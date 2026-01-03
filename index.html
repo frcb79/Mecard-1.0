@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MeCard Network POS</title>
-    <!-- Shim crítico para evitar 'process is not defined' en el navegador -->
+    <!-- Shim para compatibilidad con librerías que buscan 'process' -->
     <script>
       window.process = window.process || { env: { NODE_ENV: 'production' } };
     </script>
@@ -48,6 +48,17 @@
         animation-duration: 0.5s;
         animation-fill-mode: both;
       }
+
+      #initial-loader {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        z-index: 9999;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
   <script type="importmap">
 {
@@ -64,8 +75,21 @@
 </script>
 </head>
   <body>
+    <div id="initial-loader">
+      <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
     <div id="root"></div>
-    <!-- Entrada principal de la app usando ruta relativa para compatibilidad con Vite -->
     <script type="module" src="./index.tsx"></script>
+    <script>
+      window.addEventListener('load', () => {
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          setTimeout(() => {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 500);
+          }, 500);
+        }
+      });
+    </script>
   </body>
 </html>

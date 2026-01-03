@@ -2,21 +2,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { Product, SalesData, Category, School, OperatingUnit } from '../types';
 
-/**
- * Inicializa el cliente de Gemini de forma segura.
- * Recupera la API_KEY del entorno inyectado por Vercel/Vite.
- */
-const getAI = () => {
-  // Verificación segura del objeto global process
-  const apiKey = (typeof window !== 'undefined' && (window as any).process?.env?.API_KEY) || 
-                 (typeof process !== 'undefined' && process.env?.API_KEY) || 
-                 "";
-  return new GoogleGenAI({ apiKey });
-};
-
 export const getSalesAnalysis = async (salesData: SalesData[]): Promise<string> => {
   try {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const dataSummary = salesData.map(d => `${d.name}: $${d.revenue} revenue, ${d.orders} orders`).join('\n');
     const prompt = `Como analista de negocios de MeCard Network, analiza estas ventas semanales:\n${dataSummary}\n\nDa 3 consejos para aumentar ventas. Máximo 80 palabras. Usa emojis.`;
     
@@ -37,7 +25,7 @@ export const getPlatformStrategicAudit = async (
   units: OperatingUnit[]
 ): Promise<string> => {
   try {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `Actúa como un CTO de FinTech. 
     Red actual: ${schools.length} colegios, ${units.length} terminales. 
     Volumen: $${schools.reduce((a, b) => a + b.balance, 0)}.
@@ -47,19 +35,22 @@ export const getPlatformStrategicAudit = async (
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
-      config: { thinkingConfig: { thinkingBudget: 2000 } }
+      config: { thinkingConfig: { thinkingBudget: 32768 } }
     });
     
     return response.text || "Auditoría no disponible.";
   } catch (error) {
     console.error("Gemini Audit Error:", error);
+    if (error instanceof Error && error.message.includes("not found")) {
+        throw new Error("KEY_NOT_FOUND");
+    }
     return "Error de análisis AI.";
   }
 };
 
 export const getNutritionalInsights = async (product: Product): Promise<string> => {
   try {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `Resumen nutricional divertido para un estudiante sobre: ${product.name}. Calorías: ${product.calories || 'N/A'}. Máximo 50 palabras.`;
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -73,7 +64,7 @@ export const getNutritionalInsights = async (product: Product): Promise<string> 
 
 export const getHealthyAlternatives = async (blockedCategory: Category, availableProducts: Product[]): Promise<string> => {
   try {
-    const ai = getAI();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const productsList = availableProducts.filter(p => p.isAvailable).map(p => p.name).join(', ');
     const prompt = `El alumno no puede comprar ${blockedCategory}. De esta lista: ${productsList}, sugiere una alternativa saludable. Máximo 15 palabras.`;
     const response = await ai.models.generateContent({

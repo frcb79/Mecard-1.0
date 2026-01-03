@@ -1,63 +1,107 @@
 
-import React, { useState, useMemo, createContext, useContext, useEffect } from 'react';
+import React, { useState, createContext, useContext, useEffect, useMemo } from 'react';
 import { 
-  LogOut, Building2, Zap, Landmark, Users, Save, ShieldCheck, 
-  ChevronLeft, PanelLeftClose, PanelLeftOpen, QrCode, PenTool, 
-  Activity, Plus, Calendar, DollarSign, Percent, TrendingUp, 
-  Utensils, ChefHat, ShoppingBag, Clock, CheckCircle2, Search, 
-  Settings, CreditCard, ArrowRight, X, Copy, Check, History, 
-  LayoutDashboard, Store, Trash2, Edit3, HeartPulse, Palette,
-  ArrowLeftRight, ArrowUpRight, HelpCircle, AlertCircle, Smartphone, Wallet,
-  UserPlus, Shield, Terminal, Sparkles, Bot, BrainCircuit, FileCode, Cpu,
-  Share2, Database, Network, ExternalLink, GraduationCap, Layers, Rocket
+  LogOut, Building2, Zap, Landmark, Users, Terminal, Activity, Plus, 
+  X, Globe, Hash, Database, RefreshCw, Info, BrainCircuit, 
+  Sparkles, ChevronLeft, ChevronRight, DollarSign, Receipt, 
+  CheckCircle2, ChefHat, ArrowLeftRight, ShieldCheck, Layers3,
+  ExternalLink, Key
 } from 'lucide-react';
-import { School, OperatingUnit, EntityOwner, UserRole } from '../types';
-import { PRODUCTS, MOCK_SCHOOLS, MOCK_UNITS } from '../constants';
-import { getPlatformStrategicAudit } from '../services/geminiService';
+import { School, OperatingUnit, Settlement, SettlementStatus, EntityOwner } from '../types';
+import { MOCK_SCHOOLS, MOCK_UNITS, MOCK_TRANSACTIONS } from '../constants';
 import { Button } from './Button';
+import { getPlatformStrategicAudit } from '../services/geminiService';
+import { SettlementService } from '../services/settlementService';
 
-// ==========================================
-// 1. CONTEXTO GLOBAL DE PLATAFORMA (Reparado)
-// ==========================================
+// Extender el objeto window para TypeScript
+// Fix: Use the expected AIStudio type and ensure modifiers match existing global declarations (making it optional to avoid conflicts)
+declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+
+  interface Window {
+    aistudio?: AIStudio;
+  }
+}
 
 interface PlatformContextType {
   schools: School[];
   units: OperatingUnit[];
+  settlements: Settlement[];
   activeSchool: School | null;
   addSchool: (school: School) => void;
-  updateSchool: (id: string, data: Partial<School>) => void;
+  updateSchoolModel: (id: string, updates: Partial<School['businessModel']>) => void;
   impersonateSchool: (school: School | null) => void;
-  addUnit: (unit: OperatingUnit) => void;
+  runSettlement: (school: School) => void;
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 }
 
 const PlatformContext = createContext<PlatformContextType | undefined>(undefined);
 
 export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [schools, setSchools] = useState<School[]>(MOCK_SCHOOLS);
-  const [units, setUnits] = useState<OperatingUnit[]>(MOCK_UNITS);
+  const STORAGE_KEY = 'mecard_master_schools_v5';
+  const SETTLEMENTS_KEY = 'mecard_settlements_v3';
+  const SIDEBAR_KEY = 'mecard_sidebar_state';
+  
+  const [schools, setSchools] = useState<School[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : MOCK_SCHOOLS;
+  });
+
+  const [settlements, setSettlements] = useState<Settlement[]>(() => {
+    const saved = localStorage.getItem(SETTLEMENTS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
+  
   const [activeSchool, setActiveSchool] = useState<School | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem(SIDEBAR_KEY);
+    return saved === 'true';
+  });
 
-  const addSchool = (school: School) => {
-    setSchools(prev => [school, ...prev]);
-  };
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(schools));
+    localStorage.setItem(SETTLEMENTS_KEY, JSON.stringify(settlements));
+    localStorage.setItem(SIDEBAR_KEY, String(sidebarCollapsed));
+  }, [schools, settlements, sidebarCollapsed]);
 
-  const updateSchool = (id: string, data: Partial<School>) => {
-    setSchools(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
+  const addSchool = (school: School) => setSchools(prev => [school, ...prev]);
+  
+  const updateSchoolModel = (id: string, updates: Partial<School['businessModel']>) => {
+    setSchools(prev => prev.map(s => s.id === id ? { 
+        ...s, 
+        businessModel: { ...s.businessModel, ...updates } 
+    } : s));
     if (activeSchool?.id === id) {
-      setActiveSchool(prev => prev ? { ...prev, ...data } : null);
+      setActiveSchool(prev => prev ? { ...prev, businessModel: { ...prev.businessModel, ...updates } } : null);
     }
   };
 
-  const impersonateSchool = (school: School | null) => {
-    setActiveSchool(school);
+  const impersonateSchool = (school: School | null) => setActiveSchool(school);
+  
+  const runSettlement = (school: School) => {
+    const schoolUnits = MOCK_UNITS.filter(u => u.schoolId === school.id);
+    const newSettlement = SettlementService.calculate(
+      school,
+      schoolUnits as OperatingUnit[],
+      MOCK_TRANSACTIONS,
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      new Date()
+    );
+    setSettlements(prev => [newSettlement, ...prev]);
   };
 
-  const addUnit = (unit: OperatingUnit) => {
-    setUnits(prev => [...prev, unit]);
-  };
+  const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
 
   return (
-    <PlatformContext.Provider value={{ schools, units, activeSchool, addSchool, updateSchool, impersonateSchool, addUnit }}>
+    <PlatformContext.Provider value={{ 
+      schools, units: MOCK_UNITS as OperatingUnit[], settlements, activeSchool, 
+      addSchool, updateSchoolModel, impersonateSchool, runSettlement,
+      sidebarCollapsed, toggleSidebar
+    }}>
       {children}
     </PlatformContext.Provider>
   );
@@ -69,9 +113,15 @@ const usePlatform = () => {
   return context;
 };
 
-// ==========================================
-// 2. UTILIDADES
-// ==========================================
+const calculateCLABEVerifier = (base17: string): string => {
+  const weights = [3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7];
+  let sum = 0;
+  for (let i = 0; i < 17; i++) {
+    sum += (parseInt(base17[i]) * weights[i]) % 10;
+  }
+  const mod = sum % 10;
+  return mod === 0 ? '0' : (10 - mod).toString();
+};
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('es-MX', {
@@ -81,124 +131,174 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// ==========================================
-// 3. COMPONENTES DE VISTA
-// ==========================================
-
-const SchoolDetailPanel: React.FC<{ school: School }> = ({ school }) => {
-  const { updateSchool, units, addUnit } = usePlatform();
-  const [activeTab, setActiveTab] = useState<'overview' | 'business' | 'pos_setup'>('overview');
-  const [showAddPOS, setShowAddPOS] = useState(false);
-
-  const schoolUnits = useMemo(() => units.filter(u => u.schoolId === school.id), [units, school.id]);
-
-  const handleCreatePOS = (e: React.FormEvent) => {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget as HTMLFormElement);
-      const newUnit: OperatingUnit = {
-          id: `unit_${Date.now()}`,
-          schoolId: school.id,
-          name: formData.get('name') as string,
-          type: formData.get('type') as any,
-          ownerType: formData.get('owner') as any,
-          managerId: `mgr_${Date.now()}`
-      };
-      addUnit(newUnit);
-      setShowAddPOS(false);
+const StatCard = ({ title, value, icon, color }: { title: string, value: string | number, icon: React.ReactNode, color: 'indigo' | 'emerald' | 'amber' | 'rose' }) => {
+  const colors = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
+    rose: 'bg-rose-50 text-rose-600'
   };
-
   return (
-    <div className="h-full flex flex-col animate-in slide-in-from-right-8 duration-500 bg-[#fdfdfd]">
-      <header className="p-10 bg-white border-b border-slate-100 flex justify-between items-center shadow-sm">
-        <div className="flex items-center gap-6">
-          <div className="text-5xl bg-slate-50 p-4 rounded-3xl shadow-inner border border-slate-100">{school.logo}</div>
-          <div>
-            <h2 className="text-4xl font-black text-slate-800 tracking-tighter leading-none">{school.name}</h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">ID: {school.id} • Centro de Costos STP: {school.stpCostCenter}</p>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="flex px-10 bg-white border-b border-slate-50 overflow-x-auto scrollbar-hide">
-           {/* Fixed syntax error in onClick handler below */}
-           <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<ArrowLeftRight size={18}/>} label="Finanzas" />
-           <TabButton active={activeTab === 'pos_setup'} onClick={() => setActiveTab('pos_setup')} icon={<Terminal size={18}/>} label="Puntos de Venta" />
-           <TabButton active={activeTab === 'business'} onClick={() => setActiveTab('business')} icon={<Landmark size={18}/>} label="Configuración SaaS" />
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-12 pb-40">
-           {activeTab === 'overview' && (
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in duration-500">
-               <StatCard title="Alumnos" value={school.studentCount} icon={<Users size={24}/>} color="indigo" />
-               <StatCard title="Saldo Red" value={formatCurrency(school.balance)} icon={<Landmark size={24}/>} color="emerald" />
-               <StatCard title="Comisión Estimada" value={formatCurrency(school.balance * (school.businessModel.cafeteriaFeePercent/100))} icon={<Activity size={24}/>} color="amber" />
-               <div className="md:col-span-3 h-64 bg-slate-50 rounded-[48px] border-4 border-dashed border-slate-100 flex items-center justify-center text-slate-300 font-black uppercase tracking-widest">Monitor de Flujos Activo</div>
-             </div>
-           )}
-
-           {activeTab === 'pos_setup' && (
-             <div className="space-y-12">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-3xl font-black text-slate-800 tracking-tighter">Unidades Operativas</h3>
-                    <button onClick={() => setShowAddPOS(true)} className="bg-indigo-600 text-white px-8 py-4 rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-100 flex items-center gap-3"><Plus size={18}/> Nueva Unidad</button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {schoolUnits.map(unit => (
-                        <div key={unit.id} className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all">
-                            <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">{unit.type === 'CAFETERIA' ? <ChefHat size={32}/> : <PenTool size={32}/>}</div>
-                                <div><h4 className="text-xl font-black text-slate-800">{unit.name}</h4><p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{unit.type} • {unit.ownerType}</p></div>
-                            </div>
-                            <button className="p-4 bg-slate-50 rounded-2xl text-slate-300 group-hover:text-indigo-600"><ArrowRight size={24}/></button>
-                        </div>
-                    ))}
-                </div>
-             </div>
-           )}
-
-           {activeTab === 'business' && (
-             <div className="bg-slate-900 rounded-[56px] p-12 text-white space-y-8">
-                <h3 className="text-2xl font-black flex items-center gap-4"><Landmark className="text-indigo-400"/> Modelo Económico</h3>
-                <div className="grid grid-cols-2 gap-8">
-                    <div className="p-8 bg-white/5 rounded-3xl border border-white/10"><p className="text-[10px] text-slate-500 uppercase font-black mb-2">Comisión Cafetería</p><p className="text-4xl font-black">{school.businessModel.cafeteriaFeePercent}%</p></div>
-                    <div className="p-8 bg-white/5 rounded-3xl border border-white/10"><p className="text-[10px] text-slate-500 uppercase font-black mb-2">Renta Mensual</p><p className="text-4xl font-black">{formatCurrency(school.businessModel.monthlyRentFee)}</p></div>
-                </div>
-             </div>
-           )}
-        </div>
+    <div className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-sm flex items-center gap-8 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+      <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center ${colors[color]}`}>{icon}</div>
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</p>
+        <p className="text-4xl font-black text-slate-800 tracking-tighter mt-1">{value}</p>
       </div>
-
-      {/* Modal POS */}
-      {showAddPOS && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-6">
-              <div className="bg-white rounded-[56px] shadow-2xl w-full max-w-xl p-16 relative animate-in zoom-in duration-300">
-                <button onClick={() => setShowAddPOS(false)} className="absolute top-12 right-12 text-slate-300 hover:text-slate-800"><X size={32}/></button>
-                <h3 className="text-3xl font-black text-slate-800 tracking-tighter mb-10">Desplegar Unidad</h3>
-                <form onSubmit={handleCreatePOS} className="space-y-8">
-                   <input name="name" required placeholder="Nombre de la Unidad" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 shadow-inner" />
-                   <div className="grid grid-cols-2 gap-6">
-                        <select name="type" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-sm">
-                            <option value="CAFETERIA">CAFETERÍA</option>
-                            <option value="STATIONERY">PAPELERÍA</option>
-                        </select>
-                        <select name="owner" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-sm">
-                            <option value={EntityOwner.CONCESSIONAIRE}>CONCESIONARIO</option>
-                            <option value={EntityOwner.SCHOOL}>ESCUELA</option>
-                        </select>
-                   </div>
-                   <Button type="submit" className="w-full py-8 rounded-[32px] bg-indigo-600 font-black uppercase tracking-widest shadow-2xl">Activar Unidad POS</Button>
-                </form>
-              </div>
-          </div>
-      )}
     </div>
   );
 };
 
-// ==========================================
-// 4. COMPONENTE PRINCIPAL
-// ==========================================
+const ClabeSegment = ({ digits, color, label }: { digits: string, color: string, label: string }) => (
+  <div className="flex flex-col items-center gap-2 group cursor-help flex-1 min-w-[70px]">
+    <div className={`w-full text-center px-2 py-4 rounded-2xl font-mono text-2xl font-black tracking-widest transition-all group-hover:scale-105 shadow-sm border border-white/10 ${color}`}>
+      {digits}
+    </div>
+    <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 text-center leading-tight h-4">{label}</span>
+  </div>
+);
+
+const SaaSInputField = ({ label, value, onChange, prefix, suffix }: any) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{label}</label>
+    <div className="relative">
+      {prefix && <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-black text-xl">{prefix}</span>}
+      <input 
+        type="number"
+        step="0.01"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className={`w-full border-none bg-slate-50 rounded-[28px] ${prefix ? 'pl-12' : 'pl-6'} ${suffix ? 'pr-16' : 'pr-6'} py-5 font-black text-2xl text-slate-700 shadow-inner outline-none focus:ring-4 focus:ring-indigo-100 transition-all`}
+      />
+      {suffix && <span className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black text-sm">{suffix}</span>}
+    </div>
+  </div>
+);
+
+const SchoolDetailPanel: React.FC<{ school: School }> = ({ school }) => {
+  const { updateSchoolModel, settlements, runSettlement } = usePlatform();
+  const [activeTab, setActiveTab] = useState<'finances' | 'settlements'>('finances');
+  const model = school.businessModel;
+
+  const banco = "646";
+  const plaza = "180";
+  const prefijoMeCard = "0000";
+  const ccColegio = school.stpCostCenter?.padStart(3, '0') || "000";
+  const cuentaCC = "0001";
+  const base17 = `${banco}${plaza}${prefijoMeCard}${ccColegio}${cuentaCC}`;
+  const verificador = calculateCLABEVerifier(base17);
+
+  const schoolSettlements = settlements.filter(s => s.schoolId === school.id);
+
+  return (
+    <div className="h-full flex flex-col animate-in slide-in-from-right-8 duration-500 bg-[#fdfdfd]">
+      <header className="p-10 bg-white border-b border-slate-100 flex justify-between items-center shadow-sm shrink-0">
+        <div className="flex items-center gap-6">
+          <div className="text-6xl bg-slate-50 p-6 rounded-[36px] shadow-inner border border-slate-100">{school.logo}</div>
+          <div>
+            <h2 className="text-4xl font-black text-slate-800 tracking-tighter leading-none">{school.name}</h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3 flex items-center gap-4">
+               <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-xl">ID: {school.id}</span>
+               <span className="flex items-center gap-2"><Hash size={12}/> STP C.C.: <span className="text-slate-800 font-black">{school.stpCostCenter}</span></span>
+               <span className="flex items-center gap-2"><Users size={12}/> {school.studentCount} Alumnos</span>
+            </p>
+          </div>
+        </div>
+        <button onClick={() => window.location.reload()} className="p-5 bg-slate-50 rounded-3xl text-slate-300 hover:text-indigo-600 transition-all hover:scale-105"><X size={28}/></button>
+      </header>
+
+      <div className="flex px-10 bg-white border-b border-slate-50 overflow-x-auto scrollbar-hide shrink-0">
+         <button onClick={() => setActiveTab('finances')} className={`px-10 py-6 border-b-4 transition-all font-black text-[11px] uppercase tracking-[3px] ${activeTab === 'finances' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400'}`}>Arquitectura SaaS</button>
+         <button onClick={() => setActiveTab('settlements')} className={`px-10 py-6 border-b-4 transition-all font-black text-[11px] uppercase tracking-[3px] ${activeTab === 'settlements' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400'}`}>Cortes de Caja</button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-12 pb-40">
+         {activeTab === 'finances' && (
+           <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-500">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+               <StatCard title="Fondeo Campus" value={formatCurrency(school.balance)} icon={<DollarSign size={24}/>} color="emerald" />
+               <StatCard title="Revenue Estimado" value={formatCurrency(school.balance * 0.045)} icon={<Activity size={24}/>} color="indigo" />
+               <StatCard title="Nodo Red" value="ONLINE" icon={<Zap size={24}/>} color="amber" />
+             </div>
+
+             <div className="bg-slate-900 rounded-[64px] p-16 text-white relative overflow-hidden shadow-2xl">
+               <div className="absolute top-0 right-0 p-12 opacity-5"><Database size={200}/></div>
+               <div className="relative z-10 space-y-12">
+                 <h3 className="text-3xl font-black flex items-center gap-4 tracking-tighter leading-none"><Landmark className="text-indigo-400" size={32}/> Nodo STP Interbancario</h3>
+                 <div className="flex flex-wrap md:flex-nowrap justify-between gap-3 p-10 bg-white/5 rounded-[48px] border border-white/10">
+                    <ClabeSegment digits={banco} color="bg-slate-800 text-slate-400" label="Banco" />
+                    <ClabeSegment digits={plaza} color="bg-slate-800 text-slate-400" label="Plaza" />
+                    <ClabeSegment digits={prefijoMeCard} color="bg-indigo-600 text-white shadow-xl" label="Prefijo" />
+                    <ClabeSegment digits={ccColegio} color="bg-amber-600 text-white shadow-xl" label="C.C." />
+                    <ClabeSegment digits={cuentaCC} color="bg-emerald-600 text-white" label="ID" />
+                    <ClabeSegment digits={verificador} color="bg-rose-600 text-white shadow-lg" label="D.V." />
+                 </div>
+                 <div className="p-8 bg-indigo-500/10 rounded-[32px] border border-indigo-500/20 flex items-center gap-6">
+                    <Info className="text-indigo-400 shrink-0" size={24}/>
+                    <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-[2px] leading-relaxed">
+                      El segmento <span className="text-amber-300 font-black">{ccColegio}</span> habilita la dispersión automática hacia el CC del campus.
+                    </p>
+                 </div>
+               </div>
+             </div>
+
+             <div className="bg-white rounded-[64px] border border-slate-100 shadow-sm p-16 space-y-12">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                 <div className="space-y-8">
+                   <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px] mb-4">Métricas SaaS Base</h4>
+                   <SaaSInputField label="Setup Fee" value={model.setupFee} onChange={(val: number) => updateSchoolModel(school.id, { setupFee: val })} prefix="$" />
+                   <SaaSInputField label="Anualidad" value={model.annualFee} onChange={(val: number) => updateSchoolModel(school.id, { annualFee: val })} prefix="$" />
+                   <SaaSInputField label="Renta POS" value={model.monthlyRentFee} onChange={(val: number) => updateSchoolModel(school.id, { monthlyRentFee: val })} prefix="$" />
+                 </div>
+                 <div className="space-y-8">
+                   <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px] mb-4">Fees por Operación</h4>
+                   <SaaSInputField label="App Padre" value={model.parentAppFee} onChange={(val: number) => updateSchoolModel(school.id, { parentAppFee: val })} prefix="$" />
+                   <SaaSInputField label="Comisión Tarjeta" value={model.cardDepositFeePercent} onChange={(val: number) => updateSchoolModel(school.id, { cardDepositFeePercent: val })} suffix="%" />
+                   <SaaSInputField label="Fee SPEI" value={model.speiDepositFeeFixed} onChange={(val: number) => updateSchoolModel(school.id, { speiDepositFeeFixed: val })} prefix="$" />
+                 </div>
+               </div>
+             </div>
+           </div>
+         )}
+
+         {activeTab === 'settlements' && (
+           <div className="max-w-6xl mx-auto space-y-12">
+              <div className="flex justify-between items-center">
+                 <h3 className="text-4xl font-black text-slate-800 tracking-tighter">Ciclos de Liquidación</h3>
+                 <Button onClick={() => runSettlement(school)} className="bg-indigo-600 px-10 py-6 rounded-[32px] font-black text-[11px] uppercase tracking-widest">
+                   <RefreshCw className="mr-3" size={18}/> Ejecutar Corte
+                 </Button>
+              </div>
+
+              {schoolSettlements.length === 0 ? (
+                <div className="bg-slate-50 border-4 border-dashed border-slate-100 rounded-[64px] py-40 text-center grayscale opacity-30">
+                   <Receipt size={100} strokeWidth={1} className="mx-auto mb-6" />
+                   <p className="text-slate-500 font-black uppercase tracking-[8px]">Sin historial</p>
+                </div>
+              ) : (
+                <div className="space-y-10">
+                   {schoolSettlements.map(s => (
+                     <div key={s.id} className="bg-white rounded-[56px] border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-12 border-b border-slate-50 flex justify-between items-center bg-slate-50/20">
+                           <h4 className="text-2xl font-black text-slate-800">Corte ID: {s.id.slice(-6)}</h4>
+                           <span className="bg-emerald-50 text-emerald-600 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-2"><CheckCircle2 size={14}/> {s.status}</span>
+                        </div>
+                        <div className="p-12 grid grid-cols-2 md:grid-cols-4 gap-12">
+                           <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1">Gross Revenue</p><p className="text-3xl font-black text-slate-800">{formatCurrency(s.grossRevenue)}</p></div>
+                           <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1">Fee MeCard</p><p className="text-3xl font-black text-rose-500">-{formatCurrency(s.platformCommission)}</p></div>
+                           <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1">Share Colegio</p><p className="text-3xl font-black text-emerald-600">{formatCurrency(s.schoolShare)}</p></div>
+                           <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1">Share Vendor</p><p className="text-3xl font-black text-indigo-600">{formatCurrency(s.vendorShare)}</p></div>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+              )}
+           </div>
+         )}
+      </div>
+    </div>
+  );
+};
 
 export default function MeCardPlatform({ onLogout }: { onLogout?: () => void }) {
   return (
@@ -209,227 +309,165 @@ export default function MeCardPlatform({ onLogout }: { onLogout?: () => void }) 
 }
 
 const PlatformUI = ({ onLogout }: { onLogout?: () => void }) => {
-  const { schools, activeSchool, impersonateSchool, addSchool } = usePlatform();
-  const [activeTab, setActiveTab] = useState<'infrastructure' | 'ai_audit'>('infrastructure');
-  const [showAddSchool, setShowAddSchool] = useState(false);
-  const [auditView, setAuditView] = useState<'manifest' | 'dashboard'>('manifest');
+  const { schools, activeSchool, impersonateSchool, sidebarCollapsed, toggleSidebar } = usePlatform();
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'schools' | 'ai'>('dashboard');
+  const [aiAudit, setAiAudit] = useState<string | null>(null);
+  const [loadingAi, setLoadingAi] = useState(false);
+  const [keyMissing, setKeyMissing] = useState(false);
 
-  const systemManifest = useMemo(() => {
-    return `
-# MeCard v4.5 - FULL PROJECT CONTEXT FOR GEMINI
-
-## 1. Core Architecture
-- Multi-tenant school network management.
-- FinTech Layer: STP Bank Integration (Personalized CLABE per student).
-- POS Layer: High-performance terminals for Cafeteria/Stationery with medical alerts validation.
-- Parental Layer: Real-time spending limits, product-level bans, and healthy alternative suggestions via AI.
-
-## 2. Technical Stack
-- React 19, Lucide Icons, Recharts, Tailwind CSS.
-- AI Core: Gemini Flash for fast nutritional alerts, Gemini Pro for strategic audits.
-
-## 3. Business Logic
-- Multi-fee management (Setup, Rents, App Fees).
-- Dynamic Commissioning: Automatic Markup vs Vendor Discounting.
-- Scalable Entity Hierarchy: Platform -> School -> Units (POS) -> Staff -> Students.
-    `.trim();
-  }, []);
-
-  const handleRegisterSchool = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget as HTMLFormElement);
-    const newSchool: School = {
-        id: `mx_${Date.now().toString().slice(-3)}`,
-        name: formData.get('name') as string,
-        logo: formData.get('logo') as string,
-        studentCount: Number(formData.get('students')),
-        balance: 0,
-        stpCostCenter: (100 + schools.length).toString(),
-        // Added missing required properties from the School interface
-        platformFeePercent: 4.5,
-        onboardingStatus: 'PENDING',
-        branding: { primary: '#4f46e5', secondary: '#818cf8' },
-        businessModel: {
-            setupFee: Number(formData.get('setup')),
-            annualFee: 15000,
-            monthlyRentFee: Number(formData.get('rent')),
-            parentAppFee: 25,
-            cardDepositFeePercent: 3.5,
-            speiDepositFeeFixed: 8.0,
-            cafeteriaFeePercent: Number(formData.get('fee')),
-            cafeteriaFeeAutoMarkup: true
+  const handleGenerateAudit = async () => {
+    // Regla: Verificar selección de API Key para modelos Pro
+    if (typeof window.aistudio !== 'undefined') {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+            setKeyMissing(true);
+            return;
         }
-    };
-    addSchool(newSchool);
-    setShowAddSchool(false);
+    }
+
+    setLoadingAi(true);
+    setAiAudit(null);
+    try {
+        const audit = await getPlatformStrategicAudit(schools, MOCK_UNITS as any);
+        setAiAudit(audit);
+    } catch (e: any) {
+        if (e.message === "KEY_NOT_FOUND") {
+            setKeyMissing(true);
+        } else {
+            setAiAudit("Error al conectar con Gemini Pro.");
+        }
+    } finally {
+        setLoadingAi(false);
+    }
+  };
+
+  const handleOpenKeySelector = async () => {
+    if (typeof window.aistudio !== 'undefined') {
+        await window.aistudio.openSelectKey();
+        setKeyMissing(false);
+        // Proceder inmediatamente después del selector
+        handleGenerateAudit();
+    }
   };
 
   return (
     <div className="h-screen w-full bg-[#f8fafc] flex overflow-hidden font-sans">
-      {/* SIDEBAR */}
-      <aside className="w-80 bg-white border-r border-slate-200 flex flex-col z-20 shadow-xl">
+      <aside className={`bg-white border-r border-slate-200 flex flex-col z-20 shadow-xl transition-all duration-300 ${sidebarCollapsed ? 'w-24' : 'w-80'}`}>
         <div className="p-10">
-          <div className="flex items-center gap-4 mb-16">
-            <div className="bg-indigo-600 p-3 rounded-[22px] rotate-3 shadow-2xl shadow-indigo-100 shrink-0"><Zap className="text-white w-7 h-7" /></div>
-            <span className="text-3xl font-black text-slate-800 tracking-tighter">MeCard<span className="text-indigo-600">.</span></span>
+          <div className={`flex items-center gap-4 mb-16 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <div className="bg-indigo-600 p-3 rounded-[22px] rotate-3 shadow-2xl shrink-0"><Zap className="text-white w-7 h-7" /></div>
+            {!sidebarCollapsed && <span className="text-3xl font-black text-slate-800 tracking-tighter">MeCard<span className="text-indigo-600">.</span></span>}
           </div>
           <nav className="space-y-3">
-            <SidebarItem icon={<Building2 size={22}/>} label="Instituciones" active={activeTab === 'infrastructure'} onClick={() => { setActiveTab('infrastructure'); impersonateSchool(null); }} />
-            <SidebarItem icon={<BrainCircuit size={22}/>} label="Gemini Context" active={activeTab === 'ai_audit'} onClick={() => setActiveTab('ai_audit')} />
+             <SidebarItem icon={<Globe size={22}/>} label="Global" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); impersonateSchool(null); }} collapsed={sidebarCollapsed} />
+             <SidebarItem icon={<Building2 size={22}/>} label="Campus" active={activeTab === 'schools' || !!activeSchool} onClick={() => { setActiveTab('schools'); impersonateSchool(null); }} collapsed={sidebarCollapsed} />
+             <SidebarItem icon={<BrainCircuit size={22}/>} label="AI Auditor" active={activeTab === 'ai'} onClick={() => setActiveTab('ai')} collapsed={sidebarCollapsed} />
           </nav>
         </div>
-        <div className="mt-auto p-8 border-t border-slate-50">
-          <button onClick={onLogout} className="w-full flex items-center gap-6 px-8 py-5 text-rose-500 hover:bg-rose-50 rounded-[28px] font-black text-[11px] uppercase tracking-widest transition-all"><LogOut size={22}/> Cerrar Sesión</button>
+        
+        <div className="mt-auto">
+           <button onClick={toggleSidebar} className="w-full p-6 text-slate-300 hover:text-indigo-600 transition-all flex items-center justify-center">
+              {sidebarCollapsed ? <ChevronRight size={24}/> : <ChevronLeft size={24}/>}
+           </button>
+           <div className="p-8 border-t border-slate-50">
+              <button onClick={onLogout} className={`w-full flex items-center gap-6 px-8 py-5 text-rose-500 hover:bg-rose-50 rounded-[28px] font-black text-[11px] uppercase tracking-widest transition-all ${sidebarCollapsed ? 'justify-center' : ''}`}>
+                <LogOut size={22}/> {!sidebarCollapsed && 'Salir'}
+              </button>
+           </div>
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
       <main className="flex-1 h-full overflow-hidden relative bg-[#fdfdfd]">
-        {activeTab === 'infrastructure' && !activeSchool && (
-          <div className="p-16 max-w-7xl mx-auto h-full overflow-y-auto animate-in fade-in duration-700 pb-40">
-             <header className="mb-20 flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
+        {!activeSchool ? (
+          <div className="p-16 max-w-7xl mx-auto h-full overflow-y-auto pb-40 animate-in fade-in duration-700">
+             {activeTab === 'dashboard' && (
+                <div className="space-y-16">
+                    <h1 className="text-7xl font-black text-slate-800 tracking-tighter leading-none">Global Hub</h1>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                        <StatCard title="Campus" value={schools.length} icon={<Building2 size={32}/>} color="indigo" />
+                        <StatCard title="Volumen" value={formatCurrency(schools.reduce((a,b)=>a+b.balance,0))} icon={<Landmark size={32}/>} color="emerald" />
+                        <StatCard title="Alumnos" value={schools.reduce((a,b)=>a+b.studentCount,0).toLocaleString()} icon={<Users size={32}/>} color="rose" />
+                        <StatCard title="Nodos POS" value={MOCK_UNITS.length} icon={<Terminal size={32}/>} color="amber" />
+                    </div>
+                </div>
+             )}
+
+             {activeTab === 'ai' && (
+                <div className="space-y-12 max-w-4xl">
+                    <h2 className="text-6xl font-black text-slate-800 tracking-tighter">AI Network Auditor</h2>
+                    <div className="bg-slate-900 rounded-[64px] p-16 text-white relative overflow-hidden shadow-2xl">
+                        <div className="absolute top-0 right-0 p-12 opacity-5"><BrainCircuit size={200}/></div>
+                        <div className="relative z-10 space-y-8">
+                            <p className="text-indigo-400 font-black uppercase text-[11px] tracking-widest flex items-center gap-3"><Sparkles size={16}/> Gemini Pro 3.0 Strategic Analyst</p>
+                            
+                            {keyMissing ? (
+                                <div className="bg-white/5 border border-white/10 p-10 rounded-[32px] animate-in zoom-in">
+                                    <ShieldCheck className="text-amber-400 mb-6" size={48}/>
+                                    <h4 className="text-2xl font-black text-white mb-2">Requiere API Key de Pago</h4>
+                                    <p className="text-slate-400 mb-8 leading-relaxed">Para ejecutar análisis estratégicos con Gemini Pro 3.0, debes seleccionar una API Key de un proyecto con facturación activa.</p>
+                                    <Button onClick={handleOpenKeySelector} className="bg-indigo-600 px-8 py-5 rounded-2xl font-black text-xs uppercase flex items-center gap-3">
+                                        <Key size={18}/> Seleccionar API Key
+                                    </Button>
+                                    <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="block mt-4 text-[10px] text-slate-500 hover:text-indigo-400 flex items-center gap-1 underline">Ver documentación de facturación <ExternalLink size={10}/></a>
+                                </div>
+                            ) : (
+                                <div className="min-h-[250px] text-xl font-medium leading-relaxed text-indigo-100/90 whitespace-pre-wrap">
+                                    {loadingAi ? (
+                                        <div className="flex flex-col items-center gap-6 py-20 animate-pulse">
+                                          <div className="w-16 h-16 border-8 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                                          <p className="font-black text-xs uppercase tracking-[4px]">Gemini Pro está razonando...</p>
+                                        </div>
+                                    ) : aiAudit || "Ejecuta una auditoría para detectar anomalías o riesgos financieros en la infraestructura de MeCard."}
+                                </div>
+                            )}
+                            
+                            {!keyMissing && (
+                                <Button onClick={handleGenerateAudit} disabled={loadingAi} className="bg-indigo-600 px-12 py-8 rounded-[36px] text-[12px] uppercase font-black">
+                                    {loadingAi ? 'Procesando...' : 'Auditar Red'}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+             )}
+
+             {activeTab === 'schools' && (
                 <div>
-                    <p className="text-[11px] font-black text-indigo-500 uppercase tracking-[8px] mb-4">PLATFORM CORE</p>
-                    <h1 className="text-7xl font-black text-slate-800 tracking-tighter leading-none">Red Global</h1>
-                </div>
-                <div className="flex gap-4">
-                    <button onClick={() => setActiveTab('ai_audit')} className="bg-slate-900 text-white px-10 py-6 rounded-[40px] font-black text-[12px] uppercase tracking-widest flex items-center gap-4 group shadow-2xl shadow-slate-200">
-                        <Share2 size={24}/> Manifiesto Gemini
-                    </button>
-                    <button onClick={() => setShowAddSchool(true)} className="bg-indigo-600 text-white px-10 py-6 rounded-[40px] font-black text-[12px] uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:scale-105 transition-all flex items-center gap-4 group">
-                        <Plus size={24} className="group-hover:rotate-90 transition-transform duration-500"/> Registrar Colegio
-                    </button>
-                </div>
-            </header>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                {schools.map(s => (
-                    <div key={s.id} onClick={() => impersonateSchool(s)} className="bg-white p-12 rounded-[64px] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-4 transition-all cursor-pointer group relative overflow-hidden animate-in zoom-in">
-                        <div className="absolute top-0 right-0 p-10 text-slate-50 opacity-10 group-hover:scale-110 transition-transform"><Building2 size={120}/></div>
-                        <div className="flex justify-between items-start mb-12 relative z-10">
-                            <div className="text-8xl bg-slate-50 p-10 rounded-[48px] group-hover:bg-indigo-50 shadow-inner border border-slate-100">{s.logo}</div>
-                            <div className="text-right">
-                                <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-widest">Activo</span>
-                                <p className="text-5xl font-black text-slate-800 mt-8 tracking-tighter">{formatCurrency(s.balance)}</p>
+                    <h1 className="text-7xl font-black text-slate-800 tracking-tighter leading-none mb-20">Campus Red</h1>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        {schools.map(s => (
+                            <div key={s.id} onClick={() => impersonateSchool(s)} className="bg-white p-12 rounded-[64px] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-4 transition-all cursor-pointer group relative overflow-hidden animate-in zoom-in">
+                                <div className="absolute top-0 right-0 p-12 text-slate-50 opacity-10 group-hover:scale-110 transition-transform"><Building2 size={120}/></div>
+                                <div className="flex justify-between items-start mb-12 relative z-10">
+                                    <div className="text-8xl bg-slate-50 p-10 rounded-[48px] group-hover:bg-indigo-50 shadow-inner border border-slate-100 transition-all">{s.logo}</div>
+                                    <div className="text-right">
+                                        <span className="px-5 py-2 bg-emerald-50 text-emerald-600 rounded-2xl text-[9px] font-black uppercase tracking-widest border border-emerald-100">Activo</span>
+                                        <p className="text-5xl font-black text-slate-800 mt-8 tracking-tighter">{formatCurrency(s.balance)}</p>
+                                    </div>
+                                </div>
+                                <h3 className="text-4xl font-black text-slate-800 tracking-tighter mb-4">{s.name}</h3>
+                                <div className="flex gap-6 text-slate-400 font-bold text-[12px] uppercase tracking-widest">
+                                  <span className="flex items-center gap-2"><Users size={20}/> {s.studentCount} Alumnos</span>
+                                  <span className="flex items-center gap-2"><Landmark size={20}/> CC: {s.stpCostCenter}</span>
+                                </div>
                             </div>
-                        </div>
-                        <h3 className="text-4xl font-black text-slate-800 tracking-tighter mb-4">{s.name}</h3>
-                        <div className="flex gap-6 text-slate-400 font-bold text-[12px] uppercase tracking-widest">
-                           <span className="flex items-center gap-2"><Users size={20}/> {s.studentCount} Alumnos</span>
-                           <span className="flex items-center gap-2"><Landmark size={20}/> CC: {s.stpCostCenter}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Modal Onboarding (REPARADO) */}
-            {showAddSchool && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-6">
-                    <div className="bg-white rounded-[64px] shadow-2xl w-full max-w-4xl p-16 relative animate-in zoom-in duration-300">
-                        <button onClick={() => setShowAddSchool(false)} className="absolute top-12 right-12 text-slate-300 hover:text-slate-800"><X size={32}/></button>
-                        <h3 className="text-4xl font-black text-slate-800 tracking-tighter mb-12">Nuevo Despliegue Escolar</h3>
-                        <form onSubmit={handleRegisterSchool} className="space-y-10">
-                           <div className="grid grid-cols-2 gap-10">
-                              <div className="space-y-3">
-                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre Institución</label>
-                                 <input name="name" required placeholder="Ej. Colegio Americano" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-lg shadow-inner" />
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center block">Logo (Emoji)</label>
-                                    <input name="logo" required placeholder="🎓" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-3xl shadow-inner text-center" />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center block">Alumnos</label>
-                                    <input name="students" type="number" required placeholder="800" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-xl shadow-inner text-center" />
-                                </div>
-                              </div>
-                           </div>
-                           <div className="p-10 bg-indigo-50/50 rounded-[48px] border border-indigo-100 flex gap-10">
-                                <div className="flex-1 space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-2">Setup Fee ($)</label>
-                                    <input name="setup" type="number" defaultValue="25000" className="w-full p-5 rounded-2xl bg-white border border-indigo-100 font-black text-indigo-700" />
-                                </div>
-                                <div className="flex-1 space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-2">Renta Mensual ($)</label>
-                                    <input name="rent" type="number" defaultValue="5000" className="w-full p-5 rounded-2xl bg-white border border-indigo-100 font-black text-indigo-700" />
-                                </div>
-                                <div className="flex-1 space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-2">Comisión (%)</label>
-                                    <input name="fee" type="number" step="0.1" defaultValue="5.0" className="w-full p-5 rounded-2xl bg-white border border-indigo-100 font-black text-indigo-700" />
-                                </div>
-                           </div>
-                           <Button type="submit" className="w-full py-8 rounded-[32px] bg-indigo-600 text-white font-black uppercase tracking-[5px] shadow-2xl shadow-indigo-100">Registrar e Instalar Infraestructura</Button>
-                        </form>
+                        ))}
                     </div>
                 </div>
-            )}
+             )}
           </div>
-        )}
-
-        {activeSchool && <SchoolDetailPanel school={activeSchool} />}
-
-        {activeTab === 'ai_audit' && (
-           <div className="p-16 max-w-5xl mx-auto h-full overflow-y-auto animate-in fade-in duration-700">
-              <header className="mb-16 flex justify-between items-center">
-                 <div>
-                    <p className="text-[11px] font-black text-indigo-500 uppercase tracking-[8px] mb-4">BRAIN CORE STRATEGY</p>
-                    <h1 className="text-6xl font-black text-slate-800 tracking-tighter leading-none">Contexto Gemini</h1>
-                 </div>
-                 <button onClick={() => {
-                     navigator.clipboard.writeText(systemManifest);
-                     alert("✅ ¡Manifiesto copiado! Pégalo en tu chat con Gemini.");
-                 }} className="bg-indigo-600 text-white px-10 py-5 rounded-[28px] font-black text-[12px] uppercase tracking-widest shadow-2xl shadow-indigo-100 flex items-center gap-3"><Copy size={20}/> Copiar para Gemini</button>
-              </header>
-
-              <div className="bg-white border-2 border-slate-100 rounded-[64px] p-12 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-12 opacity-5 text-indigo-600"><Bot size={150}/></div>
-                  <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3"><Rocket className="text-indigo-600"/> Manifiesto del Proyecto</h3>
-                  <pre className="text-slate-600 font-mono text-sm leading-relaxed whitespace-pre-wrap bg-slate-50 p-10 rounded-[32px] border border-slate-100 shadow-inner">
-                    {systemManifest}
-                  </pre>
-              </div>
-
-              <div className="mt-12 p-10 bg-indigo-50 border border-indigo-100 rounded-[40px] flex gap-8 items-center">
-                  <div className="bg-indigo-600 p-4 rounded-2xl text-white shadow-lg"><Cpu size={32}/></div>
-                  <div>
-                      <p className="text-indigo-900 font-black text-lg leading-tight">Instrucción para Gemini:</p>
-                      <p className="text-indigo-700 font-medium text-xs mt-1">"Actúa como un experto desarrollador. Te daré el contexto técnico del proyecto MeCard para que entiendas la lógica de mi código..."</p>
-                      {/* Fixed missing Sparkles icon usage here if intended, adding it to match previous views' style */}
-                      <p className="text-indigo-400 font-black uppercase text-[11px] tracking-widest flex items-center gap-3 mt-4"><Sparkles size={16}/> Gemini Pro 2.0 en línea</p>
-                  </div>
-              </div>
-           </div>
+        ) : (
+          <SchoolDetailPanel school={activeSchool} />
         )}
       </main>
     </div>
   );
 };
 
-const SidebarItem = ({ icon, label, active, onClick }: any) => (
-  <button onClick={onClick} className={`w-full flex items-center gap-6 px-8 py-5 rounded-[28px] font-black text-[11px] uppercase tracking-[3px] transition-all relative group ${active ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-slate-400 hover:bg-slate-50'}`}>
+const SidebarItem = ({ icon, label, active, onClick, collapsed }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, collapsed: boolean }) => (
+  <button onClick={onClick} className={`w-full flex items-center gap-6 px-8 py-5 rounded-[28px] font-black text-[11px] uppercase tracking-[3px] transition-all relative ${active ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-slate-400 hover:bg-slate-50'}`}>
     <span className="shrink-0">{icon}</span>
-    <span className="whitespace-nowrap">{label}</span>
+    {!collapsed && <span className="whitespace-nowrap">{label}</span>}
     {active && <div className="absolute right-6 w-2 h-2 bg-indigo-600 rounded-full shadow-lg"></div>}
   </button>
 );
-
-const TabButton = ({ active, onClick, icon, label }: any) => (
-  <button onClick={onClick} className={`px-10 py-6 flex items-center gap-3 border-b-4 transition-all font-black text-[11px] uppercase tracking-[3px] whitespace-nowrap ${active ? 'border-indigo-600 text-indigo-700 bg-indigo-50/30' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
-    {icon} {label}
-  </button>
-);
-
-const StatCard = ({ title, value, icon, color }: any) => {
-  const colors = {
-    indigo: 'bg-indigo-50 text-indigo-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600'
-  };
-  return (
-    <div className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-sm flex items-center gap-8 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-      <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center ${colors[color as keyof typeof colors]}`}>{icon}</div>
-      <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</p><p className="text-4xl font-black text-slate-800 tracking-tighter mt-1">{value}</p></div>
-    </div>
-  );
-};
