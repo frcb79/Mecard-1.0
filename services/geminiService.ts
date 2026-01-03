@@ -2,18 +2,15 @@
 import { GoogleGenAI } from "@google/genai";
 import { Product, SalesData, Category, School, OperatingUnit } from '../types';
 
-// Función segura para obtener la API Key sin romper el hilo de ejecución del navegador
-const getApiKey = () => {
-  try {
-    // @ts-ignore - En Vercel/Vite se inyecta como process.env.API_KEY o import.meta.env.VITE_API_KEY
-    return process.env.API_KEY || "";
-  } catch (e) {
-    return "";
-  }
-};
-
+/**
+ * Inicializa el cliente de Gemini de forma segura.
+ * Recupera la API_KEY del entorno inyectado por Vercel/Vite.
+ */
 const getAI = () => {
-  const apiKey = getApiKey();
+  // Verificación segura del objeto global process
+  const apiKey = (typeof window !== 'undefined' && (window as any).process?.env?.API_KEY) || 
+                 (typeof process !== 'undefined' && process.env?.API_KEY) || 
+                 "";
   return new GoogleGenAI({ apiKey });
 };
 
