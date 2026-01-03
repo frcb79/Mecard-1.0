@@ -2,7 +2,20 @@
 import { GoogleGenAI } from "@google/genai";
 import { Product, SalesData, Category, School, OperatingUnit } from '../types';
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Función segura para obtener la API Key sin romper el hilo de ejecución del navegador
+const getApiKey = () => {
+  try {
+    // @ts-ignore - En Vercel/Vite se inyecta como process.env.API_KEY o import.meta.env.VITE_API_KEY
+    return process.env.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const getAI = () => {
+  const apiKey = getApiKey();
+  return new GoogleGenAI({ apiKey });
+};
 
 export const getSalesAnalysis = async (salesData: SalesData[]): Promise<string> => {
   try {
@@ -17,6 +30,7 @@ export const getSalesAnalysis = async (salesData: SalesData[]): Promise<string> 
     
     return response.text || "Análisis no disponible.";
   } catch (error) {
+    console.error("Gemini Error:", error);
     return "Error al analizar datos.";
   }
 };
@@ -41,6 +55,7 @@ export const getPlatformStrategicAudit = async (
     
     return response.text || "Auditoría no disponible.";
   } catch (error) {
+    console.error("Gemini Audit Error:", error);
     return "Error de análisis AI.";
   }
 };
