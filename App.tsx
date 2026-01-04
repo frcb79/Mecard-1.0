@@ -49,14 +49,16 @@ function AppContent() {
         return;
     }
     
+    // Descontar saldo del remitente localmente (demo)
     handleUpdateStudent(student.id, { balance: student.balance - product.price });
     
+    // Abonar al destinatario si está en la lista local (demo)
     const recipient = myStudents.find(s => s.id === recipientId);
     if (recipient) {
       handleUpdateStudent(recipientId, { balance: recipient.balance + product.price });
     }
 
-    alert(`🎁 ¡Regalo enviado! Se han descontado $${product.price} de tu saldo y se han abonado a ${recipient?.name.split(' ')[0]}.`);
+    console.log(`🎁 Regalo de ${product.name} enviado a ${recipientId}`);
   };
 
   const handleLogin = (role: UserRole) => {
@@ -69,6 +71,7 @@ function AppContent() {
         case UserRole.PARENT: setCurrentView(AppView.PARENT_DASHBOARD); break;
         case UserRole.CASHIER: setCurrentView(AppView.CASHIER_VIEW); break;
         case UserRole.UNIT_MANAGER: setCurrentView(AppView.UNIT_MANAGER_DASHBOARD); break;
+        case UserRole.POS_OPERATOR: setCurrentView(AppView.POS_CAFETERIA); break;
         default: setCurrentView(AppView.PARENT_DASHBOARD);
     }
   };
@@ -99,86 +102,53 @@ function AppContent() {
       
       <main className="flex-1 h-full relative ml-64 overflow-hidden">
         
-        {/* VISTAS ALUMNO */}
         {isStudentView && (
           <div className="h-full flex flex-col md:flex-row overflow-hidden">
              <div className="flex-1 overflow-y-auto">
-               <StudentPortal 
-                view={currentView} 
-                onNavigate={setCurrentView} 
-                student={student} 
-                transactions={transactions} 
-               />
+               <StudentPortal view={currentView} onNavigate={setCurrentView} student={student} transactions={transactions} />
              </div>
              <div className="w-full md:w-[450px] border-l border-slate-200 bg-slate-900 shadow-2xl">
-               <MeCardSocial 
-                currentStudent={student} 
-                allStudents={myStudents} 
-                onSendGift={handleSendGift} 
-               />
+               <MeCardSocial currentStudent={student} allStudents={myStudents} onSendGift={handleSendGift} />
              </div>
           </div>
         )}
 
-        {/* VISTAS PADRE */}
         {isParentView && (
            <ParentPortal 
-              view={currentView} 
-              onNavigate={setCurrentView} 
-              students={myStudents} 
-              activeStudentIndex={activeStudentIndex} 
-              onSwitchStudent={setActiveStudentIndex}
+              view={currentView} onNavigate={setCurrentView} students={myStudents} 
+              activeStudentIndex={activeStudentIndex} onSwitchStudent={setActiveStudentIndex}
               onLinkStudent={(s) => setMyStudents(p => [...p, s])} 
-              transactions={transactions}
-              onUpdateStudent={(data) => handleUpdateStudent(student.id, data)}
+              transactions={transactions} onUpdateStudent={(data) => handleUpdateStudent(student.id, data)}
               onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })}
            />
         )}
 
-        {/* OTRAS VISTAS (ADMIN, CAJA, POS) */}
         {currentView === AppView.SCHOOL_ADMIN_DASHBOARD && (
           <SchoolAdminStudentsView 
-            schoolId="mx_01" 
-            students={myStudents} 
-            onUpdateStudent={handleUpdateStudent}
-            onAddStudent={(s) => setMyStudents(p => [s, ...p])}
-            onDeleteStudent={(id) => setMyStudents(p => p.filter(s => s.id !== id))}
+            schoolId="mx_01" students={myStudents} onUpdateStudent={handleUpdateStudent}
+            onAddStudent={(s) => setMyStudents(p => [s, ...p])} onDeleteStudent={(id) => setMyStudents(p => p.filter(s => s.id !== id))}
             onToggleStatus={(id) => handleUpdateStudent(id, { status: myStudents.find(s => s.id === id)?.status === 'Active' ? 'Inactive' : 'Active' })}
           />
         )}
 
         {currentView === AppView.CASHIER_VIEW && (
-          <CashierView 
-            student={student} 
-            onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} 
-          />
+          <CashierView student={student} onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} />
         )}
 
-        {(currentView === AppView.POS_CAFETERIA || currentView === AppView.POS_STATIONERY) && (
+        {(currentView === AppView.POS_CAFETERIA || currentView === AppView.POS_STATIONERY || currentView === AppView.POS_GIFT_REDEEM) && (
           <PosView 
-            mode={currentView === AppView.POS_CAFETERIA ? 'cafeteria' : 'stationery'}
-            cart={cart}
-            student={student}
-            addToCart={addToCart}
-            removeFromCart={removeFromCart}
+            mode={currentView === AppView.POS_STATIONERY ? 'stationery' : 'cafeteria'}
+            cart={cart} student={student} addToCart={addToCart} removeFromCart={removeFromCart}
             clearCart={() => setCart([])}
             onPurchase={(total) => {
-              handleUpdateStudent(student.id, { 
-                balance: student.balance - total,
-                spentToday: student.spentToday + total
-              });
+              handleUpdateStudent(student.id, { balance: student.balance - total, spentToday: student.spentToday + total });
               setCart([]);
             }}
           />
         )}
 
-        {currentView === AppView.UNIT_MANAGER_DASHBOARD && (
-          <ConcessionaireDashboard unit={MOCK_UNITS[0]} />
-        )}
-
-        {currentView === AppView.HELP_DESK && (
-          <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN} />
-        )}
+        {currentView === AppView.UNIT_MANAGER_DASHBOARD && <ConcessionaireDashboard unit={MOCK_UNITS[0]} />}
+        {currentView === AppView.HELP_DESK && <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN} />}
       </main>
     </div>
   );

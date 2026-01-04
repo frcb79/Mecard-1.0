@@ -31,6 +31,45 @@ export interface User {
   schoolId?: string;
 }
 
+export interface Friend {
+  id: string;
+  full_name: string;
+  student_id: string;
+  balance: number;
+  favorites: string[] | null;
+  favorites_public: boolean;
+  status: string;
+  grade?: string;
+  allergies?: string[] | null;
+}
+
+export interface Gift {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  inventory_item_id: string;
+  redemption_code: string;
+  amount: number;
+  status: 'pending' | 'redeemed' | 'expired' | 'cancelled';
+  message?: string;
+  created_at: string;
+  expires_at: string;
+  redeemed_at?: string;
+  item?: {
+    name: string;
+    price: number;
+    image_url?: string;
+  };
+  sender?: {
+    full_name: string;
+    student_id: string;
+  };
+  receiver?: {
+    full_name: string;
+    student_id: string;
+  };
+}
+
 export enum UserStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -250,5 +289,6 @@ export enum AppView {
   STUDENT_ID = 'STUDENT_ID',
   STUDENT_HISTORY = 'STUDENT_HISTORY',
   STUDENT_MENU = 'STUDENT_MENU',
-  HELP_DESK = 'HELP_DESK'
+  HELP_DESK = 'HELP_DESK',
+  POS_GIFT_REDEEM = 'POS_GIFT_REDEEM'
 }
