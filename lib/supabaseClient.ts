@@ -1,11 +1,21 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.1';
+import { createClient } from '@supabase/supabase-js';
 
-// These would normally be in process.env
-const supabaseUrl = (window as any).process?.env?.SUPABASE_URL || 'https://your-project-url.supabase.co';
-const supabaseAnonKey = (window as any).process?.env?.SUPABASE_ANON_KEY || 'your-anon-key';
+// Access variables safely from the environment
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// If credentials are the default placeholders or empty, we will handle this in the context
+export const isSupabaseConfigured = 
+  SUPABASE_URL !== '' && 
+  SUPABASE_URL !== 'https://your-project-url.supabase.co' && 
+  SUPABASE_ANON_KEY !== '' && 
+  SUPABASE_ANON_KEY !== 'your-anon-key';
+
+export const supabase = createClient(
+  isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder-url.supabase.co', 
+  isSupabaseConfigured ? SUPABASE_ANON_KEY : 'placeholder-key'
+);
 
 export type Database = {
   public: {

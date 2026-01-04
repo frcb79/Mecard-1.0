@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { School, OperatingUnit, Settlement, User, UserRole } from '../types';
+import { MOCK_SCHOOLS, MOCK_UNITS } from '../constants';
 
 type NewSchool = Omit<School, 'id' | 'balance'> & { id?: string };
 
@@ -12,6 +13,7 @@ interface PlatformContextType {
   activeSchool: School | null;
   currentUser: User | null;
   isLoading: boolean;
+  isDemoMode: boolean;
   
   addSchool: (school: NewSchool) => Promise<void>;
   updateSchoolModel: (id: string, updates: any) => Promise<void>;
@@ -30,30 +32,61 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activeSchool, setActiveSchool] = useState<School | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      
-      const { data: schoolsData, error: schoolsError } = await supabase
-        .from('schools')
-        .select('*');
-      
-      if (schoolsData) setSchools(schoolsData as any);
-      if (schoolsError) console.error('Error cargando escuelas:', schoolsError.message || schoolsError);
 
-      const { data: unitsData, error: unitsError } = await supabase.from('operating_units').select('*');
-      if (unitsData) setUnits(unitsData as any);
-      if (unitsError) console.error('Error cargando unidades:', unitsError.message || unitsError);
-
-      const { data: settlementsData, error: settlementsError } = await supabase
-        .from('settlements')
-        .select('*')
-        .order('created_at', { ascending: false });
+      if (!isSupabaseConfigured) {
+        console.warn("MeCard: Supabase not configured. Entering Demo Mode.");
+        useMockData();
+        return;
+      }
       
-      if (settlementsData) setSettlements(settlementsData as any);
-      if (settlementsError) console.error('Error cargando cortes:', settlementsError.message || settlementsError);
+      try {
+        // Fetch Escuelas
+        const { data: schoolsData, error: schoolsError } = await supabase
+          .from('schools')
+          .select('*');
+        
+        if (schoolsError) throw schoolsError;
+        if (schoolsData) setSchools(schoolsData as any);
 
+        // Fetch Unidades
+        const { data: unitsData, error: unitsError } = await supabase.from('operating_units').select('*');
+        if (unitsError) throw unitsError;
+        if (unitsData) setUnits(unitsData as any);
+
+        // Fetch Settlements
+        const { data: settlementsData, error: settlementsError } = await supabase
+          .from('settlements')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (settlementsError) throw settlementsError;
+        if (settlementsData) setSettlements(settlementsData as any);
+
+        setIsDemoMode(false);
+      } catch (err: any) {
+        // Log clear errors but fallback to demo mode so the app works for the user
+        const errorMessage = err.message || err;
+        console.error('MeCard Data Error:', errorMessage);
+        
+        if (errorMessage.includes('fetch') || errorMessage.includes('NetworkError')) {
+          console.info('Switching to Demo Mode due to connectivity issues.');
+          useMockData();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const useMockData = () => {
+      setSchools(MOCK_SCHOOLS);
+      setUnits(MOCK_UNITS);
+      setSettlements([]);
+      setIsDemoMode(true);
       setIsLoading(false);
     };
 
@@ -61,8 +94,19 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const addSchool = async (school: NewSchool) => {
+    if (isDemoMode) {
+      const mockNew: School = { 
+        ...school, 
+        id: school.id || `mx_${Date.now()}`, 
+        balance: 0,
+        platformFeePercent: school.platformFeePercent || 4.5,
+        onboardingStatus: 'PENDING'
+      } as School;
+      setSchools(prev => [mockNew, ...prev]);
+      return;
+    }
+
     const newId = school.id || `mx_${Date.now()}`;
-    
     const { data, error } = await supabase
       .from('schools')
       .insert([{ ...school, id: newId, balance: 0 }])
@@ -81,6 +125,14 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!currentSchool) return;
 
     const newModel = { ...currentSchool.businessModel, ...updates };
+
+    if (isDemoMode) {
+      setSchools(prev => prev.map(s => s.id === id ? { ...s, businessModel: newModel } : s));
+      if (activeSchool?.id === id) {
+        setActiveSchool(prev => prev ? { ...prev, businessModel: newModel } : null);
+      }
+      return;
+    }
 
     const { error } = await supabase
       .from('schools')
@@ -118,6 +170,12 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ]
     };
 
+    if (isDemoMode) {
+      setSettlements(prev => [{ ...newSettlement, id: `mock_${Date.now()}`, createdAt: new Date().toISOString() } as any, ...prev]);
+      alert("✅ Corte Guardado (Demo Mode)");
+      return;
+    }
+
     const { data, error } = await supabase
       .from('settlements')
       .insert([newSettlement])
@@ -151,7 +209,7 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   return (
     <PlatformContext.Provider value={{ 
-      schools, units, settlements, activeSchool, currentUser, isLoading,
+      schools, units, settlements, activeSchool, currentUser, isLoading, isDemoMode,
       addSchool, updateSchoolModel, impersonateSchool: setActiveSchool, runSettlement, login, logout
     }}>
       {children}
