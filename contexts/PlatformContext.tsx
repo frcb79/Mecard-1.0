@@ -38,8 +38,9 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const fetchData = async () => {
       setIsLoading(true);
 
+      // Early exit if Supabase isn't even configured
       if (!isSupabaseConfigured) {
-        console.warn("MeCard: Supabase not configured. Entering Demo Mode.");
+        console.info("MeCard: Backend not configured. Entering Demo Mode.");
         useMockData();
         return;
       }
@@ -69,12 +70,13 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         setIsDemoMode(false);
       } catch (err: any) {
-        // Log clear errors but fallback to demo mode so the app works for the user
-        const errorMessage = err.message || err;
-        console.error('MeCard Data Error:', errorMessage);
-        
-        if (errorMessage.includes('fetch') || errorMessage.includes('NetworkError')) {
-          console.info('Switching to Demo Mode due to connectivity issues.');
+        // Silently fallback to demo mode on NetworkError
+        // This stops the [object Object] or fetch errors from disrupting the UI
+        if (err.message?.includes('fetch') || err.name === 'TypeError') {
+          console.warn("MeCard: Network issue detected. Falling back to Demo Mode.");
+          useMockData();
+        } else {
+          console.error("MeCard: Database error:", err.message || err);
           useMockData();
         }
       } finally {

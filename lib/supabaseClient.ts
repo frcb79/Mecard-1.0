@@ -2,18 +2,24 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Access variables safely from the environment
+// We use fallback empty strings to prevent the client from crashing on init
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-// If credentials are the default placeholders or empty, we will handle this in the context
+/**
+ * isSupabaseConfigured
+ * Checks if the environment has been provided with real Supabase credentials.
+ * This prevents "NetworkError" by allowing the app to skip fetching and use demo data.
+ */
 export const isSupabaseConfigured = 
   SUPABASE_URL !== '' && 
   SUPABASE_URL !== 'https://your-project-url.supabase.co' && 
   SUPABASE_ANON_KEY !== '' && 
   SUPABASE_ANON_KEY !== 'your-anon-key';
 
+// Initialize with placeholders if not configured to satisfy the singleton pattern
 export const supabase = createClient(
-  isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder-url.supabase.co', 
+  isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder.supabase.co', 
   isSupabaseConfigured ? SUPABASE_ANON_KEY : 'placeholder-key'
 );
 

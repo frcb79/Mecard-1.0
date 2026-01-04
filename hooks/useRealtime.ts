@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // ============================================
@@ -43,7 +43,11 @@ export function useRealtimeTransactions(schoolId: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!schoolId) return;
+    // Stop here if not configured or no schoolId
+    if (!schoolId || !isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
 
     let channel: RealtimeChannel | null = null;
 
@@ -70,8 +74,11 @@ export function useRealtimeTransactions(schoolId: string) {
 
         setTransactions(data || []);
       } catch (err: any) {
-        console.error('Error loading transactions:', err);
-        setError(err.message || 'Error al cargar transacciones');
+        // Silently log and set transactions empty if it's a network issue
+        if (!err.message?.includes('fetch')) {
+           console.error('Error loading transactions:', err);
+           setError(err.message || 'Error al cargar transacciones');
+        }
       } finally {
         setLoading(false);
       }
@@ -163,7 +170,7 @@ export const useRealtimeTransaction = (
   onNewTransaction: () => void
 ) => {
   useEffect(() => {
-    if (!studentId) return;
+    if (!studentId || !isSupabaseConfigured) return;
 
     const subscription = supabase
       .channel(`student-txns-${studentId}`)
