@@ -16,8 +16,6 @@ import { SupportSystem } from './components/SupportSystem';
 import { MeCardSocial } from './components/MeCardSocial';
 import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, MovementType, School } from './types';
 import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_SCHOOLS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
-import { CLABEService } from './services/clabeService';
-import { InventoryService } from './services/inventoryService';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -43,12 +41,23 @@ function App() {
 
   const handleSendGift = (recipientId: string, productId: string) => {
     const product = PRODUCTS.find(p => p.id === productId);
-    if (!product || student.balance < product.price) {
+    if (!product) return;
+    
+    if (student.balance < product.price) {
         alert("Saldo insuficiente para enviar este regalo.");
         return;
     }
+    
+    // Descontar del que envía
     handleUpdateStudent(student.id, { balance: student.balance - product.price });
-    alert(`🎁 ¡Regalo enviado! Se han descontado $${product.price} de tu saldo.`);
+    
+    // Sumar al que recibe
+    const recipient = myStudents.find(s => s.id === recipientId);
+    if (recipient) {
+      handleUpdateStudent(recipientId, { balance: recipient.balance + product.price });
+    }
+
+    alert(`🎁 ¡Regalo enviado! Se han descontado $${product.price} de tu saldo y se han abonado a ${recipient?.name.split(' ')[0]}.`);
   };
 
   const handleLogin = (role: UserRole) => {
@@ -59,11 +68,26 @@ function App() {
         case UserRole.SCHOOL_ADMIN: setCurrentView(AppView.SCHOOL_ADMIN_DASHBOARD); break;
         case UserRole.STUDENT: setCurrentView(AppView.STUDENT_DASHBOARD); break;
         case UserRole.PARENT: setCurrentView(AppView.PARENT_DASHBOARD); break;
+        case UserRole.CASHIER: setCurrentView(AppView.CASHIER_VIEW); break;
+        case UserRole.UNIT_MANAGER: setCurrentView(AppView.UNIT_MANAGER_DASHBOARD); break;
         default: setCurrentView(AppView.PARENT_DASHBOARD);
     }
   };
 
   const handleLogout = () => { setIsLoggedIn(false); setUserRole(null); };
+
+  // Funciones para el Carrito del POS
+  const addToCart = (product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.id !== productId));
+  };
 
   if (!isLoggedIn) return <LoginView onLogin={handleLogin} />;
   if (userRole === UserRole.SUPER_ADMIN) return <MeCardPlatform onLogout={handleLogout} />;
@@ -71,7 +95,9 @@ function App() {
   return (
     <div className="flex h-screen w-full bg-gray-50 text-gray-900 font-sans overflow-hidden">
       <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole={userRole!} onLogout={handleLogout} />
+      
       <main className="flex-1 h-full relative ml-64 overflow-hidden">
+        {/* VISTAS ADMINISTRADOR COLEGIO */}
         {currentView === AppView.SCHOOL_ADMIN_DASHBOARD && (
           <SchoolAdminStudentsView 
             schoolId="mx_01" 
@@ -82,23 +108,79 @@ function App() {
             onToggleStatus={(id) => handleUpdateStudent(id, { status: myStudents.find(s => s.id === id)?.status === 'Active' ? 'Inactive' : 'Active' })}
           />
         )}
-        {currentView === AppView.STUDENT_DASHBOARD && (
+
+        {/* VISTAS ALUMNO (Dashboard, ID, Historial agrupados para mantener MeCard Social) */}
+        {(currentView === AppView.STUDENT_DASHBOARD || currentView === AppView.STUDENT_ID || currentView === AppView.STUDENT_HISTORY) && (
           <div className="h-full flex flex-col md:flex-row overflow-hidden">
-             <div className="flex-1 overflow-y-auto"><StudentPortal view={currentView} onNavigate={setCurrentView} student={student} transactions={transactions} /></div>
-             <div className="w-full md:w-[450px] border-l border-slate-200 bg-slate-900"><MeCardSocial currentStudent={student} allStudents={myStudents} onSendGift={handleSendGift} /></div>
+             <div className="flex-1 overflow-y-auto">
+               <StudentPortal 
+                view={currentView} 
+                onNavigate={setCurrentView} 
+                student={student} 
+                transactions={transactions} 
+               />
+             </div>
+             <div className="w-full md:w-[450px] border-l border-slate-200 bg-slate-900">
+               <MeCardSocial 
+                currentStudent={student} 
+                allStudents={myStudents} 
+                onSendGift={handleSendGift} 
+               />
+             </div>
           </div>
         )}
-        {currentView === AppView.PARENT_DASHBOARD && (
+
+        {/* VISTAS PADRE (Dashboard, Wallet, Ajustes) */}
+        {(currentView === AppView.PARENT_DASHBOARD || currentView === AppView.PARENT_WALLET || currentView === AppView.PARENT_SETTINGS) && (
            <ParentPortal 
-              view={currentView} onNavigate={setCurrentView} students={myStudents} 
-              activeStudentIndex={activeStudentIndex} onSwitchStudent={setActiveStudentIndex}
-              onLinkStudent={(s) => setMyStudents(p => [...p, s])} transactions={transactions}
+              view={currentView} 
+              onNavigate={setCurrentView} 
+              students={myStudents} 
+              activeStudentIndex={activeStudentIndex} 
+              onSwitchStudent={setActiveStudentIndex}
+              onLinkStudent={(s) => setMyStudents(p => [...p, s])} 
+              transactions={transactions}
               onUpdateStudent={(data) => handleUpdateStudent(student.id, data)}
+              onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })}
            />
         )}
-        {/* Renderiza otras vistas según AppView... */}
+
+        {/* VISTAS CAJERO Y POS */}
+        {currentView === AppView.CASHIER_VIEW && (
+          <CashierView 
+            student={student} 
+            onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} 
+          />
+        )}
+
+        {(currentView === AppView.POS_CAFETERIA || currentView === AppView.POS_STATIONERY) && (
+          <PosView 
+            mode={currentView === AppView.POS_CAFETERIA ? 'cafeteria' : 'stationery'}
+            cart={cart}
+            student={student}
+            addToCart={addToCart}
+            removeFromCart={removeFromCart}
+            clearCart={() => setCart([])}
+            onPurchase={(total) => {
+              handleUpdateStudent(student.id, { 
+                balance: student.balance - total,
+                spentToday: student.spentToday + total
+              });
+              setCart([]);
+            }}
+          />
+        )}
+
+        {currentView === AppView.UNIT_MANAGER_DASHBOARD && (
+          <ConcessionaireDashboard unit={MOCK_UNITS[0]} />
+        )}
+
+        {currentView === AppView.HELP_DESK && (
+          <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN} />
+        )}
       </main>
     </div>
   );
 }
+
 export default App;

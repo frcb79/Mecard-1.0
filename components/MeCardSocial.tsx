@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Heart, X, Star, Gift, Sparkles, Zap, TrendingUp, 
-  Users, Crown, Medal, Trophy, Target, Fire, Info
+  Users, Crown, Medal, Trophy, Target, Info
 } from 'lucide-react';
 import { StudentProfile, Product } from '../types';
 import { PRODUCTS } from '../constants';
