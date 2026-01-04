@@ -2,16 +2,20 @@
 import { supabase } from '../lib/supabaseClient';
 
 export const posService = {
+  /**
+   * Procesa una venta: Crea la transacción y descuenta inventario atómicamente
+   */
   async processSale(
     transactionData: {
       school_id: string;
       unit_id: string;
       student_id: string;
       amount: number;
-      items: any[];
+      items: any[]; // JSON del carrito
       payment_method: 'nfc' | 'qr' | 'cash' | 'card';
     }
   ) {
+    // 1. Crear la transacción financiera
     const { data: txn, error: txnError } = await supabase
       .from('transactions')
       .insert([{
@@ -29,6 +33,8 @@ export const posService = {
 
     if (txnError) throw txnError;
 
+    // 2. Descontar inventario para cada item
+    // Llama a la función SQL 'decrement_inventory_stock' definida en el esquema
     for (const item of transactionData.items) {
       if (item.id) {
         const { error: stockError } = await supabase

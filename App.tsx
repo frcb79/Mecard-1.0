@@ -16,8 +16,9 @@ import { SupportSystem } from './components/SupportSystem';
 import { MeCardSocial } from './components/MeCardSocial';
 import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, MovementType, School } from './types';
 import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_SCHOOLS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
+import { PlatformProvider } from './contexts/PlatformContext';
 
-function App() {
+function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [currentView, setCurrentView] = useState<AppView>(AppView.PARENT_DASHBOARD);
@@ -89,7 +90,6 @@ function App() {
   if (!isLoggedIn) return <LoginView onLogin={handleLogin} />;
   if (userRole === UserRole.SUPER_ADMIN) return <MeCardPlatform onLogout={handleLogout} />;
 
-  // Agrupamos vistas de Alumno para el renderizado
   const isStudentView = [AppView.STUDENT_DASHBOARD, AppView.STUDENT_ID, AppView.STUDENT_HISTORY, AppView.STUDENT_MENU].includes(currentView);
   const isParentView = [AppView.PARENT_DASHBOARD, AppView.PARENT_WALLET, AppView.PARENT_SETTINGS, AppView.PARENT_MENU].includes(currentView);
 
@@ -181,6 +181,14 @@ function App() {
         )}
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <PlatformProvider>
+      <AppContent />
+    </PlatformProvider>
   );
 }
 

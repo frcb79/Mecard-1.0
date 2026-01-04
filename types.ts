@@ -19,7 +19,16 @@ export enum UserRole {
   STATIONERY_STAFF = 'STATIONERY_STAFF',
   CASHIER = 'CASHIER',
   PARENT = 'PARENT',
-  STUDENT = 'STUDENT'
+  STUDENT = 'STUDENT',
+  POS_OPERATOR = 'POS_OPERATOR'
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  schoolId?: string;
 }
 
 export enum UserStatus {
@@ -103,8 +112,8 @@ export interface Settlement {
   platformCommission: number;
   schoolShare: number;
   vendorShare: number;
-  status: SettlementStatus;
-  disbursements: Disbursement[];
+  status: SettlementStatus | string;
+  disbursements: Disbursement[] | any[];
   createdAt: string;
 }
 

@@ -5,6 +5,9 @@ import { Database } from '../lib/supabaseClient';
 type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
 
 export const inventoryService = {
+  /**
+   * Sube una imagen al bucket 'products' y retorna la URL pública
+   */
   async uploadProductImage(file: File, path: string): Promise<string> {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
@@ -23,10 +26,14 @@ export const inventoryService = {
     return data.publicUrl;
   },
 
+  /**
+   * Crea un producto vinculando su imagen si existe
+   */
   async createProduct(item: Omit<InventoryItemInsert, 'id' | 'created_at' | 'updated_at'>, imageFile?: File) {
     let imageUrl = (item as any).image_url;
 
     if (imageFile) {
+      // Si hay nueva imagen, subirla primero
       try {
         imageUrl = await this.uploadProductImage(imageFile, (item as any).unit_id);
       } catch (e) {
@@ -45,6 +52,9 @@ export const inventoryService = {
     return data;
   },
 
+  /**
+   * Obtiene productos activos de una unidad específica
+   */
   async getProductsByUnit(unitId: string) {
     const { data, error } = await supabase
       .from('inventory_items')
