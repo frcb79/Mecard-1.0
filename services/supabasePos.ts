@@ -44,7 +44,7 @@ export const posService = {
           });
         
         if (stockError) {
-            console.error(`Error descontando stock para ${item.id}`, stockError);
+            console.error(`Error descontando stock para ${item.id}:`, stockError.message);
         }
       }
     }

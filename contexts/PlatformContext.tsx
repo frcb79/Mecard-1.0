@@ -40,13 +40,19 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .select('*');
       
       if (schoolsData) setSchools(schoolsData as any);
-      if (schoolsError) console.error('Error cargando escuelas:', schoolsError);
+      if (schoolsError) console.error('Error cargando escuelas:', schoolsError.message || schoolsError);
 
-      const { data: unitsData } = await supabase.from('operating_units').select('*');
+      const { data: unitsData, error: unitsError } = await supabase.from('operating_units').select('*');
       if (unitsData) setUnits(unitsData as any);
+      if (unitsError) console.error('Error cargando unidades:', unitsError.message || unitsError);
 
-      const { data: settlementsData } = await supabase.from('settlements').select('*').order('created_at', { ascending: false });
+      const { data: settlementsData, error: settlementsError } = await supabase
+        .from('settlements')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
       if (settlementsData) setSettlements(settlementsData as any);
+      if (settlementsError) console.error('Error cargando cortes:', settlementsError.message || settlementsError);
 
       setIsLoading(false);
     };
@@ -81,7 +87,9 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .update({ business_model: newModel })
       .eq('id', id);
 
-    if (!error) {
+    if (error) {
+      console.error('Error actualizando modelo:', error.message);
+    } else {
       setSchools(prev => prev.map(s => s.id === id ? { ...s, businessModel: newModel } : s));
       if (activeSchool?.id === id) {
         setActiveSchool(prev => prev ? { ...prev, businessModel: newModel } : null);
@@ -117,8 +125,8 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .single();
 
     if (error) {
-      console.error(error);
-      alert("Error generando corte");
+      console.error('Error generando corte:', error.message);
+      alert("Error generando corte: " + error.message);
     } else if (data) {
       setSettlements(prev => [data as any, ...prev]);
       alert("✅ Corte Guardado en Nube");

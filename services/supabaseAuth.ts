@@ -19,7 +19,7 @@ export const authService = {
       .single();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching profile:', error.message);
       return null;
     }
     return data;
@@ -61,7 +61,7 @@ export const authService = {
       }]);
 
     if (profileError) {
-      console.error('Error creating profile:', profileError);
+      console.error('Error creating profile:', profileError.message);
       throw new Error('Usuario creado pero falló la creación del perfil de base de datos.');
     }
 
