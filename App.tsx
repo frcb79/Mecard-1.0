@@ -48,10 +48,8 @@ function App() {
         return;
     }
     
-    // Descontar del que envía
     handleUpdateStudent(student.id, { balance: student.balance - product.price });
     
-    // Sumar al que recibe
     const recipient = myStudents.find(s => s.id === recipientId);
     if (recipient) {
       handleUpdateStudent(recipientId, { balance: recipient.balance + product.price });
@@ -76,7 +74,6 @@ function App() {
 
   const handleLogout = () => { setIsLoggedIn(false); setUserRole(null); };
 
-  // Funciones para el Carrito del POS
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -92,25 +89,18 @@ function App() {
   if (!isLoggedIn) return <LoginView onLogin={handleLogin} />;
   if (userRole === UserRole.SUPER_ADMIN) return <MeCardPlatform onLogout={handleLogout} />;
 
+  // Agrupamos vistas de Alumno para el renderizado
+  const isStudentView = [AppView.STUDENT_DASHBOARD, AppView.STUDENT_ID, AppView.STUDENT_HISTORY, AppView.STUDENT_MENU].includes(currentView);
+  const isParentView = [AppView.PARENT_DASHBOARD, AppView.PARENT_WALLET, AppView.PARENT_SETTINGS, AppView.PARENT_MENU].includes(currentView);
+
   return (
     <div className="flex h-screen w-full bg-gray-50 text-gray-900 font-sans overflow-hidden">
       <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole={userRole!} onLogout={handleLogout} />
       
       <main className="flex-1 h-full relative ml-64 overflow-hidden">
-        {/* VISTAS ADMINISTRADOR COLEGIO */}
-        {currentView === AppView.SCHOOL_ADMIN_DASHBOARD && (
-          <SchoolAdminStudentsView 
-            schoolId="mx_01" 
-            students={myStudents} 
-            onUpdateStudent={handleUpdateStudent}
-            onAddStudent={(s) => setMyStudents(p => [s, ...p])}
-            onDeleteStudent={(id) => setMyStudents(p => p.filter(s => s.id !== id))}
-            onToggleStatus={(id) => handleUpdateStudent(id, { status: myStudents.find(s => s.id === id)?.status === 'Active' ? 'Inactive' : 'Active' })}
-          />
-        )}
-
-        {/* VISTAS ALUMNO (Dashboard, ID, Historial agrupados para mantener MeCard Social) */}
-        {(currentView === AppView.STUDENT_DASHBOARD || currentView === AppView.STUDENT_ID || currentView === AppView.STUDENT_HISTORY) && (
+        
+        {/* VISTAS ALUMNO */}
+        {isStudentView && (
           <div className="h-full flex flex-col md:flex-row overflow-hidden">
              <div className="flex-1 overflow-y-auto">
                <StudentPortal 
@@ -120,7 +110,7 @@ function App() {
                 transactions={transactions} 
                />
              </div>
-             <div className="w-full md:w-[450px] border-l border-slate-200 bg-slate-900">
+             <div className="w-full md:w-[450px] border-l border-slate-200 bg-slate-900 shadow-2xl">
                <MeCardSocial 
                 currentStudent={student} 
                 allStudents={myStudents} 
@@ -130,8 +120,8 @@ function App() {
           </div>
         )}
 
-        {/* VISTAS PADRE (Dashboard, Wallet, Ajustes) */}
-        {(currentView === AppView.PARENT_DASHBOARD || currentView === AppView.PARENT_WALLET || currentView === AppView.PARENT_SETTINGS) && (
+        {/* VISTAS PADRE */}
+        {isParentView && (
            <ParentPortal 
               view={currentView} 
               onNavigate={setCurrentView} 
@@ -145,7 +135,18 @@ function App() {
            />
         )}
 
-        {/* VISTAS CAJERO Y POS */}
+        {/* OTRAS VISTAS (ADMIN, CAJA, POS) */}
+        {currentView === AppView.SCHOOL_ADMIN_DASHBOARD && (
+          <SchoolAdminStudentsView 
+            schoolId="mx_01" 
+            students={myStudents} 
+            onUpdateStudent={handleUpdateStudent}
+            onAddStudent={(s) => setMyStudents(p => [s, ...p])}
+            onDeleteStudent={(id) => setMyStudents(p => p.filter(s => s.id !== id))}
+            onToggleStatus={(id) => handleUpdateStudent(id, { status: myStudents.find(s => s.id === id)?.status === 'Active' ? 'Inactive' : 'Active' })}
+          />
+        )}
+
         {currentView === AppView.CASHIER_VIEW && (
           <CashierView 
             student={student} 
