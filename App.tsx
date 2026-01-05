@@ -5,6 +5,7 @@ import { PosView } from './components/PosView';
 import { ParentPortal } from './components/ParentPortal';
 import StudentDashboard from './components/StudentDashboard';
 import { SchoolAdminStudentsView } from './components/SchoolAdminStudentsView';
+import { SchoolAdminView } from './components/SchoolAdminView';
 import { CashierView } from './components/CashierView';
 import { ConcessionaireDashboard } from './components/ConcessionaireDashboard';
 import MeCardPlatform from './MeCardPlatform';
@@ -19,7 +20,7 @@ function AppContent() {
   const { activeSchool, currentUser } = usePlatform();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [currentView, setCurrentView] = useState<AppView>(AppView.PARENT_DASHBOARD);
+  const [currentView, setCurrentView] = useState<AppView>(AppView.SUPER_ADMIN_DASHBOARD);
   
   const STORAGE_KEY_STUDENTS = 'mecard_students_v3';
   const [myStudents, setMyStudents] = useState<StudentProfile[]>(() => {
@@ -68,48 +69,56 @@ function AppContent() {
   };
 
   if (!isLoggedIn) return <LoginView onLogin={handleLogin} />;
-  if (userRole === UserRole.SUPER_ADMIN) return <MeCardPlatform onLogout={handleLogout} />;
+  
+  // El Super Admin ahora ve el Sidebar y el MeCardPlatform es solo UNA de sus vistas
+  const isSuperAdminMode = userRole === UserRole.SUPER_ADMIN;
 
-  const isStudentView = [AppView.STUDENT_DASHBOARD, AppView.STUDENT_ID, AppView.STUDENT_HISTORY, AppView.STUDENT_MENU].includes(currentView);
-  const isParentView = [AppView.PARENT_DASHBOARD, AppView.PARENT_WALLET, AppView.PARENT_SETTINGS, AppView.PARENT_MENU].includes(currentView);
+  const renderCurrentView = () => {
+    if (isSuperAdminMode && currentView === AppView.SUPER_ADMIN_DASHBOARD) {
+        return <MeCardPlatform onLogout={handleLogout} />;
+    }
 
-  return (
-    <div className="flex h-screen w-full bg-gray-50 text-gray-900 font-sans overflow-hidden">
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole={userRole!} onLogout={handleLogout} />
+    switch(currentView) {
+      case AppView.STUDENT_DASHBOARD:
+      case AppView.STUDENT_ID:
+      case AppView.STUDENT_HISTORY:
+        return <StudentDashboard userId={student.id} schoolId={student.schoolId} transactions={transactions} />;
       
-      <main className="flex-1 h-full relative ml-64 overflow-hidden">
-        
-        {isStudentView && (
-          <StudentDashboard 
-            userId={student.id} 
-            schoolId={student.schoolId}
-            transactions={transactions}
+      case AppView.PARENT_DASHBOARD:
+      case AppView.PARENT_WALLET:
+      case AppView.PARENT_SETTINGS:
+        return (
+          <ParentPortal 
+            view={currentView} onNavigate={setCurrentView} students={myStudents} 
+            activeStudentIndex={activeStudentIndex} onSwitchStudent={setActiveStudentIndex}
+            onLinkStudent={(s) => setMyStudents(p => [...p, s])} 
+            transactions={transactions} onUpdateStudent={(data) => handleUpdateStudent(student.id, data)}
+            onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })}
           />
-        )}
+        );
 
-        {isParentView && (
-           <ParentPortal 
-              view={currentView} onNavigate={setCurrentView} students={myStudents} 
-              activeStudentIndex={activeStudentIndex} onSwitchStudent={setActiveStudentIndex}
-              onLinkStudent={(s) => setMyStudents(p => [...p, s])} 
-              transactions={transactions} onUpdateStudent={(data) => handleUpdateStudent(student.id, data)}
-              onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })}
-           />
-        )}
-
-        {currentView === AppView.SCHOOL_ADMIN_DASHBOARD && (
-          <SchoolAdminStudentsView 
-            schoolId="mx_01" students={myStudents} onUpdateStudent={handleUpdateStudent}
-            onAddStudent={(s) => setMyStudents(p => [s, ...p])} onDeleteStudent={(id) => setMyStudents(p => p.filter(s => s.id !== id))}
-            onToggleStatus={(id) => handleUpdateStudent(id, { status: myStudents.find(s => s.id === id)?.status === 'Active' ? 'Inactive' : 'Active' })}
+      case AppView.SCHOOL_ADMIN_DASHBOARD:
+        return (
+          <SchoolAdminView 
+            allStudents={myStudents} 
+            onUpdateStudent={handleUpdateStudent}
+            onBulkAddStudents={(news) => setMyStudents(p => [...news, ...p])}
+            operatingUnits={MOCK_UNITS as OperatingUnit[]}
+            onAddUnit={() => {}}
+            onUpdateUnit={() => {}}
+            onDeleteUnit={() => {}}
           />
-        )}
+        );
 
-        {currentView === AppView.CASHIER_VIEW && (
-          <CashierView student={student} onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} />
-        )}
+      case AppView.UNIT_MANAGER_DASHBOARD:
+        return <ConcessionaireDashboard unit={MOCK_UNITS[0] as OperatingUnit} />;
 
-        {(currentView === AppView.POS_CAFETERIA || currentView === AppView.POS_STATIONERY) && (
+      case AppView.CASHIER_VIEW:
+        return <CashierView student={student} onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} />;
+
+      case AppView.POS_CAFETERIA:
+      case AppView.POS_STATIONERY:
+        return (
           <PosView 
             mode={currentView === AppView.POS_STATIONERY ? 'stationery' : 'cafeteria'}
             cart={cart} student={student} addToCart={addToCart} removeFromCart={removeFromCart}
@@ -120,17 +129,25 @@ function AppContent() {
             }}
             onNavigate={setCurrentView}
           />
-        )}
+        );
 
-        {currentView === AppView.POS_GIFT_REDEEM && (
-          <GiftRedemptionView 
-            unitId={MOCK_UNITS[0].id}
-            onBack={() => setCurrentView(AppView.POS_CAFETERIA)}
-          />
-        )}
+      case AppView.POS_GIFT_REDEEM:
+        return <GiftRedemptionView unitId={MOCK_UNITS[0].id} onBack={() => setCurrentView(AppView.POS_CAFETERIA)} />;
 
-        {currentView === AppView.UNIT_MANAGER_DASHBOARD && <ConcessionaireDashboard unit={MOCK_UNITS[0]} />}
-        {currentView === AppView.HELP_DESK && <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN} />}
+      case AppView.HELP_DESK:
+        return <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN || isSuperAdminMode} />;
+
+      default:
+        return <MeCardPlatform onLogout={handleLogout} />;
+    }
+  };
+
+  return (
+    <div className="flex h-screen w-full bg-gray-50 text-gray-900 font-sans overflow-hidden">
+      <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole={userRole!} onLogout={handleLogout} />
+      
+      <main className="flex-1 h-full relative ml-64 overflow-hidden bg-white">
+        {renderCurrentView()}
       </main>
     </div>
   );
