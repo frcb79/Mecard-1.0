@@ -45,7 +45,7 @@ export const getPlatformStrategicAudit = async (
 ): Promise<string> => {
   try {
     const ai = getAIClient();
-    const prompt = `Actúa como un CTO de FinTech. 
+    const prompt = `Actúa como un CTO de FinTech de MeCard Network. 
     Red actual: ${schools.length} colegios, ${units.length} terminales. 
     Volumen: $${schools.reduce((a, b) => a + b.balance, 0)}.
     Analiza riesgos de seguridad y dame una recomendación audaz para el roadmap técnico de los próximos 6 meses.
