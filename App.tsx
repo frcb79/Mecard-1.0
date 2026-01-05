@@ -3,22 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { PosView } from './components/PosView';
 import { ParentPortal } from './components/ParentPortal';
-import { StudentPortal } from './components/StudentPortal';
-import { MenuView } from './components/MenuView';
-import { SchoolAdminView } from './components/SchoolAdminView'; 
+import StudentDashboard from './components/StudentDashboard';
 import { SchoolAdminStudentsView } from './components/SchoolAdminStudentsView';
-import { SchoolOnboardingDashboard } from './components/SchoolOnboardingDashboard';
 import { CashierView } from './components/CashierView';
 import { ConcessionaireDashboard } from './components/ConcessionaireDashboard';
 import MeCardPlatform from './MeCardPlatform';
 import { LoginView } from './components/LoginView';
 import { SupportSystem } from './components/SupportSystem';
 import { MeCardSocial } from './components/MeCardSocial';
-import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, MovementType, School } from './types';
-import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_SCHOOLS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
-import { PlatformProvider } from './contexts/PlatformContext';
+import { GiftRedemptionView } from './components/GiftRedemptionView';
+import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, School } from './types';
+import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
+import { PlatformProvider, usePlatform } from './contexts/PlatformContext';
 
 function AppContent() {
+  const { activeSchool, currentUser } = usePlatform();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [currentView, setCurrentView] = useState<AppView>(AppView.PARENT_DASHBOARD);
@@ -31,7 +30,7 @@ function AppContent() {
 
   const [activeStudentIndex, setActiveStudentIndex] = useState(0);
   const student = myStudents[activeStudentIndex] || MOCK_STUDENT;
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [transactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(myStudents)); }, [myStudents]);
@@ -49,16 +48,11 @@ function AppContent() {
         return;
     }
     
-    // Descontar saldo del remitente localmente (demo)
     handleUpdateStudent(student.id, { balance: student.balance - product.price });
-    
-    // Abonar al destinatario si está en la lista local (demo)
     const recipient = myStudents.find(s => s.id === recipientId);
     if (recipient) {
       handleUpdateStudent(recipientId, { balance: recipient.balance + product.price });
     }
-
-    console.log(`🎁 Regalo de ${product.name} enviado a ${recipientId}`);
   };
 
   const handleLogin = (role: UserRole) => {
@@ -103,14 +97,11 @@ function AppContent() {
       <main className="flex-1 h-full relative ml-64 overflow-hidden">
         
         {isStudentView && (
-          <div className="h-full flex flex-col md:flex-row overflow-hidden">
-             <div className="flex-1 overflow-y-auto">
-               <StudentPortal view={currentView} onNavigate={setCurrentView} student={student} transactions={transactions} />
-             </div>
-             <div className="w-full md:w-[450px] border-l border-slate-200 bg-slate-900 shadow-2xl">
-               <MeCardSocial currentStudent={student} allStudents={myStudents} onSendGift={handleSendGift} />
-             </div>
-          </div>
+          <StudentDashboard 
+            userId={student.id} 
+            schoolId={student.schoolId}
+            transactions={transactions}
+          />
         )}
 
         {isParentView && (
@@ -135,7 +126,7 @@ function AppContent() {
           <CashierView student={student} onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} />
         )}
 
-        {(currentView === AppView.POS_CAFETERIA || currentView === AppView.POS_STATIONERY || currentView === AppView.POS_GIFT_REDEEM) && (
+        {(currentView === AppView.POS_CAFETERIA || currentView === AppView.POS_STATIONERY) && (
           <PosView 
             mode={currentView === AppView.POS_STATIONERY ? 'stationery' : 'cafeteria'}
             cart={cart} student={student} addToCart={addToCart} removeFromCart={removeFromCart}
@@ -144,6 +135,13 @@ function AppContent() {
               handleUpdateStudent(student.id, { balance: student.balance - total, spentToday: student.spentToday + total });
               setCart([]);
             }}
+          />
+        )}
+
+        {currentView === AppView.POS_GIFT_REDEEM && (
+          <GiftRedemptionView 
+            unitId={MOCK_UNITS[0].id}
+            onBack={() => setCurrentView(AppView.POS_CAFETERIA)}
           />
         )}
 

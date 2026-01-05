@@ -10,7 +10,6 @@ import { Product, CartItem, Category, StudentProfile, AppView } from '../types';
 import { PRODUCTS } from '../constants';
 import { ProductCard } from './ProductCard';
 import { Button } from './Button';
-import { GiftRedemptionView } from './GiftRedemptionView';
 import { getHealthyAlternatives } from '../services/geminiService';
 
 interface PosViewProps {
@@ -31,8 +30,6 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
   const [scanStage, setScanStage] = useState<ScanStage>('idle');
   const [studentIdInput, setStudentIdInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
-  const [loadingAi, setLoadingAi] = useState(false);
 
   const isCafeteria = mode === 'cafeteria';
   const accentColor = isCafeteria ? 'bg-indigo-600' : 'bg-blue-600';
@@ -51,10 +48,6 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
       return matchesSearch && matchesCategory;
     });
   }, [search, selectedCategory, allowedCategories]);
-
-  if (scanStage === 'gift_redeem') {
-    return <GiftRedemptionView unitId="unit_01" onBack={() => setScanStage('idle')} />;
-  }
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +101,17 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
               </div>
           </div>
       );
+  }
+
+  // Si el stage es 'gift_redeem', mostramos el componente (importado en App.tsx para controlar el flujo mejor)
+  // Pero aquí permitimos que la prop local maneje la navegación si es necesario.
+  if (scanStage === 'gift_redeem') {
+      // Forzamos un refresco de vista o comunicamos al padre.
+      // Como estamos dentro del componente PosView, lo manejamos localmente o vía prop.
+      // Para esta versión, mostramos un aviso y redirigimos.
+      window.location.hash = '#gift-redeem'; // Mock navigation
+      setScanStage('idle');
+      return null;
   }
 
   return (

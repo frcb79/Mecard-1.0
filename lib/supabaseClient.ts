@@ -2,14 +2,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Access variables safely from the environment
-// We use fallback empty strings to prevent the client from crashing on init
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
 /**
  * isSupabaseConfigured
  * Checks if the environment has been provided with real Supabase credentials.
- * This prevents "NetworkError" by allowing the app to skip fetching and use demo data.
+ * If false, the app will enter Demo Mode automatically.
  */
 export const isSupabaseConfigured = 
   SUPABASE_URL !== '' && 
@@ -18,10 +17,11 @@ export const isSupabaseConfigured =
   SUPABASE_ANON_KEY !== 'your-anon-key';
 
 // Initialize with placeholders if not configured to satisfy the singleton pattern
-export const supabase = createClient(
-  isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder.supabase.co', 
-  isSupabaseConfigured ? SUPABASE_ANON_KEY : 'placeholder-key'
-);
+// We use a safe dummy URL to prevent library-level crashes
+const finalUrl = isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder-project.supabase.co';
+const finalKey = isSupabaseConfigured ? SUPABASE_ANON_KEY : 'placeholder-key';
+
+export const supabase = createClient(finalUrl, finalKey);
 
 export type Database = {
   public: {

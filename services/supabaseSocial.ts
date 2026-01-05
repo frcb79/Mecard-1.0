@@ -1,32 +1,83 @@
 
 import { supabase } from '../lib/supabaseClient';
 import { Friend, Gift } from '../types';
+import { NotificationService } from './notificationService';
+import { NotificationType } from '../types';
 
 export const socialService = {
   /**
    * Busca un potencial amigo por ID de estudiante o nombre
    */
-  async findPotentialFriend(schoolId: string, searchTerm: string): Promise<Friend | null> {
+  async findPotentialFriend(schoolId: string, searchTerm: string): Promise<{ data: Friend | null; error: any }> {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, student_id, balance, favorites, favorites_public, status, grade')
         .eq('school_id', schoolId)
         .eq('status', 'Active')
-        .or(`student_id.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`)
+        .or(`student_id.eq.${searchTerm},id.eq.${searchTerm},full_name.ilike.%${searchTerm}%`)
         .limit(1)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
-
-      return data as Friend;
+      if (error && error.code !== 'PGRST116') throw error;
+      return { data: data as Friend, error: null };
     } catch (error) {
       console.error('Error finding potential friend:', error);
-      return null;
+      return { data: null, error };
     }
+  },
+
+  /**
+   * Actualiza el perfil del usuario
+   */
+  async updateProfile(userId: string, updates: Partial<Friend>): Promise<void> {
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+    if (error) throw error;
+  },
+
+  /**
+   * Agrega o quita un producto de favoritos
+   */
+  async toggleFavorite(userId: string, productId: string): Promise<string[]> {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('favorites')
+      .eq('id', userId)
+      .single();
+    
+    let favorites = profile?.favorites || [];
+    if (favorites.includes(productId)) {
+      favorites = favorites.filter((id: string) => id !== productId);
+    } else {
+      favorites = [...favorites, productId];
+    }
+
+    await this.updateProfile(userId, { favorites });
+    return favorites;
+  },
+
+  /**
+   * Envía una notificación de agradecimiento al remitente de un regalo
+   */
+  async sendThankYouMessage(giftId: string, senderId: string, text: string): Promise<void> {
+    // Actualizar el regalo con el mensaje
+    const { error } = await supabase
+      .from('gifts')
+      .update({ thank_you_message: text })
+      .eq('id', giftId);
+    
+    if (error) throw error;
+
+    // Enviar notificación al remitente
+    NotificationService.send(
+      senderId,
+      NotificationType.PURCHASE_ALERT,
+      "¡Te enviaron un agradecimiento! 🎁",
+      `Un amigo dice: "${text}"`
+    );
   },
 
   /**
@@ -35,7 +86,6 @@ export const socialService = {
   async addFriend(userId: string, friendId: string): Promise<void> {
     if (userId === friendId) throw new Error('No puedes agregarte a ti mismo');
     
-    // Crear relación bidireccional
     const { error } = await supabase
       .from('friendships')
       .insert([
@@ -65,15 +115,25 @@ export const socialService = {
   },
 
   /**
-   * Elimina una amistad
+   * Obtiene regalos recibidos
    */
-  async removeFriend(userId: string, friendId: string): Promise<void> {
-    await supabase.from('friendships').delete().eq('user_id', userId).eq('friend_id', friendId);
-    await supabase.from('friendships').delete().eq('user_id', friendId).eq('friend_id', userId);
+  async getReceivedGifts(userId: string): Promise<{ data: Gift[] | null; error: any }> {
+    const { data, error } = await supabase
+      .from('gifts')
+      .select(`
+        *,
+        item:inventory_items(name, price, image_url),
+        sender:profiles!gifts_sender_id_fkey(full_name, student_id)
+      `)
+      .eq('receiver_id', userId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    return { data: data as Gift[], error };
   },
 
   /**
-   * ENVIAR REGALO - Usa función RPC atómica
+   * ENVIAR REGALO
    */
   async sendGift(
     senderId: string,
@@ -102,26 +162,25 @@ export const socialService = {
    * CANJEAR REGALO EN POS
    */
   async redeemGift(code: string, unitId: string): Promise<Gift> {
-    const { data, error } = await supabase.rpc('redeem_gift_at_pos', {
-      p_code: code.toUpperCase(),
-      p_unit_id: unitId,
-    });
-
-    if (error) throw error;
-
-    // Obtener el regalo completo
-    const { data: gift, error: giftError } = await supabase
+    const { data, error } = await supabase
       .from('gifts')
+      .update({ 
+        status: 'redeemed', 
+        redeemed_at: new Date().toISOString()
+      })
+      .eq('redemption_code', code.toUpperCase())
+      .eq('status', 'pending')
       .select(`
         *,
         item:inventory_items(name, price, image_url),
-        sender:profiles!gifts_sender_id_fkey(full_name, student_id),
         receiver:profiles!gifts_receiver_id_fkey(full_name, student_id)
       `)
-      .eq('id', data[0].gift_id)
       .single();
 
-    if (giftError) throw giftError;
-    return gift as Gift;
+    if (error) {
+      if (error.code === 'PGRST116') throw new Error('Código no encontrado o ya canjeado.');
+      throw error;
+    }
+    return data as Gift;
   }
 };

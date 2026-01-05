@@ -51,8 +51,9 @@ export const MeCardSocial: React.FC<{
   const handleSearchFriend = async () => {
     if (!addFriendSearch.trim()) return;
     setSearching(true);
-    const result = await socialService.findPotentialFriend(currentStudent.schoolId, addFriendSearch.trim());
-    setSearchResult(result);
+    // Fix: Destructure 'data' from the result of findPotentialFriend to set state correctly
+    const { data } = await socialService.findPotentialFriend(currentStudent.schoolId, addFriendSearch.trim());
+    setSearchResult(data);
     setSearching(false);
   };
 
@@ -175,7 +176,7 @@ export const MeCardSocial: React.FC<{
       {/* Modal Agregar Amigo */}
       {showAddFriend && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6">
-           <div className="bg-white rounded-[40px] p-10 w-full max-w-sm relative">
+           <div className="bg-white rounded-[40px] p-10 w-full max-sm relative">
               <button onClick={() => setShowAddFriend(false)} className="absolute top-8 right-8 text-slate-300"><X/></button>
               <h3 className="text-2xl font-black mb-8 italic">Vincular Amigo</h3>
               <div className="space-y-6">

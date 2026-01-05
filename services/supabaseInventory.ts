@@ -6,7 +6,24 @@ type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Inse
 
 export const inventoryService = {
   /**
-   * Sube una imagen al bucket 'products' y retorna la URL pública
+   * Obtiene todos los productos (para exploración de alumnos)
+   */
+  async getInventory(scope: string = 'all') {
+    let query = supabase.from('inventory_items').select('*').eq('status', 'active');
+    
+    // Si scope no es 'all', podríamos filtrar por school_id si existiera en la tabla
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    // Mapping format to match UI expected properties
+    return (data || []).map(item => ({
+      ...item,
+      image_url: item.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
+    }));
+  },
+
+  /**
+   * Sube una imagen al bucket 'products'
    */
   async uploadProductImage(file: File, path: string): Promise<string> {
     const fileExt = file.name.split('.').pop();
@@ -27,13 +44,12 @@ export const inventoryService = {
   },
 
   /**
-   * Crea un producto vinculando su imagen si existe
+   * Crea un producto
    */
   async createProduct(item: Omit<InventoryItemInsert, 'id' | 'created_at' | 'updated_at'>, imageFile?: File) {
     let imageUrl = (item as any).image_url;
 
     if (imageFile) {
-      // Si hay nueva imagen, subirla primero
       try {
         imageUrl = await this.uploadProductImage(imageFile, (item as any).unit_id);
       } catch (e) {
