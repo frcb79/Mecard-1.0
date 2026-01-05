@@ -10,7 +10,6 @@ import { ConcessionaireDashboard } from './components/ConcessionaireDashboard';
 import MeCardPlatform from './MeCardPlatform';
 import { LoginView } from './components/LoginView';
 import { SupportSystem } from './components/SupportSystem';
-import { MeCardSocial } from './components/MeCardSocial';
 import { GiftRedemptionView } from './components/GiftRedemptionView';
 import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, School } from './types';
 import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
@@ -37,22 +36,6 @@ function AppContent() {
 
   const handleUpdateStudent = (id: string, updatedData: Partial<StudentProfile>) => {
     setMyStudents(prev => prev.map((s) => s.id === id ? { ...s, ...updatedData } : s));
-  };
-
-  const handleSendGift = (recipientId: string, productId: string) => {
-    const product = PRODUCTS.find(p => p.id === productId);
-    if (!product) return;
-    
-    if (student.balance < product.price) {
-        alert("Saldo insuficiente para enviar este regalo.");
-        return;
-    }
-    
-    handleUpdateStudent(student.id, { balance: student.balance - product.price });
-    const recipient = myStudents.find(s => s.id === recipientId);
-    if (recipient) {
-      handleUpdateStudent(recipientId, { balance: recipient.balance + product.price });
-    }
   };
 
   const handleLogin = (role: UserRole) => {
@@ -135,6 +118,7 @@ function AppContent() {
               handleUpdateStudent(student.id, { balance: student.balance - total, spentToday: student.spentToday + total });
               setCart([]);
             }}
+            onNavigate={setCurrentView}
           />
         )}
 

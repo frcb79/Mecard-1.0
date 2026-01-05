@@ -10,7 +10,6 @@
     "recharts": "^2.13.0",
     "papaparse": "^5.4.1",
     "@google/genai": "^1.31.0"
-    "@supabase/supabase-js": "^2.39.0",
   },
   "scripts": {
     "dev": "vite",
