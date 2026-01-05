@@ -1,14 +1,17 @@
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   define: {
-    'process.env': process.env
+    // NO uses 'process.env': process.env -> Esto causa el error de seguridad.
+    // Vite ya maneja las variables VITE_ automáticamente.
+    'process.env': {} 
   },
   build: {
-    outDir: 'dist',
-    sourcemap: true
+    rollupOptions: {
+      // Aseguramos que no intente procesar cosas innecesarias
+    }
   }
 });
