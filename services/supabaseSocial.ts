@@ -1,8 +1,7 @@
-// src/services/supabase/socialService.ts
 import { supabase } from '../../lib/supabaseClient';
 
 // ============================================
-// TIPOS
+// TYPES & INTERFACES
 // ============================================
 
 export interface Friend {
@@ -26,6 +25,7 @@ export interface Gift {
   amount: number;
   status: 'pending' | 'redeemed' | 'expired' | 'cancelled';
   message?: string;
+  thank_you_message?: string;
   created_at: string;
   expires_at: string;
   redeemed_at?: string;
@@ -45,12 +45,13 @@ export interface Gift {
 }
 
 // ============================================
-// SERVICIO SOCIAL
+// SOCIAL SERVICE (Full Production Version)
 // ============================================
 
 export const socialService = {
   /**
-   * Busca un potencial amigo por ID de estudiante o nombre
+   * Busca un potencial amigo por ID de estudiante o nombre.
+   * Utiliza ilike para búsqueda parcial y sensible a mayúsculas.
    */
   async findPotentialFriend(schoolId: string, searchTerm: string): Promise<Friend | null> {
     try {
@@ -61,43 +62,57 @@ export const socialService = {
         .eq('status', 'active')
         .or(`student_id.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === 'PGRST116') return null;
         throw error;
       }
-
       return data;
     } catch (error) {
       console.error('Error finding potential friend:', error);
-      throw new Error('Error al buscar estudiante');
+      throw new Error('Error al buscar estudiante en la base de datos');
     }
   },
 
   /**
-   * Agrega a un amigo (crea la relación bidireccional)
+   * Actualiza el perfil del usuario (Privacidad de favoritos, grado, etc.)
+   */
+  async updateProfile(userId: string, updates: Partial<Friend>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw new Error('No se pudo actualizar el perfil');
+    }
+  },
+
+  /**
+   * Crea una relación de amistad bidireccional entre dos usuarios.
    */
   async addFriend(userId: string, friendId: string): Promise<void> {
     try {
-      // Validar que no se agregue a sí mismo
       if (userId === friendId) {
         throw new Error('No puedes agregarte a ti mismo como amigo');
       }
 
-      // Verificar si ya son amigos
+      // Verificar existencia de la relación previa
       const { data: existing } = await supabase
         .from('friendships')
         .select('id')
         .eq('user_id', userId)
         .eq('friend_id', friendId)
-        .single();
+        .maybeSingle();
 
       if (existing) {
-        throw new Error('Ya son amigos');
+        throw new Error('Ya existe una relación de amistad o solicitud pendiente');
       }
 
-      // Crear relación bidireccional
+      // Inserción bidireccional para que aparezca en ambas listas
       const { error: error1 } = await supabase
         .from('friendships')
         .insert({ user_id: userId, friend_id: friendId, status: 'accepted' });
@@ -106,17 +121,15 @@ export const socialService = {
         .from('friendships')
         .insert({ user_id: friendId, friend_id: userId, status: 'accepted' });
 
-      if (error1 || error2) {
-        throw error1 || error2;
-      }
+      if (error1 || error2) throw error1 || error2;
     } catch (error: any) {
       console.error('Error adding friend:', error);
-      throw new Error(error.message || 'Error al agregar amigo');
+      throw new Error(error.message || 'Error al procesar la solicitud de amistad');
     }
   },
 
   /**
-   * Obtiene la lista de amigos con sus datos
+   * Obtiene la lista completa de amigos aceptados con sus perfiles.
    */
   async getFriends(userId: string): Promise<Friend[]> {
     try {
@@ -124,31 +137,22 @@ export const socialService = {
         .from('friendships')
         .select(`
           friend:profiles!friendships_friend_id_fkey (
-            id, 
-            full_name, 
-            student_id, 
-            balance, 
-            favorites, 
-            favorites_public,
-            status,
-            grade,
-            allergies
+            id, full_name, student_id, balance, favorites, favorites_public, status, grade, allergies
           )
         `)
         .eq('user_id', userId)
         .eq('status', 'accepted');
 
       if (error) throw error;
-
       return (data || []).map((f: any) => f.friend).filter((f: any) => f !== null);
     } catch (error) {
       console.error('Error fetching friends:', error);
-      throw new Error('Error al obtener amigos');
+      throw new Error('Error al cargar la lista de amigos');
     }
   },
 
   /**
-   * Elimina una amistad (bidireccional)
+   * Elimina la relación de amistad de forma bidireccional.
    */
   async removeFriend(userId: string, friendId: string): Promise<void> {
     try {
@@ -164,17 +168,16 @@ export const socialService = {
         .eq('user_id', friendId)
         .eq('friend_id', userId);
 
-      if (error1 || error2) {
-        throw error1 || error2;
-      }
+      if (error1 || error2) throw error1 || error2;
     } catch (error) {
       console.error('Error removing friend:', error);
-      throw new Error('Error al eliminar amigo');
+      throw new Error('No se pudo eliminar la amistad');
     }
   },
 
   /**
-   * ENVIAR REGALO - Usa función RPC atómica para seguridad
+   * ENVIAR REGALO: Llama a una función RPC en Postgres que asegura
+   * que el descuento de saldo y la creación del regalo sean atómicos.
    */
   async sendGift(
     senderId: string,
@@ -184,7 +187,6 @@ export const socialService = {
     message?: string
   ): Promise<{ giftId: string; code: string }> {
     try {
-      // Llamar a la función RPC que maneja todo de forma atómica
       const { data, error } = await supabase.rpc('process_gift_purchase', {
         p_sender_id: senderId,
         p_receiver_id: receiverId,
@@ -195,43 +197,33 @@ export const socialService = {
       });
 
       if (error) throw error;
-
-      if (!data || data.length === 0) {
-        throw new Error('No se pudo procesar el regalo');
-      }
+      if (!data || data.length === 0) throw new Error('Error en la respuesta del servidor');
 
       const result = data[0];
-
       return {
         giftId: result.gift_id,
         code: result.redemption_code,
       };
     } catch (error: any) {
       console.error('Error sending gift:', error);
-      throw new Error(error.message || 'Error al enviar regalo');
+      throw new Error(error.message || 'Error al procesar el envío del regalo');
     }
   },
 
   /**
-   * CANJEAR REGALO EN POS - Usa función RPC atómica
+   * CANJEAR REGALO: El POS llama a esta función para validar código y entregar.
    */
   async redeemGift(code: string, unitId: string): Promise<Gift> {
     try {
-      // Llamar a la función RPC que maneja el canje de forma atómica
       const { data, error } = await supabase.rpc('redeem_gift_at_pos', {
         p_code: code.toUpperCase(),
         p_unit_id: unitId,
       });
 
       if (error) throw error;
-
-      if (!data || data.length === 0) {
-        throw new Error('No se pudo canjear el regalo');
-      }
-
       const result = data[0];
 
-      // Obtener el regalo completo con todos sus datos
+      // Rehidratamos el objeto con los nombres de remitente y producto para el recibo
       const { data: gift, error: giftError } = await supabase
         .from('gifts')
         .select(`
@@ -244,16 +236,113 @@ export const socialService = {
         .single();
 
       if (giftError) throw giftError;
-
       return gift as Gift;
     } catch (error: any) {
       console.error('Error redeeming gift:', error);
-      throw new Error(error.message || 'Código inválido o ya canjeado');
+      throw new Error(error.message || 'Código de regalo inválido o ya utilizado');
     }
   },
 
   /**
-   * Obtiene regalos recibidos pendientes
+   * Envía un mensaje de agradecimiento del receptor al emisor del regalo.
+   */
+  async sendThankYouMessage(giftId: string, message: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('gifts')
+        .update({ thank_you_message: message })
+        .eq('id', giftId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error sending thank you message:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Cancela un regalo pendiente y REEMBOLSA el dinero al saldo del alumno emisor.
+   */
+  async cancelGift(giftId: string, senderId: string): Promise<void> {
+    try {
+      const { data: gift, error: fetchError } = await supabase
+        .from('gifts')
+        .select('*')
+        .eq('id', giftId)
+        .eq('sender_id', senderId)
+        .eq('status', 'pending')
+        .single();
+
+      if (fetchError || !gift) {
+        throw new Error('El regalo no se puede cancelar porque ya fue canjeado o no existe');
+      }
+
+      // 1. Cambiar estado del regalo
+      const { error: updateError } = await supabase
+        .from('gifts')
+        .update({ status: 'cancelled' })
+        .eq('id', giftId);
+
+      if (updateError) throw updateError;
+
+      // 2. Reembolsar saldo al perfil
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ balance: supabase.sql`balance + ${gift.amount}` })
+        .eq('id', senderId);
+
+      if (balanceError) throw balanceError;
+
+      // 3. Registrar la transacción de reembolso para auditoría
+      await supabase.from('transactions').insert({
+        school_id: gift.school_id,
+        student_id: senderId,
+        type: 'gift_cancelled',
+        amount: gift.amount,
+        status: 'completed',
+        metadata: { gift_id: giftId, original_type: 'PURCHASE_REFUND' }
+      });
+
+    } catch (error: any) {
+      console.error('Error cancelling gift:', error);
+      throw new Error(error.message || 'Error al procesar la cancelación del regalo');
+    }
+  },
+
+  /**
+   * Agrega o quita un producto de la lista de favoritos/wishlist.
+   */
+  async toggleFavorite(userId: string, productId: string): Promise<string[]> {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('favorites')
+        .eq('id', userId)
+        .single();
+
+      let favs = profile?.favorites || [];
+      if (favs.includes(productId)) {
+        favs = favs.filter((id: string) => id !== productId);
+      } else {
+        favs = [...favs, productId];
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ favorites: favs })
+        .eq('id', userId);
+
+      if (error) throw error;
+      return favs;
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      throw new Error('No se pudo actualizar la lista de favoritos');
+    }
+  },
+
+  /**
+   * Obtiene todos los regalos recibidos que aún no han sido canjeados.
    */
   async getReceivedGifts(userId: string): Promise<Gift[]> {
     try {
@@ -269,16 +358,15 @@ export const socialService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
       return data as Gift[];
     } catch (error) {
       console.error('Error fetching received gifts:', error);
-      throw new Error('Error al obtener regalos recibidos');
+      throw new Error('Error al cargar regalos recibidos');
     }
   },
 
   /**
-   * Obtiene regalos enviados
+   * Obtiene el historial de regalos enviados por el usuario.
    */
   async getSentGifts(userId: string): Promise<Gift[]> {
     try {
@@ -294,152 +382,36 @@ export const socialService = {
         .limit(50);
 
       if (error) throw error;
-
       return data as Gift[];
     } catch (error) {
       console.error('Error fetching sent gifts:', error);
-      throw new Error('Error al obtener regalos enviados');
+      throw new Error('Error al cargar historial de envíos');
     }
   },
 
   /**
-   * Obtiene historial completo de regalos (enviados y recibidos)
-   */
-  async getGiftHistory(userId: string): Promise<{
-    sent: Gift[];
-    received: Gift[];
-  }> {
-    try {
-      const [sent, received] = await Promise.all([
-        this.getSentGifts(userId),
-        this.getReceivedGifts(userId),
-      ]);
-
-      return { sent, received };
-    } catch (error) {
-      console.error('Error fetching gift history:', error);
-      throw new Error('Error al obtener historial de regalos');
-    }
-  },
-
-  /**
-   * Cancela un regalo pendiente (solo si aún no ha sido canjeado)
-   */
-  async cancelGift(giftId: string, senderId: string): Promise<void> {
-    try {
-      // Verificar que el regalo existe y es del sender
-      const { data: gift, error: fetchError } = await supabase
-        .from('gifts')
-        .select('*')
-        .eq('id', giftId)
-        .eq('sender_id', senderId)
-        .eq('status', 'pending')
-        .single();
-
-      if (fetchError || !gift) {
-        throw new Error('Regalo no encontrado o ya canjeado');
-      }
-
-      // Marcar como cancelado
-      const { error: updateError } = await supabase
-        .from('gifts')
-        .update({ status: 'cancelled' })
-        .eq('id', giftId);
-
-      if (updateError) throw updateError;
-
-      // Devolver el saldo al sender
-      const { error: balanceError } = await supabase
-        .from('profiles')
-        .update({ balance: supabase.sql`balance + ${gift.amount}` })
-        .eq('id', senderId);
-
-      if (balanceError) throw balanceError;
-
-      // Registrar transacción de cancelación
-      await supabase.from('transactions').insert({
-        school_id: gift.school_id,
-        student_id: senderId,
-        type: 'gift_cancelled',
-        amount: gift.amount,
-        status: 'completed',
-        metadata: { gift_id: giftId },
-      });
-    } catch (error: any) {
-      console.error('Error cancelling gift:', error);
-      throw new Error(error.message || 'Error al cancelar regalo');
-    }
-  },
-
-  /**
-   * Actualiza favoritos del usuario
-   */
-  async updateFavorites(
-    userId: string,
-    favorites: string[],
-    isPublic: boolean
-  ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          favorites: favorites,
-          favorites_public: isPublic,
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating favorites:', error);
-      throw new Error('Error al actualizar favoritos');
-    }
-  },
-
-  /**
-   * Obtiene estadísticas sociales del usuario
+   * Genera estadísticas sociales globales del usuario (Amigos, Total regalado, etc.)
    */
   async getUserSocialStats(userId: string) {
     try {
       const [friendsCount, sentGifts, receivedGifts] = await Promise.all([
-        supabase
-          .from('friendships')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('status', 'accepted'),
-        
-        supabase
-          .from('gifts')
-          .select('amount')
-          .eq('sender_id', userId),
-        
-        supabase
-          .from('gifts')
-          .select('amount')
-          .eq('receiver_id', userId)
-          .eq('status', 'redeemed'),
+        supabase.from('friendships').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'accepted'),
+        supabase.from('gifts').select('amount').eq('sender_id', userId).neq('status', 'cancelled'),
+        supabase.from('gifts').select('amount').eq('receiver_id', userId).eq('status', 'redeemed'),
       ]);
-
-      const totalSent = sentGifts.data?.reduce((sum, g) => sum + Number(g.amount), 0) || 0;
-      const totalReceived = receivedGifts.data?.reduce((sum, g) => sum + Number(g.amount), 0) || 0;
 
       return {
         friendsCount: friendsCount.count || 0,
         giftsSent: sentGifts.data?.length || 0,
         giftsReceived: receivedGifts.data?.length || 0,
-        totalSent,
-        totalReceived,
+        totalSent: sentGifts.data?.reduce((sum, g) => sum + Number(g.amount), 0) || 0,
+        totalReceived: receivedGifts.data?.reduce((sum, g) => sum + Number(g.amount), 0) || 0,
       };
     } catch (error) {
       console.error('Error fetching social stats:', error);
-      return {
-        friendsCount: 0,
-        giftsSent: 0,
-        giftsReceived: 0,
-        totalSent: 0,
-        totalReceived: 0,
-      };
+      return { friendsCount: 0, giftsSent: 0, giftsReceived: 0, totalSent: 0, totalReceived: 0 };
     }
-  },
+  }
 };
 
 export default socialService;
