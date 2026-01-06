@@ -1,3 +1,6 @@
+// IMPORTANTE: Ruta corregida basándose en la estructura:
+// src/lib/supabaseClient.ts
+// src/services/supabase/socialService.ts
 import { supabase } from '../../lib/supabaseClient';
 
 // ============================================
@@ -199,7 +202,7 @@ export const socialService = {
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('Error en la respuesta del servidor');
 
-      const result = data[0];
+      const result = Array.isArray(data) ? data[0] : data;
       return {
         giftId: result.gift_id,
         code: result.redemption_code,
@@ -221,7 +224,7 @@ export const socialService = {
       });
 
       if (error) throw error;
-      const result = data[0];
+      const result = Array.isArray(data) ? data[0] : data;
 
       // Rehidratamos el objeto con los nombres de remitente y producto para el recibo
       const { data: gift, error: giftError } = await supabase
