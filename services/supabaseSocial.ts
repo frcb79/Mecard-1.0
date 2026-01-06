@@ -1,7 +1,7 @@
-// IMPORTANTE: Ruta corregida basándose en la estructura:
-// src/lib/supabaseClient.ts
-// src/services/supabase/socialService.ts
-import { supabase } from '../../lib/supabaseClient';
+// IMPORTANTE: Ruta corregida para la estructura de carpetas hermanas
+// src/services/supabaseSocial.ts  <-- Tu archivo
+// src/lib/supabaseClient.ts       <-- El destino
+import { supabase } from '../lib/supabaseClient';
 
 // ============================================
 // TYPES & INTERFACES
@@ -54,7 +54,6 @@ export interface Gift {
 export const socialService = {
   /**
    * Busca un potencial amigo por ID de estudiante o nombre.
-   * Utiliza ilike para búsqueda parcial y sensible a mayúsculas.
    */
   async findPotentialFriend(schoolId: string, searchTerm: string): Promise<Friend | null> {
     try {
@@ -103,7 +102,6 @@ export const socialService = {
         throw new Error('No puedes agregarte a ti mismo como amigo');
       }
 
-      // Verificar existencia de la relación previa
       const { data: existing } = await supabase
         .from('friendships')
         .select('id')
@@ -115,7 +113,6 @@ export const socialService = {
         throw new Error('Ya existe una relación de amistad o solicitud pendiente');
       }
 
-      // Inserción bidireccional para que aparezca en ambas listas
       const { error: error1 } = await supabase
         .from('friendships')
         .insert({ user_id: userId, friend_id: friendId, status: 'accepted' });
@@ -179,8 +176,7 @@ export const socialService = {
   },
 
   /**
-   * ENVIAR REGALO: Llama a una función RPC en Postgres que asegura
-   * que el descuento de saldo y la creación del regalo sean atómicos.
+   * ENVIAR REGALO: Llama a una función RPC en Postgres.
    */
   async sendGift(
     senderId: string,
@@ -200,8 +196,6 @@ export const socialService = {
       });
 
       if (error) throw error;
-      if (!data || data.length === 0) throw new Error('Error en la respuesta del servidor');
-
       const result = Array.isArray(data) ? data[0] : data;
       return {
         giftId: result.gift_id,
@@ -209,12 +203,12 @@ export const socialService = {
       };
     } catch (error: any) {
       console.error('Error sending gift:', error);
-      throw new Error(error.message || 'Error al procesar el envío del regalo');
+      throw new Error(error.message || 'Error al enviar el regalo');
     }
   },
 
   /**
-   * CANJEAR REGALO: El POS llama a esta función para validar código y entregar.
+   * CANJEAR REGALO EN POS.
    */
   async redeemGift(code: string, unitId: string): Promise<Gift> {
     try {
@@ -226,7 +220,6 @@ export const socialService = {
       if (error) throw error;
       const result = Array.isArray(data) ? data[0] : data;
 
-      // Rehidratamos el objeto con los nombres de remitente y producto para el recibo
       const { data: gift, error: giftError } = await supabase
         .from('gifts')
         .select(`
@@ -242,12 +235,12 @@ export const socialService = {
       return gift as Gift;
     } catch (error: any) {
       console.error('Error redeeming gift:', error);
-      throw new Error(error.message || 'Código de regalo inválido o ya utilizado');
+      throw new Error(error.message || 'Código inválido o ya utilizado');
     }
   },
 
   /**
-   * Envía un mensaje de agradecimiento del receptor al emisor del regalo.
+   * Envía un mensaje de agradecimiento.
    */
   async sendThankYouMessage(giftId: string, message: string): Promise<boolean> {
     try {
@@ -265,7 +258,7 @@ export const socialService = {
   },
 
   /**
-   * Cancela un regalo pendiente y REEMBOLSA el dinero al saldo del alumno emisor.
+   * Cancela un regalo pendiente y REEMBOLSA el dinero.
    */
   async cancelGift(giftId: string, senderId: string): Promise<void> {
     try {
@@ -277,11 +270,8 @@ export const socialService = {
         .eq('status', 'pending')
         .single();
 
-      if (fetchError || !gift) {
-        throw new Error('El regalo no se puede cancelar porque ya fue canjeado o no existe');
-      }
+      if (fetchError || !gift) throw new Error('Regalo no disponible para cancelación');
 
-      // 1. Cambiar estado del regalo
       const { error: updateError } = await supabase
         .from('gifts')
         .update({ status: 'cancelled' })
@@ -289,7 +279,6 @@ export const socialService = {
 
       if (updateError) throw updateError;
 
-      // 2. Reembolsar saldo al perfil
       const { error: balanceError } = await supabase
         .from('profiles')
         .update({ balance: supabase.sql`balance + ${gift.amount}` })
@@ -297,7 +286,6 @@ export const socialService = {
 
       if (balanceError) throw balanceError;
 
-      // 3. Registrar la transacción de reembolso para auditoría
       await supabase.from('transactions').insert({
         school_id: gift.school_id,
         student_id: senderId,
@@ -309,43 +297,30 @@ export const socialService = {
 
     } catch (error: any) {
       console.error('Error cancelling gift:', error);
-      throw new Error(error.message || 'Error al procesar la cancelación del regalo');
+      throw new Error(error.message || 'Error al cancelar el regalo');
     }
   },
 
   /**
-   * Agrega o quita un producto de la lista de favoritos/wishlist.
+   * Favoritos/Wishlist.
    */
   async toggleFavorite(userId: string, productId: string): Promise<string[]> {
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('favorites')
-        .eq('id', userId)
-        .single();
-
+      const { data: profile } = await supabase.from('profiles').select('favorites').eq('id', userId).single();
       let favs = profile?.favorites || [];
-      if (favs.includes(productId)) {
-        favs = favs.filter((id: string) => id !== productId);
-      } else {
-        favs = [...favs, productId];
-      }
+      favs = favs.includes(productId) ? favs.filter((id: string) => id !== productId) : [...favs, productId];
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ favorites: favs })
-        .eq('id', userId);
-
+      const { error } = await supabase.from('profiles').update({ favorites: favs }).eq('id', userId);
       if (error) throw error;
       return favs;
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      throw new Error('No se pudo actualizar la lista de favoritos');
+      throw new Error('No se pudo actualizar favoritos');
     }
   },
 
   /**
-   * Obtiene todos los regalos recibidos que aún no han sido canjeados.
+   * Obtiene todos los regalos recibidos pendientes.
    */
   async getReceivedGifts(userId: string): Promise<Gift[]> {
     try {
@@ -364,12 +339,12 @@ export const socialService = {
       return data as Gift[];
     } catch (error) {
       console.error('Error fetching received gifts:', error);
-      throw new Error('Error al cargar regalos recibidos');
+      throw new Error('Error al cargar regalos');
     }
   },
 
   /**
-   * Obtiene el historial de regalos enviados por el usuario.
+   * Obtiene el historial de regalos enviados.
    */
   async getSentGifts(userId: string): Promise<Gift[]> {
     try {
@@ -388,12 +363,12 @@ export const socialService = {
       return data as Gift[];
     } catch (error) {
       console.error('Error fetching sent gifts:', error);
-      throw new Error('Error al cargar historial de envíos');
+      throw new Error('Error al cargar historial');
     }
   },
 
   /**
-   * Genera estadísticas sociales globales del usuario (Amigos, Total regalado, etc.)
+   * Estadísticas sociales globales.
    */
   async getUserSocialStats(userId: string) {
     try {
