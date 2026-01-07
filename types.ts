@@ -212,7 +212,34 @@ export interface School {
     speiDepositFeeFixed: number;
     cafeteriaFeePercent: number;
     cafeteriaFeeAutoMarkup: boolean;
+    // Dynamic POS configuration
+    posMarkupPercent: number;
+    posOperatorIncentivePercent: number;
+    pointsExchangeRate: number;
   };
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  isLocked: boolean;
+  releaseDate: string;
+  status: 'active' | 'completed' | 'cancelled';
+}
+
+export interface FinancialProfile {
+  studentId: string;
+  schoolId: string;
+  wallet: {
+    availableBalance: number;
+    lockedBalance: number;
+    points: number;
+  };
+  savingsGoals: SavingsGoal[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StudentProfile {

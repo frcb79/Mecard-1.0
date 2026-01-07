@@ -39,7 +39,6 @@ export const MOCK_SCHOOLS: School[] = [
     studentCount: 1200, 
     balance: 450000.00, 
     stpCostCenter: '123',
-    // Added missing platformFeePercent and onboardingStatus properties to satisfy School type
     platformFeePercent: 4.5,
     onboardingStatus: 'COMPLETED',
     branding: { primary: '#4f46e5', secondary: '#818cf8' },
@@ -51,7 +50,10 @@ export const MOCK_SCHOOLS: School[] = [
       cardDepositFeePercent: 3.5,
       speiDepositFeeFixed: 8.0,
       cafeteriaFeePercent: 5.0,
-      cafeteriaFeeAutoMarkup: true
+      cafeteriaFeeAutoMarkup: true,
+      posMarkupPercent: 15,
+      posOperatorIncentivePercent: 20,
+      pointsExchangeRate: 10
     }
   },
   { 
@@ -61,7 +63,6 @@ export const MOCK_SCHOOLS: School[] = [
     studentCount: 850, 
     balance: 230000.00, 
     stpCostCenter: '456',
-    // Added missing platformFeePercent and onboardingStatus properties to satisfy School type
     platformFeePercent: 4.5,
     onboardingStatus: 'COMPLETED',
     branding: { primary: '#0f172a', secondary: '#334155' },
@@ -73,7 +74,10 @@ export const MOCK_SCHOOLS: School[] = [
       cardDepositFeePercent: 3.2,
       speiDepositFeeFixed: 7.0,
       cafeteriaFeePercent: 4.5,
-      cafeteriaFeeAutoMarkup: false
+      cafeteriaFeeAutoMarkup: false,
+      posMarkupPercent: 15,
+      posOperatorIncentivePercent: 20,
+      pointsExchangeRate: 10
     }
   }
 ];
