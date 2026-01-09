@@ -1,23 +1,23 @@
-import { Deposit, PaymentMethod } from '../types';
+import { supabaseClient } from './supabaseClient';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+/**
+ * Parent Deposit Service
+ * Maneja depósitos de padres a las billeteras de sus hijos
+ */
 
-export const parentDepositService = {
-  /**
-   * Create a new deposit for a parent
-   */
-  async createDeposit(
-    parentId: string,
-    amount: number,
-    paymentMethodId: string,
-    schoolId: string
-  ): Promise<Deposit> {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      return {
-        id: `deposit_${Date.now()}`,
-        parentId,
-        amount,
+export interface DepositRequest {
+  parentUserId: string;
+  studentId: bigint;
+  amount: number;
+  schoolId: bigint;
+  paymentMethod?: string;
+  notes?: string;
+}
+
+export interface Deposit {
+  id: string;
+  parentId: string;
+  amount: number;
         paymentMethodId,
         status: 'COMPLETED',
         depositDate: new Date().toISOString(),
