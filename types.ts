@@ -242,6 +242,59 @@ export interface FinancialProfile {
   updatedAt: string;
 }
 
+export interface PaymentMethod {
+  id: string;
+  parentId: string;
+  type: 'DEBIT_CARD' | 'CREDIT_CARD' | 'BANK_ACCOUNT';
+  last4: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface Deposit {
+  id: string;
+  parentId: string;
+  amount: number;
+  paymentMethodId: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  depositDate: string;
+  completedDate?: string;
+  speiReference?: string;
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SpendingLimit {
+  id: string;
+  parentId: string;
+  studentId: string;
+  dailyLimit: number;
+  weeklyLimit: number;
+  monthlyLimit: number;
+  restrictedCategories: Category[];
+  restrictedProducts: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ParentProfile {
+  id: string;
+  email: string;
+  phoneNumber: string;
+  fullName: string;
+  schoolId: string;
+  children: string[]; // Array of student IDs
+  totalWalletBalance: number;
+  paymentMethods: PaymentMethod[];
+  spendingLimits: SpendingLimit[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StudentProfile {
   id: string;
   name: string;
