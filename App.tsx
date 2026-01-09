@@ -8,6 +8,9 @@ import { SchoolAdminStudentsView } from './components/SchoolAdminStudentsView';
 import { SchoolAdminView } from './components/SchoolAdminView';
 import { CashierView } from './components/CashierView';
 import { ConcessionaireDashboard } from './components/ConcessionaireDashboard';
+import { ParentAlertsConfigView } from './components/ParentAlertsConfigView';
+import { ParentTransactionMonitoringView } from './components/ParentTransactionMonitoringView';
+import { ConcessionaireSalesReportsView } from './components/ConcessionaireSalesReportsView';
 import MeCardPlatform from './MeCardPlatform';
 import { LoginView } from './components/LoginView';
 import { SupportSystem } from './components/SupportSystem';
@@ -97,6 +100,24 @@ function AppContent() {
           />
         );
 
+      case AppView.PARENT_ALERTS:
+        return (
+          <ParentAlertsConfigView 
+            parentId={currentUser?.id || 'parent_1'} 
+            schoolId={activeSchool?.id || 'school_1'}
+            onNavigate={setCurrentView}
+          />
+        );
+
+      case AppView.PARENT_MONITORING:
+        return (
+          <ParentTransactionMonitoringView 
+            children={myStudents.map(s => s.id)} 
+            transactions={transactions}
+            onNavigate={setCurrentView}
+          />
+        );
+
       case AppView.SCHOOL_ADMIN_DASHBOARD:
         return (
           <SchoolAdminView 
@@ -112,6 +133,16 @@ function AppContent() {
 
       case AppView.UNIT_MANAGER_DASHBOARD:
         return <ConcessionaireDashboard unit={MOCK_UNITS[0] as OperatingUnit} />;
+
+      case AppView.CONCESSIONAIRE_SALES:
+        return (
+          <ConcessionaireSalesReportsView 
+            unitId={MOCK_UNITS[0].id} 
+            transactions={transactions}
+            products={PRODUCTS}
+            onNavigate={setCurrentView}
+          />
+        );
 
       case AppView.CASHIER_VIEW:
         return <CashierView student={student} onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} />;

@@ -351,6 +351,29 @@ export interface SupportTicket {
   messages: TicketMessage[];
 }
 
+export interface AlertConfig {
+  id: string;
+  parentId: string;
+  lowBalanceAlert: boolean;
+  lowBalanceThreshold: number;
+  largePurchaseAlert: boolean;
+  largePurchaseThreshold: number;
+  deniedPurchaseAlert: boolean;
+  alertChannels: ('EMAIL' | 'SMS' | 'IN_APP')[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlertLog {
+  id: string;
+  parentId: string;
+  studentId: string;
+  type: 'LOW_BALANCE' | 'LARGE_PURCHASE' | 'DENIED_PURCHASE';
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export enum AppView {
   SUPER_ADMIN_DASHBOARD = 'SUPER_ADMIN_DASHBOARD',
   SCHOOL_ADMIN_DASHBOARD = 'SCHOOL_ADMIN_DASHBOARD',
@@ -363,12 +386,15 @@ export enum AppView {
   CASHIER_VIEW = 'CASHIER_VIEW',
   PARENT_DASHBOARD = 'PARENT_DASHBOARD',
   PARENT_WALLET = 'PARENT_WALLET',
+  PARENT_ALERTS = 'PARENT_ALERTS',
+  PARENT_MONITORING = 'PARENT_MONITORING',
   PARENT_SETTINGS = 'PARENT_SETTINGS',
   PARENT_MENU = 'PARENT_MENU',
   STUDENT_DASHBOARD = 'STUDENT_DASHBOARD',
   STUDENT_ID = 'STUDENT_ID',
   STUDENT_HISTORY = 'STUDENT_HISTORY',
   STUDENT_MENU = 'STUDENT_MENU',
+  CONCESSIONAIRE_SALES = 'CONCESSIONAIRE_SALES',
   HELP_DESK = 'HELP_DESK',
   POS_GIFT_REDEEM = 'POS_GIFT_REDEEM'
 }
