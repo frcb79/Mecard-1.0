@@ -20,6 +20,30 @@ import { GiftRedemptionView } from './components/GiftRedemptionView';
 import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, School } from './types';
 import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
 import { PlatformProvider, usePlatform } from './contexts/PlatformContext';
+import { isAuthorized } from './lib/rolePermissions';
+
+// ============================================
+// COMPONENTE DE ACCESO DENEGADO
+// ============================================
+
+// Componente de acceso denegado
+const UnauthorizedView: React.FC<{ onLogout: () => void }> = ({ onLogout }) => (
+  <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center border border-red-100">
+      <div className="text-red-500 text-7xl mb-6 animate-bounce">🚫</div>
+      <h2 className="text-3xl font-black text-gray-800 mb-3">Acceso Denegado</h2>
+      <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+        No tienes permisos para acceder a esta sección. Si crees que esto es un error, contacta a tu administrador.
+      </p>
+      <button
+        onClick={onLogout}
+        className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-black px-8 py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all uppercase tracking-widest text-sm"
+      >
+        ← Volver al Menú Principal
+      </button>
+    </div>
+  </div>
+);
 
 function AppContent() {
   const { activeSchool, currentUser } = usePlatform();
@@ -79,6 +103,11 @@ function AppContent() {
   const isSuperAdminMode = userRole === UserRole.SUPER_ADMIN;
 
   const renderCurrentView = () => {
+    // ✅ VALIDACIÓN DE AUTORIZACIÓN - PRIMERA LÍNEA DE DEFENSA
+    if (!isAuthorized(currentView, userRole)) {
+      return <UnauthorizedView onLogout={handleLogout} />;
+    }
+
     if (isSuperAdminMode && currentView === AppView.SUPER_ADMIN_DASHBOARD) {
         return <MeCardPlatform onLogout={handleLogout} />;
     }

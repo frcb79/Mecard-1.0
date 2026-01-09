@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { AppView, UserRole } from '../types';
 import { NotificationCenter } from './NotificationCenter';
+import { canAccessView } from '../lib/rolePermissions';
 
 interface SidebarProps {
   currentView: AppView;
@@ -138,6 +139,70 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, userR
             <button onClick={() => onNavigate(AppView.STUDENT_HISTORY)} className={navItemClass(AppView.STUDENT_HISTORY)}>
               <History className="w-5 h-5 mr-3" /> Consumo
             </button>
+          </>
+        )}
+
+        {/* ✅ SCHOOL ADMIN - NUEVO */}
+        {!isSuperAdmin && userRole === UserRole.SCHOOL_ADMIN && (
+          <>
+            <div className="mb-4 px-5 text-[9px] font-black text-slate-400 uppercase tracking-[4px]">Administración</div>
+            <button onClick={() => onNavigate(AppView.SCHOOL_ADMIN_DASHBOARD)} className={navItemClass(AppView.SCHOOL_ADMIN_DASHBOARD)}>
+              <Building2 className="w-5 h-5 mr-3" /> Campus Admin
+            </button>
+            <button onClick={() => onNavigate(AppView.ANALYTICS_DASHBOARD)} className={navItemClass(AppView.ANALYTICS_DASHBOARD)}>
+              <TrendingUp className="w-5 h-5 mr-3" /> Analytics
+            </button>
+            <button onClick={() => onNavigate(AppView.STUDENT_MONITORING)} className={navItemClass(AppView.STUDENT_MONITORING)}>
+              <Bell className="w-5 h-5 mr-3" /> Monitoreo
+            </button>
+            <button onClick={() => onNavigate(AppView.HELP_DESK)} className={navItemClass(AppView.HELP_DESK)}>
+              <MessageSquare className="w-5 h-5 mr-3" /> Help Desk
+            </button>
+          </>
+        )}
+
+        {/* ✅ UNIT MANAGER / CONCESSIONAIRE - NUEVO */}
+        {!isSuperAdmin && userRole === UserRole.UNIT_MANAGER && (
+          <>
+            <div className="mb-4 px-5 text-[9px] font-black text-slate-400 uppercase tracking-[4px]">Operación</div>
+            <button onClick={() => onNavigate(AppView.UNIT_MANAGER_DASHBOARD)} className={navItemClass(AppView.UNIT_MANAGER_DASHBOARD)}>
+              <ChefHat className="w-5 h-5 mr-3" /> Dashboard Unidad
+            </button>
+            <button onClick={() => onNavigate(AppView.CONCESSIONAIRE_SALES)} className={navItemClass(AppView.CONCESSIONAIRE_SALES)}>
+              <BarChart3 className="w-5 h-5 mr-3" /> Reportes Ventas
+            </button>
+          </>
+        )}
+
+        {/* ✅ CASHIER - NUEVO */}
+        {!isSuperAdmin && userRole === UserRole.CASHIER && (
+          <>
+            <div className="mb-4 px-5 text-[9px] font-black text-slate-400 uppercase tracking-[4px]">Caja</div>
+            <button onClick={() => onNavigate(AppView.CASHIER_VIEW)} className={navItemClass(AppView.CASHIER_VIEW)}>
+              <Banknote className="w-5 h-5 mr-3" /> Recargas y Pagos
+            </button>
+          </>
+        )}
+
+        {/* ✅ POS OPERATOR / CAFETERIA STAFF / STATIONERY STAFF - NUEVO */}
+        {!isSuperAdmin && (userRole === UserRole.POS_OPERATOR || userRole === UserRole.CAFETERIA_STAFF || userRole === UserRole.STATIONERY_STAFF) && (
+          <>
+            <div className="mb-4 px-5 text-[9px] font-black text-slate-400 uppercase tracking-[4px]">Punto de Venta</div>
+            {(userRole === UserRole.POS_OPERATOR || userRole === UserRole.CAFETERIA_STAFF) && (
+              <button onClick={() => onNavigate(AppView.POS_CAFETERIA)} className={navItemClass(AppView.POS_CAFETERIA)}>
+                <Terminal className="w-5 h-5 mr-3" /> Terminal Cafetería
+              </button>
+            )}
+            {(userRole === UserRole.POS_OPERATOR || userRole === UserRole.STATIONERY_STAFF) && (
+              <button onClick={() => onNavigate(AppView.POS_STATIONERY)} className={navItemClass(AppView.POS_STATIONERY)}>
+                <ShoppingCart className="w-5 h-5 mr-3" /> Terminal Papelería
+              </button>
+            )}
+            {userRole === UserRole.POS_OPERATOR && (
+              <button onClick={() => onNavigate(AppView.POS_GIFT_REDEEM)} className={navItemClass(AppView.POS_GIFT_REDEEM)}>
+                <Gift className="w-5 h-5 mr-3" /> Canje de Regalos
+              </button>
+            )}
           </>
         )}
       </nav>
