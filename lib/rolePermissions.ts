@@ -69,6 +69,9 @@ export const canAccessView = (view: AppView, role: UserRole): boolean => {
  * @returns true si tiene acceso, false de lo contrario
  */
 export const isAuthorized = (view: AppView, role: UserRole | null): boolean => {
+  if (!role) return false;
+  return VIEW_PERMISSIONS[view]?.includes(role) ?? false;
+};
 
 /**
  * Obtiene las vistas permitidas para un rol
