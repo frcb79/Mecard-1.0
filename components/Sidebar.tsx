@@ -58,6 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, userR
               <button onClick={() => onNavigate(AppView.SCHOOL_ADMIN_DASHBOARD)} className={navItemClass(AppView.SCHOOL_ADMIN_DASHBOARD)}>
                 <GraduationCap className="w-5 h-5 mr-3" /> Campus Admin
               </button>
+              <button onClick={() => onNavigate(AppView.ANALYTICS_DASHBOARD)} className={navItemClass(AppView.ANALYTICS_DASHBOARD)}>
+                <TrendingUp className="w-5 h-5 mr-3" /> Analytics
+              </button>
+              <button onClick={() => onNavigate(AppView.STUDENT_MONITORING)} className={navItemClass(AppView.STUDENT_MONITORING)}>
+                <Bell className="w-5 h-5 mr-3" /> Monitoreo
+              </button>
               <button onClick={() => onNavigate(AppView.UNIT_MANAGER_DASHBOARD)} className={navItemClass(AppView.UNIT_MANAGER_DASHBOARD)}>
                 <ChefHat className="w-5 h-5 mr-3" /> Concesionarios
               </button>

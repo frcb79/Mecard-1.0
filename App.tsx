@@ -11,6 +11,8 @@ import { ConcessionaireDashboard } from './components/ConcessionaireDashboard';
 import { ParentAlertsConfigView } from './components/ParentAlertsConfigView';
 import { ParentTransactionMonitoringView } from './components/ParentTransactionMonitoringView';
 import { ConcessionaireSalesReportsView } from './components/ConcessionaireSalesReportsView';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { StudentMonitoring } from './components/StudentMonitoring';
 import MeCardPlatform from './MeCardPlatform';
 import { LoginView } from './components/LoginView';
 import { SupportSystem } from './components/SupportSystem';
@@ -79,6 +81,16 @@ function AppContent() {
   const renderCurrentView = () => {
     if (isSuperAdminMode && currentView === AppView.SUPER_ADMIN_DASHBOARD) {
         return <MeCardPlatform onLogout={handleLogout} />;
+    }
+
+    // Admin Analytics Dashboard
+    if (currentView === 'ANALYTICS_DASHBOARD') {
+      return <AnalyticsDashboard schoolId={activeSchool?.id ? BigInt(typeof activeSchool.id === 'string' ? parseInt(activeSchool.id) : activeSchool.id) : BigInt(1)} />;
+    }
+
+    // Student Monitoring
+    if (currentView === 'STUDENT_MONITORING') {
+      return <StudentMonitoring schoolId={activeSchool?.id ? BigInt(typeof activeSchool.id === 'string' ? parseInt(activeSchool.id) : activeSchool.id) : BigInt(1)} />;
     }
 
     switch(currentView) {
