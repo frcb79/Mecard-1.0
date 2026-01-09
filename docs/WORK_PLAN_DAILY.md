@@ -5,55 +5,63 @@ Construir todas las pantallas y funcionalidades faltantes para cada perfil de us
 
 ---
 
-## FASE 1: MVP-1 (INMEDIATO) 🟢 Bajo esfuerzo, Alto impacto
+## FASE 1: MVP-1 (COMPLETADO) ✅ Bajo esfuerzo, Alto impacto
+**Commit**: `feat: implement MVP-1 screens (parent wallet, limits, student history, children management) and supporting services`
 
 ### Estudiante
-- [ ] **StudentTransactionHistoryView** — Historial detallado con filtros por fecha/monto
+- [x] **StudentTransactionHistoryView** — Historial detallado con filtros por fecha/monto ✅
   - Expandir sobre `StudentDashboard`
   - Mostrar transacciones con detalles (fecha, monto, lugar, categoría)
   - Filtros: por fecha, rango de monto, tipo (compra/depósito)
   - Exportar a CSV (opcional)
 
 ### Padre
-- [ ] **ParentChildrenManagementView** — Gestionar múltiples hijos
+- [x] **ParentChildrenManagementView** — Gestionar múltiples hijos ✅
   - Listar hijos vinculados
   - Vincular nuevos hijos (QR o código)
   - Desvincular hijos
   - Ver saldo/estado de cada hijo en tiempo real
 
-- [ ] **ParentWalletView** — Gestión de fondos (CRÍTICO)
+- [x] **ParentWalletView** — Gestión de fondos (CRÍTICO) ✅
   - Ver saldo disponible del padre
   - Depositar dinero a cada hijo
   - Historial de depósitos
   - Métodos de pago (tarjeta, SPEI, transferencia)
 
-- [ ] **ParentLimitsView** — Establecer límites de gasto
+- [x] **ParentLimitsView** — Establecer límites de gasto ✅
   - Límite diario/semanal por hijo
   - Categorías bloqueadas (opcionales)
   - Horarios de bloqueo (ej: no comprar fuera de horario escolar)
 
 ---
 
-## FASE 2: MVP-2 (Semana 2) 🟡 Medio esfuerzo, Alto impacto
+## FASE 2: MVP-2 (COMPLETADO) ✅ Medio esfuerzo, Alto impacto
+**Commit**: `feat: implement MVP-2 screens (parent alerts, transaction monitoring, concessionaire sales reports) with Recharts integration and Sidebar navigation`
 
 ### Padre (continuación)
-- [ ] **ParentAlertsConfigView** — Configurar notificaciones
+- [x] **ParentAlertsConfigView** — Configurar notificaciones ✅
   - Alerta por saldo bajo (threshold configurable)
   - Alerta por compra grande (monto configurable)
   - Alerta de intentos de compra denegados
   - Canal: email, SMS, in-app
+  - **Status**: Fully functional, Sidebar navigation added
 
-- [ ] **ParentTransactionMonitoringView** — Monitoreo avanzado
+- [x] **ParentTransactionMonitoringView** — Monitoreo avanzado ✅
   - Historial detallado de transacciones de hijos
   - Filtros por fecha, hijo, categoría, monto
   - Estadísticas: gasto diario promedio, categoría favorita
+  - **Status**: Recharts integration complete (BarChart daily trend, PieChart categories, LineChart hourly)
+  - **Status**: Sidebar navigation added
 
 ### Concesionario/Cajero
-- [ ] **ConcessionaireSalesReportsView** — Reportes de ventas
+- [x] **ConcessionaireSalesReportsView** — Reportes de ventas ✅
   - Ventas por producto (tabla + gráfico)
   - Ventas por hora del día
   - Resumen: día, semana, mes
   - Comparativa vs. período anterior
+  - **Status**: Fully functional with Recharts (BarChart top products, LineChart hourly, BarChart daily trend)
+  - **Status**: Period selector (day/week/month), comparison toggle, 4 stats cards
+  - **Status**: Sidebar navigation added
 
 ---
 
