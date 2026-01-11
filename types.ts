@@ -374,6 +374,53 @@ export interface AlertLog {
   createdAt: string;
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  school_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export enum PurchaseOrderStatus {
+  DRAFT = 'DRAFT',
+  SENT = 'SENT',
+  PARTIALLY_RECEIVED = 'PARTIALLY_RECEIVED',
+  RECEIVED = 'RECEIVED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  purchase_order_id: string;
+  product_id: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  unit_cost?: number;
+  product?: Product; // For joining data
+}
+
+export interface PurchaseOrder {
+  id: string;
+  school_id: string;
+  unit_id: string;
+  supplier_id: string;
+  status: PurchaseOrderStatus;
+  order_date: string;
+  expected_delivery_date?: string;
+  notes?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  items?: PurchaseOrderItem[]; // For joining data
+  supplier?: Supplier; // For joining data
+  unit?: OperatingUnit; // For joining data
+}
+
 export enum AppView {
   SUPER_ADMIN_DASHBOARD = 'SUPER_ADMIN_DASHBOARD',
   SCHOOL_ADMIN_DASHBOARD = 'SCHOOL_ADMIN_DASHBOARD',

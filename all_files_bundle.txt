@@ -1,0 +1,743 @@
+# ============================================
+# BUNDLE COMPLETO - 11 ARCHIVOS MECARD PLATFORM
+# ============================================
+# Instrucciones:
+# 1. Copia cada sección en el archivo correspondiente
+# 2. Crea las carpetas necesarias: utils/, scripts/, .github/workflows/
+# 3. Los archivos .env.* van en la raíz del proyecto
+# ============================================
+
+# ============================================
+# ARCHIVO 1: .env.example
+# UBICACIÓN: /
+# ============================================
+NODE_ENV=development
+VITE_APP_ENV=development
+VITE_APP_NAME=MeCard Platform
+
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_USE_MOCK_DATA=true
+
+VITE_API_URL=
+VITE_WS_URL=
+
+VITE_STRIPE_PUBLIC_KEY=
+
+VITE_ENABLE_PAYMENTS=false
+VITE_ENABLE_ANALYTICS=false
+VITE_ENABLE_NOTIFICATIONS=false
+
+VITE_DEBUG_MODE=true
+VITE_LOG_LEVEL=debug
+
+# ============================================
+# ARCHIVO 2: .env.local
+# UBICACIÓN: /
+# NOTA: Este archivo NO se hace commit (ya está en .gitignore)
+# ============================================
+NODE_ENV=development
+VITE_APP_ENV=development
+VITE_APP_NAME=MeCard Platform DEV
+
+VITE_SUPABASE_URL=http://localhost:54321
+VITE_SUPABASE_ANON_KEY=mock-key-for-dev
+VITE_USE_MOCK_DATA=true
+
+VITE_API_URL=http://localhost:3000/api/v1
+VITE_WS_URL=ws://localhost:3000
+
+VITE_ENABLE_PAYMENTS=false
+VITE_ENABLE_ANALYTICS=true
+VITE_ENABLE_NOTIFICATIONS=false
+
+VITE_DEBUG_MODE=true
+VITE_LOG_LEVEL=debug
+
+# ============================================
+# ARCHIVO 3: .env.staging
+# UBICACIÓN: /
+# NOTA: Reemplazar URLs con tus valores de Supabase Staging
+# ============================================
+NODE_ENV=staging
+VITE_APP_ENV=staging
+VITE_APP_NAME=MeCard Platform STAGING
+
+VITE_SUPABASE_URL=https://your-project-staging.supabase.co
+VITE_SUPABASE_ANON_KEY=your-staging-anon-key
+VITE_USE_MOCK_DATA=false
+
+VITE_API_URL=https://mecard-api-staging.railway.app/api/v1
+VITE_WS_URL=wss://mecard-api-staging.railway.app
+
+VITE_STRIPE_PUBLIC_KEY=pk_test_51xxxxxxxxxxxxxx
+
+VITE_ENABLE_PAYMENTS=true
+VITE_ENABLE_ANALYTICS=true
+VITE_ENABLE_NOTIFICATIONS=true
+
+VITE_DEBUG_MODE=true
+VITE_LOG_LEVEL=info
+
+# ============================================
+# ARCHIVO 4: .env.production
+# UBICACIÓN: /
+# NOTA: Reemplazar URLs con tus valores de Supabase Production
+# ============================================
+NODE_ENV=production
+VITE_APP_ENV=production
+VITE_APP_NAME=MeCard Platform
+
+VITE_SUPABASE_URL=https://your-project-prod.supabase.co
+VITE_SUPABASE_ANON_KEY=your-production-anon-key
+VITE_USE_MOCK_DATA=false
+
+VITE_API_URL=https://api.mecard.mx/api/v1
+VITE_WS_URL=wss://api.mecard.mx
+
+VITE_STRIPE_PUBLIC_KEY=pk_live_51xxxxxxxxxxxxxx
+
+VITE_ENABLE_PAYMENTS=true
+VITE_ENABLE_ANALYTICS=true
+VITE_ENABLE_NOTIFICATIONS=true
+
+VITE_DEBUG_MODE=false
+VITE_LOG_LEVEL=error
+
+# ============================================
+# ARCHIVO 5: utils/environment.ts
+# UBICACIÓN: utils/environment.ts
+# ACCIÓN: CREAR NUEVO
+# ============================================
+// utils/environment.ts
+
+export type Environment = 'development' | 'staging' | 'production';
+
+export interface EnvironmentConfig {
+  env: Environment;
+  appName: string;
+  apiUrl: string;
+  wsUrl: string;
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  useMockData: boolean;
+  stripePublicKey?: string;
+  features: {
+    payments: boolean;
+    analytics: boolean;
+    notifications: boolean;
+  };
+  debug: {
+    enabled: boolean;
+    logLevel: 'debug' | 'info' | 'warn' | 'error';
+  };
+}
+
+// Obtener el ambiente actual
+export const getCurrentEnvironment = (): Environment => {
+  const env = import.meta.env.VITE_APP_ENV as Environment;
+  return env || 'development';
+};
+
+// Verificar si estamos en cada ambiente
+export const isDevelopment = (): boolean => getCurrentEnvironment() === 'development';
+export const isStaging = (): boolean => getCurrentEnvironment() === 'staging';
+export const isProduction = (): boolean => getCurrentEnvironment() === 'production';
+
+// Configuración del ambiente actual
+export const getEnvironmentConfig = (): EnvironmentConfig => {
+  const env = getCurrentEnvironment();
+  
+  return {
+    env,
+    appName: import.meta.env.VITE_APP_NAME || 'MeCard Platform',
+    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
+    wsUrl: import.meta.env.VITE_WS_URL || 'ws://localhost:3000',
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
+    supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+    useMockData: import.meta.env.VITE_USE_MOCK_DATA === 'true',
+    stripePublicKey: import.meta.env.VITE_STRIPE_PUBLIC_KEY,
+    
+    features: {
+      payments: import.meta.env.VITE_ENABLE_PAYMENTS === 'true',
+      analytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
+      notifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true'
+    },
+    
+    debug: {
+      enabled: import.meta.env.VITE_DEBUG_MODE === 'true',
+      logLevel: (import.meta.env.VITE_LOG_LEVEL || 'info') as any
+    }
+  };
+};
+
+// Logger condicional según ambiente
+class EnvironmentLogger {
+  private config = getEnvironmentConfig();
+  
+  private shouldLog(level: 'debug' | 'info' | 'warn' | 'error'): boolean {
+    if (!this.config.debug.enabled) return level === 'error';
+    
+    const levels = { debug: 0, info: 1, warn: 2, error: 3 };
+    return levels[level] >= levels[this.config.debug.logLevel];
+  }
+  
+  debug(...args: any[]) {
+    if (this.shouldLog('debug')) {
+      console.log(`[${this.config.env.toUpperCase()}] [DEBUG]`, ...args);
+    }
+  }
+  
+  info(...args: any[]) {
+    if (this.shouldLog('info')) {
+      console.info(`[${this.config.env.toUpperCase()}] [INFO]`, ...args);
+    }
+  }
+  
+  warn(...args: any[]) {
+    if (this.shouldLog('warn')) {
+      console.warn(`[${this.config.env.toUpperCase()}] [WARN]`, ...args);
+    }
+  }
+  
+  error(...args: any[]) {
+    if (this.shouldLog('error')) {
+      console.error(`[${this.config.env.toUpperCase()}] [ERROR]`, ...args);
+    }
+  }
+  
+  // Logging especial para ambientes no productivos
+  staging(...args: any[]) {
+    if (isStaging()) {
+      console.log(`[STAGING TEST]`, ...args);
+    }
+  }
+}
+
+export const logger = new EnvironmentLogger();
+
+// Banner de ambiente en consola
+export const displayEnvironmentBanner = () => {
+  const config = getEnvironmentConfig();
+  const emoji = {
+    development: '🔧',
+    staging: '🧪',
+    production: '🚀'
+  };
+  
+  console.log(`
+╔════════════════════════════════════════════════╗
+║  ${emoji[config.env]} ${config.appName.padEnd(42)} ║
+║  Environment: ${config.env.toUpperCase().padEnd(34)} ║
+║  Mock Data:   ${String(config.useMockData).padEnd(34)} ║
+║  Debug Mode:  ${String(config.debug.enabled).padEnd(34)} ║
+╚════════════════════════════════════════════════╝
+  `);
+  
+  if (isStaging()) {
+    console.warn('⚠️  STAGING ENVIRONMENT - For testing purposes only');
+  }
+  
+  if (isProduction()) {
+    console.log('✅ PRODUCTION ENVIRONMENT - Live mode active');
+  }
+};
+
+// Feature flag helper
+export const useFeature = (feature: keyof EnvironmentConfig['features']): boolean => {
+  const config = getEnvironmentConfig();
+  return config.features[feature];
+};
+
+// API URL helper
+export const getApiUrl = (endpoint: string): string => {
+  const config = getEnvironmentConfig();
+  return `${config.apiUrl}${endpoint}`;
+};
+
+// Validar configuración al inicio
+export const validateEnvironment = (): { valid: boolean; errors: string[] } => {
+  const config = getEnvironmentConfig();
+  const errors: string[] = [];
+  
+  // Validaciones para staging y production
+  if (!isDevelopment()) {
+    if (!config.supabaseUrl) {
+      errors.push('VITE_SUPABASE_URL is required in staging/production');
+    }
+    if (!config.supabaseAnonKey) {
+      errors.push('VITE_SUPABASE_ANON_KEY is required in staging/production');
+    }
+    if (config.features.payments && !config.stripePublicKey) {
+      errors.push('VITE_STRIPE_PUBLIC_KEY is required when payments are enabled');
+    }
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
+
+// Export default config
+export default getEnvironmentConfig();
+
+# ============================================
+# ARCHIVO 6: vite.config.ts
+# UBICACIÓN: vite.config.ts
+# ACCIÓN: REEMPLAZAR COMPLETAMENTE
+# ============================================
+// vite.config.ts
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig(({ mode }) => {
+  // Cargar variables de entorno según el modo
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
+    plugins: [react()],
+    
+    // Resolver aliases
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+        '@components': path.resolve(__dirname, './src/components'),
+        '@hooks': path.resolve(__dirname, './src/hooks'),
+        '@services': path.resolve(__dirname, './src/services'),
+        '@contexts': path.resolve(__dirname, './src/contexts'),
+        '@utils': path.resolve(__dirname, './src/utils'),
+        '@types': path.resolve(__dirname, './src/types')
+      }
+    },
+    
+    // Configuración del servidor de desarrollo
+    server: {
+      port: 5173,
+      host: true,
+      open: true,
+      cors: true,
+      proxy: {
+        // Proxy para API en desarrollo
+        '/api': {
+          target: env.VITE_API_URL || 'http://localhost:3000',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, '')
+        }
+      }
+    },
+    
+    // Configuración de build
+    build: {
+      outDir: 'dist',
+      sourcemap: mode !== 'production',
+      minify: mode === 'production' ? 'esbuild' : false,
+      
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Separar vendors para mejor caching
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'ui-vendor': ['lucide-react'],
+            'supabase-vendor': ['@supabase/supabase-js']
+          }
+        }
+      },
+      
+      // Límites de chunk size
+      chunkSizeWarningLimit: 1000
+    },
+    
+    // Variables de entorno expuestas al cliente
+    define: {
+      __APP_ENV__: JSON.stringify(env.VITE_APP_ENV),
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+    },
+    
+    // Optimización
+    optimizeDeps: {
+      include: ['react', 'react-dom', '@supabase/supabase-js']
+    }
+  };
+});
+
+# ============================================
+# ARCHIVO 7: package.json - SCRIPTS ADICIONALES
+# UBICACIÓN: package.json
+# ACCIÓN: AGREGAR ESTOS SCRIPTS (no borrar los existentes)
+# ============================================
+{
+  "scripts": {
+    "dev": "vite --mode development",
+    "dev:staging": "vite --mode staging",
+    "dev:production": "vite --mode production",
+    
+    "build": "tsc && vite build --mode production",
+    "build:staging": "tsc && vite build --mode staging",
+    "build:dev": "tsc && vite build --mode development",
+    
+    "preview": "vite preview",
+    "preview:staging": "vite preview --mode staging",
+    
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
+    
+    "type-check": "tsc --noEmit",
+    
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    
+    "deploy:staging": "npm run build:staging && vercel --prod --env staging",
+    "deploy:production": "npm run build && vercel --prod"
+  }
+}
+
+# ============================================
+# ARCHIVO 8: lib/supabaseClient.ts
+# UBICACIÓN: lib/supabaseClient.ts
+# ACCIÓN: REEMPLAZAR COMPLETAMENTE
+# ============================================
+// lib/supabaseClient.ts
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getEnvironmentConfig, logger, isDevelopment } from '../utils/environment';
+
+const config = getEnvironmentConfig();
+
+// Verificar si Supabase está configurado
+export const isSupabaseConfigured = 
+  !!config.supabaseUrl && 
+  !!config.supabaseAnonKey && 
+  !config.useMockData;
+
+// Cliente de Supabase (solo si está configurado)
+let supabaseInstance: SupabaseClient | null = null;
+
+if (isSupabaseConfigured) {
+  try {
+    supabaseInstance = createClient(
+      config.supabaseUrl,
+      config.supabaseAnonKey,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: localStorage,
+          storageKey: `mecard-auth-${config.env}`
+        },
+        global: {
+          headers: {
+            'x-mecard-env': config.env
+          }
+        },
+        db: {
+          schema: config.env === 'production' ? 'public' : config.env
+        }
+      }
+    );
+    
+    logger.info('Supabase client initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize Supabase client:', error);
+  }
+} else {
+  if (isDevelopment()) {
+    logger.info('Running in MOCK mode - Supabase disabled');
+  } else {
+    logger.warn('Supabase not configured properly for', config.env);
+  }
+}
+
+export const supabase = supabaseInstance!;
+
+// Helper para verificar conexión
+export const checkSupabaseConnection = async (): Promise<boolean> => {
+  if (!isSupabaseConfigured || !supabase) {
+    logger.warn('Supabase not configured');
+    return false;
+  }
+  
+  try {
+    const { error } = await supabase.from('_health_check').select('*').limit(1);
+    
+    if (error && error.code !== 'PGRST116') {
+      logger.error('Supabase connection check failed:', error);
+      return false;
+    }
+    
+    logger.info('Supabase connection OK');
+    return true;
+  } catch (error) {
+    logger.error('Supabase connection error:', error);
+    return false;
+  }
+};
+
+// API Helpers
+export const supabaseAPI = {
+  async getSchools() {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('schools').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  
+  async getStudents(schoolId?: string) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    let query = supabase.from('students').select('*');
+    if (schoolId) query = query.eq('school_id', schoolId);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  
+  async createStudent(student: any) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('students').insert([student]).select().single();
+    if (error) throw error;
+    logger.info('Student created:', data.id);
+    return data;
+  },
+  
+  async updateStudent(id: string, updates: any) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('students').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    logger.info('Student updated:', data.id);
+    return data;
+  },
+  
+  async getTransactions(filters?: { studentId?: string; schoolId?: string }) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    let query = supabase.from('transactions').select('*');
+    if (filters?.studentId) query = query.eq('student_id', filters.studentId);
+    if (filters?.schoolId) query = query.eq('school_id', filters.schoolId);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  
+  async createTransaction(transaction: any) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('transactions').insert([transaction]).select().single();
+    if (error) throw error;
+    logger.info('Transaction created:', data.id);
+    return data;
+  }
+};
+
+export default supabase;
+
+# ============================================
+# ARCHIVO 9: scripts/test-environment.sh
+# UBICACIÓN: scripts/test-environment.sh
+# ACCIÓN: CREAR NUEVO (dar permisos: chmod +x scripts/test-environment.sh)
+# ============================================
+#!/bin/bash
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+ENV=${1:-staging}
+ERRORS=0
+
+echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║   MeCard Platform - Environment Test Suite    ║${NC}"
+echo -e "${BLUE}║   Testing: ${ENV^^}${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}"
+echo ""
+
+check_env_var() {
+  if [ -z "${!1}" ]; then
+    echo -e "${RED}  ✗ $1 no está configurada${NC}"
+    ((ERRORS++))
+    return 1
+  else
+    echo -e "${GREEN}  ✓ $1 configurada${NC}"
+    return 0
+  fi
+}
+
+if [ "$ENV" = "staging" ]; then
+  export $(cat .env.staging | xargs)
+elif [ "$ENV" = "production" ]; then
+  export $(cat .env.production | xargs)
+else
+  export $(cat .env.local | xargs)
+fi
+
+echo -e "${YELLOW}[1/6] Verificando variables de entorno...${NC}"
+check_env_var "VITE_APP_ENV"
+check_env_var "VITE_SUPABASE_URL"
+check_env_var "VITE_SUPABASE_ANON_KEY"
+echo ""
+
+echo -e "${YELLOW}[2/6] Verificando Node.js...${NC}"
+if ! command -v node &> /dev/null; then
+  echo -e "${RED}  ✗ Node.js no está instalado${NC}"
+  ((ERRORS++))
+else
+  echo -e "${GREEN}  ✓ Node.js instalado: $(node -v)${NC}"
+fi
+echo ""
+
+echo -e "${YELLOW}[3/6] Type Check...${NC}"
+if npm run type-check > /dev/null 2>&1; then
+  echo -e "${GREEN}  ✓ Type check pasó${NC}"
+else
+  echo -e "${RED}  ✗ Type check falló${NC}"
+  ((ERRORS++))
+fi
+echo ""
+
+echo -e "${YELLOW}[4/6] Linting...${NC}"
+if npm run lint > /dev/null 2>&1; then
+  echo -e "${GREEN}  ✓ Linting pasó${NC}"
+else
+  echo -e "${RED}  ✗ Linting falló${NC}"
+  ((ERRORS++))
+fi
+echo ""
+
+echo -e "${YELLOW}[5/6] Build Test...${NC}"
+if npm run build > /dev/null 2>&1; then
+  echo -e "${GREEN}  ✓ Build completado${NC}"
+else
+  echo -e "${RED}  ✗ Build falló${NC}"
+  ((ERRORS++))
+fi
+echo ""
+
+echo -e "${YELLOW}[6/6] Supabase Connection...${NC}"
+if [ "$VITE_USE_MOCK_DATA" = "true" ]; then
+  echo -e "${YELLOW}  ⚠ Modo Mock - Skip${NC}"
+else
+  HEALTH=$(curl -s -o /dev/null -w "%{http_code}" "$VITE_SUPABASE_URL/rest/v1/" || echo "000")
+  if [ "$HEALTH" = "200" ] || [ "$HEALTH" = "401" ]; then
+    echo -e "${GREEN}  ✓ Supabase OK${NC}"
+  else
+    echo -e "${RED}  ✗ Supabase no responde${NC}"
+    ((ERRORS++))
+  fi
+fi
+echo ""
+
+if [ $ERRORS -eq 0 ]; then
+  echo -e "${GREEN}✅ TODOS LOS TESTS PASARON${NC}"
+  exit 0
+else
+  echo -e "${RED}❌ $ERRORS ERROR(ES) ENCONTRADO(S)${NC}"
+  exit 1
+fi
+
+# ============================================
+# ARCHIVO 10: .github/workflows/deploy.yml
+# UBICACIÓN: .github/workflows/deploy.yml
+# ACCIÓN: CREAR NUEVO
+# ============================================
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  pull_request:
+    branches:
+      - main
+      - production
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  lint-and-type-check:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run type-check
+
+  build:
+    name: Build Test
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://mecard-staging.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install --global vercel@latest
+      - run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/production' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://app.mecard.mx
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install --global vercel@latest
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+# ============================================
+# ARCHIVO 11: .gitignore - AGREGAR
+# UBICACIÓN: .gitignore
+# ACCIÓN: AGREGAR ESTAS LÍNEAS
+# ============================================
+
+# Environment files
+.env.local
+.env.staging
+.env.production
+.env*.local
+
+# Keep example
+!.env.example
+
+# ============================================
+# FIN DEL BUNDLE
+# ============================================
+# Documentación adicional en QUICK_START.md y DEPLOYMENT_GUIDE.md
+# disponibles en artifacts anteriores
+# ============================================

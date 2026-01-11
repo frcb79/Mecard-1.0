@@ -1,14 +1,17 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Users, Utensils, Plus, Wallet, Search, Filter, 
   ShieldCheck, Upload, X, Landmark, HeartPulse,
   ChefHat, PenTool, LayoutGrid, CheckCircle2, MoreVertical,
-  Activity, PieChart, Store, ArrowUpRight, TrendingUp
+  Activity, PieChart, Store, ArrowUpRight, TrendingUp, Truck, ShoppingCart
 } from 'lucide-react';
-import { StudentProfile, OperatingUnit, EntityOwner } from '../types';
+import { StudentProfile, OperatingUnit, EntityOwner, Supplier } from '../types';
 import { Button } from './Button';
 import { SchoolAdminStudentsView } from './SchoolAdminStudentsView';
+import SupplierManagementView from './SupplierManagementView';
+import PurchaseOrderView from './PurchaseOrderView';
+import { getSuppliers } from '../services/supplierService';
 
 const StatCard = ({ title, value, icon: Icon, color, trend, subtitle }: any) => (
   <div className="bg-white p-10 rounded-[48px] shadow-sm border border-slate-100 flex items-center space-x-8 hover:shadow-xl hover:-translate-y-2 transition-all duration-500 group">
@@ -37,7 +40,16 @@ export const SchoolAdminView: React.FC<{
   onUpdateUnit: (id: string, updates: Partial<OperatingUnit>) => void;
   onDeleteUnit: (id: string) => void;
 }> = ({ onUpdateStudent, allStudents, onBulkAddStudents, operatingUnits, onAddUnit, onUpdateUnit, onDeleteUnit }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'units'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'units' | 'suppliers' | 'purchase_orders'>('dashboard');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const schoolId = "mx_01"; // Hardcoded for now
+  const userId = "user_123"; // Hardcoded for now
+
+  useEffect(() => {
+    if (activeTab === 'purchase_orders' || activeTab === 'suppliers') {
+      getSuppliers(schoolId).then(setSuppliers).catch(console.error);
+    }
+  }, [activeTab, schoolId]);
 
   const handleDeleteStudent = (id: string) => {
       // Logic handled via parent state usually, simulation here
@@ -63,6 +75,8 @@ export const SchoolAdminView: React.FC<{
                 <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={18}/>} label="Dashboard" />
                 <TabButton active={activeTab === 'students'} onClick={() => setActiveTab('students')} icon={<Users size={18}/>} label="Directorio" />
                 <TabButton active={activeTab === 'units'} onClick={() => setActiveTab('units')} icon={<Store size={18}/>} label="Unidades POS" />
+                <TabButton active={activeTab === 'suppliers'} onClick={() => setActiveTab('suppliers')} icon={<Truck size={18}/>} label="Proveedores" />
+                <TabButton active={activeTab === 'purchase_orders'} onClick={() => setActiveTab('purchase_orders')} icon={<ShoppingCart size={18}/>} label="Órdenes de Compra" />
             </div>
         </header>
 
@@ -127,6 +141,19 @@ export const SchoolAdminView: React.FC<{
                 onAddStudent={(s) => onBulkAddStudents([s])}
                 onDeleteStudent={handleDeleteStudent}
                 onToggleStatus={handleToggleStudent}
+              />
+            )}
+            
+            {activeTab === 'suppliers' && (
+              <SupplierManagementView schoolId="mx_01" />
+            )}
+
+            {activeTab === 'purchase_orders' && (
+              <PurchaseOrderView 
+                schoolId={schoolId}
+                suppliers={suppliers}
+                operatingUnits={operatingUnits}
+                userId={userId}
               />
             )}
 
