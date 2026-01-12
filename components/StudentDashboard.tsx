@@ -1,117 +1,28 @@
-// components/StudentDashboard.tsx
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Wallet, Users, Gift, Star, Bell, QrCode, ShoppingBag, 
   Globe, Lock, Heart, Search, CheckCircle2, RefreshCw,
   MessageSquare, Send, User, ChevronRight, Clock,
-  Zap, ShieldCheck, HeartPulse, X, Share2
+  Zap, ArrowUpRight, TrendingUp, ShieldCheck, Flame, HeartPulse
 } from 'lucide-react';
-
-// ✅ IMPORTS REALES - Conectados a Supabase
-import { supabase } from '../lib/supabaseClient';
 import { socialService } from '../services/supabaseSocial';
-
-// ============================================
-// TIPOS
-// ============================================
+import { inventoryService } from '../services/supabaseInventory';
+import { Friend, Gift as GiftType, Transaction } from '../types';
+import { MeCardSocial } from './MeCardSocial';
+import { Button } from './Button';
 
 interface StudentDashboardProps {
   userId: string;
   schoolId: string;
+  transactions?: Transaction[];
 }
 
-interface StudentProfile {
-  id: string;
-  full_name: string;
-  student_id: string;
-  balance: number;
-  favorites: string[];
-  favorites_public: boolean;
-  grade: string;
-  school_id: string;
-}
-
-interface GiftType {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  redemption_code: string;
-  created_at: string;
-  status: string;
-  item?: { name: string; price: number; image_url?: string };
-  sender?: { full_name: string; student_id?: string };
-  thank_you_message?: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  image_url?: string;
-  stock: number;
-}
-
-// ============================================
-// COMPONENTES UI
-// ============================================
-
-const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }: any) => {
-  const variants: any = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200',
-    secondary: 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50',
-    danger: 'bg-rose-500 text-white hover:bg-rose-600',
-  };
-  return (
-    <button 
-      onClick={onClick}
-      disabled={disabled}
-      className={`px-4 py-2 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-50 ${variants[variant]} ${className}`}
-    >
-      {children}
-    </button>
-  );
-};
-
-const MeCardSocial = ({ currentStudent, onSendGift }: any) => {
-  return (
-    <div className="flex flex-col h-full bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm">
-      <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-        <h3 className="font-black italic text-slate-800 flex items-center gap-2">
-          <Users size={18} className="text-indigo-600"/> RED SOCIAL
-        </h3>
-        <button className="text-indigo-600 text-[10px] font-black uppercase tracking-widest">Ver solicitudes</button>
-      </div>
-      <div className="flex-1 flex items-center justify-center p-10 text-center">
-        <div className="max-w-xs">
-          <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
-            <Search size={32} />
-          </div>
-          <p className="text-sm font-bold text-slate-800 mb-2">Busca a tus amigos</p>
-          <p className="text-xs text-slate-400 mb-6">Encuentra a tus compañeros para ver qué les gusta y enviarles sorpresas.</p>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-            <input 
-              type="text" 
-              placeholder="Nombre o ID del alumno..." 
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-bold outline-none"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ============================================
-// COMPONENTE PRINCIPAL
-// ============================================
-
-export default function StudentDashboard({ userId, schoolId }: StudentDashboardProps) {
+export default function StudentDashboard({ userId, schoolId, transactions = [] }: StudentDashboardProps) {
   const [activeTab, setActiveTab] = useState<'wallet' | 'social' | 'gifts' | 'explore'>('wallet');
   const [myGifts, setMyGifts] = useState<GiftType[]>([]);
-  const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [profile, setProfile] = useState<Friend | null>(null);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [commentTexts, setCommentTexts] = useState<{[key: string]: string}>({});
@@ -121,51 +32,23 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
     loadStudentData();
   }, [userId, schoolId]);
 
-  // ============================================
-  // CARGAR DATOS DESDE SUPABASE REAL
-  // ============================================
-
   const loadStudentData = async () => {
     setLoading(true);
     try {
-      // 1. ✅ Cargar perfil del estudiante desde Supabase
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const { data: profileData } = await socialService.findPotentialFriend(schoolId, userId);
+      if (profileData) setProfile(profileData);
 
-      if (profileError) throw profileError;
-      if (profileData) setProfile(profileData as StudentProfile);
-
-      // 2. ✅ Cargar regalos recibidos desde servicio real
       const { data: giftsData } = await socialService.getReceivedGifts(userId);
       setMyGifts(giftsData || []);
 
-      // 3. ✅ Cargar productos del inventario desde Supabase
-      const { data: productsData, error: productsError } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .eq('status', 'active')
-        .gt('stock', 0)
-        .order('category', { ascending: true })
-        .order('name', { ascending: true })
-        .limit(20);
-
-      if (!productsError && productsData) {
-        setAllProducts(productsData as Product[]);
-      }
-
+      const products = await inventoryService.getInventory('all');
+      setAllProducts(products);
     } catch (e) {
       console.error('Error loading dashboard:', e);
     } finally {
       setLoading(false);
     }
   };
-
-  // ============================================
-  // HANDLERS
-  // ============================================
 
   const handleToggleFavorite = async (productId: string) => {
     if (!profile) return;
@@ -180,7 +63,7 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
   const toggleFavoritesPrivacy = async () => {
     if (!profile) return;
     const newVal = !profile.favorites_public;
-    await socialService.updateFavorites(userId, profile.favorites, newVal);
+    await socialService.updateProfile(userId, { favorites_public: newVal });
     setProfile({ ...profile, favorites_public: newVal });
   };
 
@@ -191,8 +74,8 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
     setSendingComment(gift.id);
     try {
       await socialService.sendThankYouMessage(gift.id, gift.sender_id, text);
-      setMyGifts(prev => prev.map(g => g.id === gift.id ? { ...g, thank_you_message: text } : g));
       setCommentTexts(prev => ({ ...prev, [gift.id]: '' }));
+      alert('¡Mensaje de agradecimiento enviado!');
     } catch (e) {
       console.error('Error enviando agradecimiento:', e);
     } finally {
@@ -200,7 +83,10 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
     }
   };
 
-  const healthScore = useMemo(() => Math.floor(Math.random() * (95 - 70 + 1)) + 70, []);
+  const healthScore = useMemo(() => {
+    // Simulated health score calculation
+    return Math.floor(Math.random() * (95 - 70 + 1)) + 70;
+  }, []);
 
   if (loading && !profile) {
     return (
@@ -210,45 +96,31 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <p className="text-slate-500 font-bold mb-4">No se pudo cargar el perfil del estudiante</p>
-          <p className="text-xs text-slate-400 mb-4">userId: {userId}</p>
-          <Button onClick={loadStudentData}>Reintentar</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-screen bg-[#fcfdfe] overflow-hidden font-sans text-slate-900">
-      {/* HEADER */}
-      <header className="bg-white px-10 py-6 border-b border-slate-100 flex justify-between items-center z-20 shadow-sm shrink-0">
+    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
+      <header className="bg-white px-10 py-6 border-b border-slate-200 flex justify-between items-center z-20 shadow-sm shrink-0">
         <div className="flex items-center gap-5">
           <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3">
             <Users size={24} />
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-800 italic tracking-tighter">Student Hub</h1>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[4px]">MeCard Network</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[4px]">Red Social MeCard</p>
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <div className="text-right hidden sm:block">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance Total</p>
-            <p className="text-2xl font-black text-emerald-600 tracking-tighter leading-none">${profile?.balance.toFixed(2)}</p>
+          <div className="text-right">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance</p>
+            <p className="text-2xl font-black text-emerald-600 tracking-tighter">${profile?.balance.toFixed(2)}</p>
           </div>
           <div className="h-10 w-px bg-slate-100 hidden md:block"></div>
           <button className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all relative">
             <Bell size={20}/>
-            <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+            <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
           </button>
         </div>
       </header>
 
-      {/* NAVIGATION */}
       <div className="bg-white border-b border-slate-100 flex px-10 overflow-x-auto scrollbar-hide shrink-0">
         <TabButton active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} icon={<Wallet size={16}/>} label="Billetera" />
         <TabButton active={activeTab === 'explore'} onClick={() => setActiveTab('explore')} icon={<ShoppingBag size={16}/>} label="Descubrir" />
@@ -256,24 +128,19 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
         <TabButton active={activeTab === 'gifts'} onClick={() => setActiveTab('gifts')} icon={<Gift size={16}/>} label="Mis Regalos" />
       </div>
 
-      <main className="flex-1 overflow-y-auto bg-[#fcfdfe]">
-        {/* VISTA: BILLETERA / INICIO */}
+      <main className="flex-1 overflow-y-auto bg-[#f8fafc]/50">
         {activeTab === 'wallet' && (
           <div className="p-10 max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* MeCard Principal */}
-                <div className="lg:col-span-8 bg-indigo-600 rounded-[48px] p-12 text-white shadow-2xl relative overflow-hidden min-h-[340px] flex flex-col justify-between group border border-white/10">
-                    <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                      <Wallet size={200} />
-                    </div>
+                {/* Visual Card (Student Passport) */}
+                <div className="lg:col-span-8 bg-indigo-600 rounded-[48px] p-12 text-white shadow-2xl relative overflow-hidden min-h-[320px] flex flex-col justify-between group border border-white/10">
+                    <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Wallet size={200} /></div>
                     <div className="relative z-10 flex justify-between items-start">
                         <div>
                            <p className="text-indigo-200 font-black uppercase text-[10px] tracking-[4px] mb-2">NETWORK ID</p>
                            <p className="font-mono text-xl tracking-[4px]">{profile?.student_id}</p>
                         </div>
-                        <div className="bg-white/20 p-4 rounded-3xl backdrop-blur-md border border-white/20 shadow-xl">
-                          <Zap size={28} className="text-yellow-400 fill-yellow-400"/>
-                        </div>
+                        <div className="bg-white/20 p-4 rounded-3xl backdrop-blur-md border border-white/20 shadow-xl"><Zap size={28} className="text-yellow-400 fill-yellow-400"/></div>
                     </div>
                     <div className="relative z-10">
                         <p className="text-indigo-200 font-black uppercase text-[10px] tracking-[4px] mb-2">SALDO DISPONIBLE</p>
@@ -281,18 +148,16 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
                     </div>
                     <div className="relative z-10 flex justify-between items-end pt-8 border-t border-white/10 mt-8">
                        <p className="text-xl font-black uppercase tracking-tighter italic opacity-80">{profile?.full_name}</p>
-                       <div className="bg-white p-4 rounded-[24px] shadow-xl hover:scale-110 transition-transform cursor-pointer">
-                         <QrCode size={36} className="text-slate-900" />
-                       </div>
+                       <div className="bg-white p-4 rounded-[24px] shadow-xl hover:scale-110 transition-transform cursor-pointer"><QrCode size={36} className="text-slate-900" /></div>
                     </div>
                 </div>
 
-                {/* Sidebar Bento: Salud */}
+                {/* Health & Performance Bento Sidebar */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col justify-between group hover:shadow-xl transition-all h-full">
+                    <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm h-1/2 flex flex-col justify-between group hover:shadow-xl transition-all">
                         <div className="flex items-center gap-4 text-rose-500 mb-4">
                             <HeartPulse size={24}/>
-                            <h3 className="font-black text-xs uppercase tracking-widest italic">Health Score</h3>
+                            <h3 className="font-black text-xs uppercase tracking-widest">Health Score</h3>
                         </div>
                         <div>
                           <p className="text-5xl font-black text-slate-800 tracking-tighter mb-4">{healthScore}<span className="text-lg text-slate-300">/100</span></p>
@@ -300,44 +165,43 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
                               <div className="h-full bg-rose-500 transition-all duration-1000" style={{ width: `${healthScore}%` }}></div>
                           </div>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-4 italic tracking-widest">IA Health Analysis Active</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-4">Analizado por Gemini AI</p>
+                    </div>
+                    <div className="bg-emerald-900 rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl h-1/2 flex flex-col justify-center">
+                        <div className="absolute top-0 right-0 p-6 opacity-10"><ShieldCheck size={100}/></div>
+                        <p className="text-[9px] font-black uppercase tracking-[3px] text-emerald-400 mb-4">Cuenta Segura</p>
+                        <p className="text-sm font-medium leading-relaxed opacity-90">Protección de gastos activa por tus tutores.</p>
                     </div>
                 </div>
              </div>
 
-             {/* Configuración de Privacidad */}
-             <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm flex items-center justify-between hover:border-indigo-100 transition-colors">
-                <div className="flex items-center gap-6">
-                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${profile?.favorites_public ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
+             <div className="bg-white rounded-[40px] p-8 border border-slate-100 flex items-center justify-between shadow-sm hover:shadow-lg transition-all">
+                <div className="flex items-center gap-5">
+                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${profile?.favorites_public ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
                       {profile?.favorites_public ? <Globe size={24} /> : <Lock size={24} />}
                    </div>
                    <div>
-                      <p className="font-black text-slate-800 text-base italic">Privacidad de Wishlist</p>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {profile?.favorites_public 
-                          ? 'Tus amigos pueden ver tus favoritos para darte mejores sorpresas.' 
-                          : 'Tu lista de deseos es privada y nadie puede verla.'}
-                      </p>
+                      <p className="font-black text-slate-800 text-base">Privacidad de Deseos</p>
+                      <p className="text-xs text-slate-500 font-medium">{profile?.favorites_public ? 'Tus amigos pueden ver tus favoritos.' : 'Tu wishlist es totalmente privada.'}</p>
                    </div>
                 </div>
-                <Button onClick={toggleFavoritesPrivacy} variant="secondary" className="px-8 shadow-sm text-[10px] uppercase tracking-widest">
-                  {profile?.favorites_public ? 'Hacer Privado' : 'Hacer Público'}
+                <Button onClick={toggleFavoritesPrivacy} variant="secondary" className="rounded-2xl font-black text-[10px] uppercase tracking-widest px-8 shadow-sm">
+                  {profile?.favorites_public ? 'Privado' : 'Hacer Público'}
                 </Button>
              </div>
           </div>
         )}
 
-        {/* VISTA: CATÁLOGO / DESCUBRIR */}
         {activeTab === 'explore' && (
           <div className="p-10 max-w-7xl mx-auto space-y-10 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-4">
+            <div className="flex justify-between items-end px-4">
               <div>
                 <h3 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">Descubrir</h3>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[5px] mt-4 flex items-center gap-2">Explora y marca tus favoritos</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[5px] mt-3 flex items-center gap-2">Explora el catálogo y añade a favoritos</p>
               </div>
-              <div className="relative w-full md:w-72">
+              <div className="relative w-72">
                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18}/>
-                 <input placeholder="Filtrar catálogo..." className="w-full pl-12 pr-4 py-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 transition-all" />
+                 <input placeholder="Buscar..." className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl border-none shadow-sm text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 transition-all" />
               </div>
             </div>
 
@@ -345,26 +209,26 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
               {allProducts.map(product => {
                 const isFavorite = profile?.favorites?.includes(product.id);
                 return (
-                  <div key={product.id} className="bg-white p-5 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all relative group">
+                  <div key={product.id} className="bg-white p-5 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl transition-all relative group">
                     <button 
                       onClick={() => handleToggleFavorite(product.id)}
-                      className="absolute top-4 right-4 z-10 w-11 h-11 rounded-[20px] bg-white/95 backdrop-blur shadow-md flex items-center justify-center transition-all active:scale-75 hover:scale-110 border border-slate-50"
+                      className="absolute top-4 right-4 z-10 w-11 h-11 rounded-[20px] bg-white/90 backdrop-blur shadow-md flex items-center justify-center transition-all active:scale-75 hover:scale-110"
                     >
                       <Heart size={20} className={isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-300'} />
                     </button>
-                    <div className="aspect-square bg-slate-50 rounded-[32px] mb-5 overflow-hidden flex items-center justify-center border border-slate-50 shadow-inner">
+                    <div className="aspect-square bg-slate-50 rounded-[32px] mb-5 overflow-hidden flex items-center justify-center">
                       {product.image_url ? (
-                        <img src={product.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <img src={product.image_url} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                       ) : (
-                        <ShoppingBag className="text-slate-200" size={50} strokeWidth={1}/>
+                        <ShoppingBag className="text-slate-200" size={50} />
                       )}
                     </div>
-                    <div className="px-2">
-                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1 leading-none">{product.category}</p>
-                        <h4 className="font-black text-slate-800 text-sm mb-3 truncate leading-tight italic">{product.name}</h4>
+                    <div className="px-1">
+                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">{product.category}</p>
+                        <h4 className="font-black text-slate-800 text-sm mb-3 truncate leading-tight">{product.name}</h4>
                         <div className="flex justify-between items-center">
-                           <p className="font-black text-emerald-600 text-lg tracking-tighter leading-none">${product.price.toFixed(2)}</p>
-                           <div className="p-1.5 bg-slate-50 rounded-lg text-slate-300 group-hover:text-indigo-600 transition-colors">
+                           <p className="font-black text-emerald-600 text-lg tracking-tighter">${product.price}</p>
+                           <div className="bg-slate-50 p-1.5 rounded-lg text-slate-300 group-hover:text-indigo-600 transition-colors">
                               <ChevronRight size={16}/>
                            </div>
                         </div>
@@ -376,108 +240,92 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
           </div>
         )}
 
-        {/* VISTA: RED SOCIAL */}
         {activeTab === 'social' && (
-          <div className="h-full p-10 max-w-7xl mx-auto">
+          <div className="h-[calc(100vh-140px)]">
             <MeCardSocial 
               currentStudent={profile} 
+              allStudents={[]} 
               onSendGift={() => loadStudentData()} 
             />
           </div>
         )}
 
-        {/* VISTA: REGALOS RECIBIDOS (Audit Log) */}
         {activeTab === 'gifts' && (
           <div className="p-10 max-w-5xl mx-auto space-y-10 animate-in fade-in duration-500">
              <div className="flex justify-between items-center px-4">
                 <div>
                   <h3 className="text-4xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">Regalos</h3>
-                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-[5px] mt-3 italic leading-none">Historial de detalles recibidos</p>
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-[5px] mt-3 italic">Detalles recibidos de tus amigos</p>
                 </div>
-                <div className="flex items-center gap-4">
-                   <div className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100">
-                      {myGifts.length} Pendientes
-                   </div>
+                <div className="flex items-center gap-3">
+                   <span className="bg-indigo-600 text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100">{myGifts.length} Disponibles</span>
                 </div>
              </div>
 
              <div className="grid grid-cols-1 gap-8">
                 {myGifts.map(gift => (
-                  <div key={gift.id} className="bg-white rounded-[56px] p-10 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-12 transition-all hover:shadow-2xl group border-l-4 border-l-indigo-600/20 hover:border-l-indigo-600">
+                  <div key={gift.id} className="bg-white rounded-[48px] p-10 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-12 transition-all hover:shadow-2xl group">
+                     {/* Gift Branding */}
                      <div className="flex gap-8 items-center md:w-1/2 relative">
-                        <div className="w-32 h-32 bg-indigo-50/50 rounded-[44px] flex items-center justify-center text-indigo-600 relative shrink-0 shadow-inner group-hover:rotate-3 transition-transform duration-500 border border-indigo-100/50">
+                        <div className="w-32 h-32 bg-indigo-50 rounded-[40px] flex items-center justify-center text-indigo-600 relative shrink-0 shadow-inner group-hover:rotate-3 transition-transform duration-500">
                             <ShoppingBag size={56} strokeWidth={1.5} />
-                            <div className="absolute -top-3 -right-3 bg-rose-500 text-white p-3 rounded-2xl shadow-xl ring-4 ring-white">
+                            <div className="absolute -top-2 -right-2 bg-rose-500 text-white p-2.5 rounded-2xl shadow-xl animate-bounce">
                                <Gift size={24} />
                             </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-3 bg-slate-50 w-fit px-3 py-1.5 rounded-full border border-slate-100">
-                               <div className="w-5 h-5 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600"><User size={10}/></div>
-                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate leading-none">
-                                  Enviado por: <span className="text-indigo-600 font-black">{gift.sender?.full_name || 'Amigo Anónimo'}</span>
+                            <div className="flex items-center gap-2 mb-3">
+                               <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600"><User size={12}/></div>
+                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">
+                                  De: <span className="text-indigo-600 font-black">{(gift as any).sender?.full_name || 'Un Amigo'}</span>
                                </p>
                             </div>
-                            <h4 className="text-2xl font-black text-slate-800 mb-6 truncate tracking-tight italic">{gift.item?.name || 'Artículo de Regalo'}</h4>
+                            <h4 className="text-3xl font-black text-slate-800 mb-6 truncate tracking-tight">{gift.item?.name}</h4>
                             <div className="flex items-center gap-6">
-                                <div className="bg-slate-900 px-8 py-5 rounded-[32px] border border-white/5 shadow-2xl relative overflow-hidden group/code">
-                                   <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500 opacity-50 group-hover/code:opacity-100 transition-opacity"></div>
-                                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-[5px] mb-2 leading-none">REDEMPTION CODE</p>
+                                <div className="bg-slate-900 px-8 py-5 rounded-[32px] border border-white/5 shadow-2xl relative overflow-hidden">
+                                   <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+                                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-[4px] mb-2">CÓDIGO CANJE</p>
                                    <p className="text-4xl font-black text-indigo-400 tracking-[8px] font-mono leading-none">{gift.redemption_code}</p>
                                 </div>
-                                <div className="text-slate-300 flex flex-col items-center shrink-0">
-                                   <Clock size={20} strokeWidth={2.5}/>
-                                   <p className="text-[8px] font-black uppercase mt-2 tracking-widest leading-none">{new Date(gift.created_at).toLocaleDateString()}</p>
+                                <div className="text-slate-300 flex flex-col items-center">
+                                   <Clock size={24} />
+                                   <p className="text-[8px] font-black uppercase mt-2 tracking-widest">{new Date(gift.created_at).toLocaleDateString()}</p>
                                 </div>
                             </div>
                         </div>
                      </div>
 
+                     {/* Gratitude Action Area */}
                      <div className="flex-1 flex flex-col justify-center border-t md:border-t-0 md:border-l border-slate-100 pt-10 md:pt-0 md:pl-12">
                         <div className="flex items-center justify-between mb-4 px-2">
                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[4px] flex items-center gap-3">
-                              <MessageSquare size={16} className="text-indigo-400" /> Agradecimiento
+                              <MessageSquare size={16} className="text-indigo-400" /> Dar las gracias
                            </p>
-                           <Share2 size={16} className="text-slate-200 cursor-pointer hover:text-indigo-400 transition-colors"/>
+                           <Star size={18} className="text-amber-400 fill-amber-400 opacity-20 group-hover:opacity-100 transition-opacity duration-1000"/>
                         </div>
                         <div className="relative">
-                           {gift.thank_you_message ? (
-                             <div className="bg-emerald-50/50 p-8 rounded-[36px] border border-emerald-100 text-sm font-bold text-emerald-800 italic shadow-inner relative overflow-hidden group/msg">
-                               <div className="absolute -top-6 -right-6 text-emerald-100/30 rotate-12 transition-transform group-hover/msg:scale-125 duration-700">
-                                 <MessageSquare size={100} fill="currentColor"/>
-                               </div>
-                               <span className="relative z-10">"{gift.thank_you_message}"</span>
-                             </div>
-                           ) : (
-                             <div className="relative">
-                               <textarea 
-                                   placeholder="Envía un mensaje para agradecer..."
-                                   className="w-full bg-slate-50 border-none rounded-[40px] p-8 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100/50 resize-none h-32 shadow-inner transition-all placeholder:text-slate-300 placeholder:italic"
-                                   value={commentTexts[gift.id] || ''}
-                                   onChange={(e) => setCommentTexts(prev => ({ ...prev, [gift.id]: e.target.value }))}
-                               />
-                               <button 
-                                   onClick={() => handleSendThankYou(gift)}
-                                   disabled={sendingComment === gift.id || !commentTexts[gift.id]?.trim()}
-                                   className="absolute bottom-5 right-5 w-14 h-14 bg-indigo-600 text-white rounded-[24px] shadow-2xl hover:bg-indigo-700 disabled:opacity-20 disabled:grayscale transition-all active:scale-90 flex items-center justify-center group/btn shadow-indigo-100"
-                               >
-                                   {sendingComment === gift.id ? (
-                                     <RefreshCw size={24} className="animate-spin" />
-                                   ) : (
-                                     <Send size={24} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform duration-300" />
-                                   )}
-                               </button>
-                             </div>
-                           )}
+                           <textarea 
+                              placeholder="Escribe un mensaje de agradecimiento..."
+                              className="w-full bg-slate-50 border-none rounded-[32px] p-6 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100 resize-none h-28 shadow-inner transition-all placeholder:text-slate-300"
+                              value={commentTexts[gift.id] || ''}
+                              onChange={(e) => setCommentTexts(prev => ({ ...prev, [gift.id]: e.target.value }))}
+                           />
+                           <button 
+                              onClick={() => handleSendThankYou(gift)}
+                              disabled={sendingComment === gift.id || !commentTexts[gift.id]?.trim()}
+                              className="absolute bottom-5 right-5 w-14 h-14 bg-indigo-600 text-white rounded-2xl shadow-2xl hover:bg-indigo-700 disabled:opacity-20 disabled:grayscale transition-all active:scale-90 flex items-center justify-center group/btn"
+                           >
+                              {sendingComment === gift.id ? <RefreshCw size={24} className="animate-spin" /> : <Send size={24} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />}
+                           </button>
                         </div>
                      </div>
                   </div>
                 ))}
-
+                
                 {myGifts.length === 0 && (
-                  <div className="py-40 bg-white rounded-[80px] border-4 border-dashed border-slate-100 text-center flex flex-col items-center justify-center grayscale opacity-10">
-                     <Gift size={100} className="text-slate-300 mb-10" strokeWidth={1}/>
-                     <p className="text-slate-500 font-black uppercase text-base tracking-[12px] italic leading-none">Tu buzón está vacío</p>
+                  <div className="py-40 bg-white rounded-[72px] border-4 border-dashed border-slate-100 text-center flex flex-col items-center justify-center grayscale opacity-20">
+                     <Gift size={100} className="text-slate-300 mb-8" strokeWidth={1}/>
+                     <p className="text-slate-500 font-black uppercase text-sm tracking-[10px] italic">Tu buzón está vacío</p>
                   </div>
                 )}
              </div>
@@ -491,8 +339,8 @@ export default function StudentDashboard({ userId, schoolId }: StudentDashboardP
 const TabButton = ({ active, onClick, icon, label }: any) => (
   <button 
     onClick={onClick} 
-    className={`px-8 py-6 flex items-center gap-4 border-b-[6px] transition-all font-black text-[10px] uppercase tracking-[3px] whitespace-nowrap ${active ? 'border-indigo-600 text-indigo-700 bg-indigo-50/30' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50/50'}`}
+    className={`px-8 py-6 flex items-center gap-4 border-b-4 transition-all font-black text-[10px] uppercase tracking-[3px] whitespace-nowrap ${active ? 'border-indigo-600 text-indigo-700 bg-indigo-50/20' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
   >
-    <span className={`${active ? 'scale-110 rotate-3 transition-transform duration-300' : ''}`}>{icon}</span> {label}
+    <span className={active ? 'scale-110 transition-transform' : ''}>{icon}</span> {label}
   </button>
 );
