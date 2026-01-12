@@ -7,14 +7,16 @@ interface ParentTransactionMonitoringViewProps {
   children: string[];
   transactions: Transaction[];
   onNavigate?: (view: string) => void;
+  initialSelectedChildId?: string | null;
 }
 
 export const ParentTransactionMonitoringView: React.FC<ParentTransactionMonitoringViewProps> = ({
   children,
   transactions,
-  onNavigate
+  onNavigate,
+  initialSelectedChildId,
 }) => {
-  const [selectedChild, setSelectedChild] = useState<string>(children[0] || '');
+  const [selectedChild, setSelectedChild] = useState<string>(initialSelectedChildId || children[0] || '');
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'all'>('month');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [minAmount, setMinAmount] = useState<number>(0);

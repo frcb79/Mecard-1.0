@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { PosView } from './components/PosView';
@@ -17,40 +16,35 @@ import MeCardPlatform from './MeCardPlatform';
 import { LoginView } from './components/LoginView';
 import { SupportSystem } from './components/SupportSystem';
 import { GiftRedemptionView } from './components/GiftRedemptionView';
-import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, School } from './types';
-import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
+import { ParentReportsView } from './components/ParentReportsView';
+import { 
+  AppView, 
+  UserRole, 
+  Transaction, 
+  StudentProfile, 
+  OperatingUnit 
+} from './types';
+import { 
+  MOCK_STUDENT, 
+  MOCK_TRANSACTIONS, 
+  MOCK_TICKETS, 
+  MOCK_UNITS, 
+  MOCK_STUDENTS_LIST, 
+  PRODUCTS,
+  MOCK_DOCUMENTS
+} from './constants';
 import { PlatformProvider, usePlatform } from './contexts/PlatformContext';
-import { isAuthorized } from './lib/rolePermissions';
-
-// ============================================
-// COMPONENTE DE ACCESO DENEGADO
-// ============================================
-
-// Componente de acceso denegado
-const UnauthorizedView: React.FC<{ onLogout: () => void }> = ({ onLogout }) => (
-  <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center border border-red-100">
-      <div className="text-red-500 text-7xl mb-6 animate-bounce">🚫</div>
-      <h2 className="text-3xl font-black text-gray-800 mb-3">Acceso Denegado</h2>
-      <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-        No tienes permisos para acceder a esta sección. Si crees que esto es un error, contacta a tu administrador.
-      </p>
-      <button
-        onClick={onLogout}
-        className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-black px-8 py-4 rounded-2xl hover:shadow-lg transform hover:scale-105 transition-all uppercase tracking-widest text-sm"
-      >
-        ← Volver al Menú Principal
-      </button>
-    </div>
-  </div>
-);
+import { isAuthorized, getAllowedViews } from './lib/rolePermissions';
+import AccessDenied from './components/AccessDenied';
 
 function AppContent() {
   const { activeSchool, currentUser } = usePlatform();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [currentView, setCurrentView] = useState<AppView>(AppView.SUPER_ADMIN_DASHBOARD);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [userRole, setUserRole] = useState<UserRole | null>(UserRole.PARENT);
+  const [currentView, setCurrentView] = useState<AppView>(AppView.PARENT_REPORTS);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   
+  // Persistencia de estados locales (Staging)
   const STORAGE_KEY_STUDENTS = 'mecard_students_v3';
   const [myStudents, setMyStudents] = useState<StudentProfile[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
@@ -60,69 +54,60 @@ function AppContent() {
   const [activeStudentIndex, setActiveStudentIndex] = useState(0);
   const student = myStudents[activeStudentIndex] || MOCK_STUDENT;
   const [transactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<any[]>([]);
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(myStudents)); }, [myStudents]);
+  useEffect(() => { 
+    localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(myStudents)); 
+  }, [myStudents]);
 
   const handleUpdateStudent = (id: string, updatedData: Partial<StudentProfile>) => {
     setMyStudents(prev => prev.map((s) => s.id === id ? { ...s, ...updatedData } : s));
   };
 
+  const handleNavigateWithStudent = (view: AppView, studentId: string) => {
+    setSelectedStudentId(studentId);
+    setCurrentView(view);
+  };
+
   const handleLogin = (role: UserRole) => {
     setUserRole(role);
     setIsLoggedIn(true);
-    switch(role) {
-        case UserRole.SUPER_ADMIN: setCurrentView(AppView.SUPER_ADMIN_DASHBOARD); break;
-        case UserRole.SCHOOL_ADMIN: setCurrentView(AppView.SCHOOL_ADMIN_DASHBOARD); break;
-        case UserRole.STUDENT: setCurrentView(AppView.STUDENT_DASHBOARD); break;
-        case UserRole.PARENT: setCurrentView(AppView.PARENT_DASHBOARD); break;
-        case UserRole.CASHIER: setCurrentView(AppView.CASHIER_VIEW); break;
-        case UserRole.UNIT_MANAGER: setCurrentView(AppView.UNIT_MANAGER_DASHBOARD); break;
-        case UserRole.POS_OPERATOR: setCurrentView(AppView.POS_CAFETERIA); break;
-        default: setCurrentView(AppView.PARENT_DASHBOARD);
+    // Redirección inteligente al login según permisos del rol
+    const allowedViews = getAllowedViews(role);
+    if (allowedViews && allowedViews.length > 0) {
+      setCurrentView(allowedViews[0]);
     }
   };
 
-  const handleLogout = () => { setIsLoggedIn(false); setUserRole(null); };
-
-  const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...prev, { ...product, quantity: 1 }];
-    });
+  const handleLogout = () => { 
+    setIsLoggedIn(false); 
+    setUserRole(null); 
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.id !== productId));
-  };
-
-  if (!isLoggedIn) return <LoginView onLogin={handleLogin} />;
-  
-  // El Super Admin ahora ve el Sidebar y el MeCardPlatform es solo UNA de sus vistas
-  const isSuperAdminMode = userRole === UserRole.SUPER_ADMIN;
-
+  /**
+   * ROUTER CON GUARDIA DE PERMISOS
+   */
   const renderCurrentView = () => {
-    // ✅ VALIDACIÓN DE AUTORIZACIÓN - PRIMERA LÍNEA DE DEFENSA
+    if (!isLoggedIn || !userRole) return <LoginView onLogin={handleLogin} />;
+
+    // BLOQUEO DE SEGURIDAD: Validamos contra la matriz ROLE_PERMISSIONS
     if (!isAuthorized(currentView, userRole)) {
-      return <UnauthorizedView onLogout={handleLogout} />;
+      return <AccessDenied role={userRole} view={currentView} />;
     }
 
-    if (isSuperAdminMode && currentView === AppView.SUPER_ADMIN_DASHBOARD) {
+    // Lógica para Super Admin Dashboard (Finanzas SaaS)
+    if (userRole === UserRole.SUPER_ADMIN && currentView === AppView.SUPER_ADMIN_DASHBOARD) {
         return <MeCardPlatform onLogout={handleLogout} />;
     }
 
-    // Admin Analytics Dashboard
-    if (currentView === 'ANALYTICS_DASHBOARD') {
-      return <AnalyticsDashboard schoolId={activeSchool?.id ? BigInt(typeof activeSchool.id === 'string' ? parseInt(activeSchool.id) : activeSchool.id) : BigInt(1)} />;
-    }
-
-    // Student Monitoring
-    if (currentView === 'STUDENT_MONITORING') {
-      return <StudentMonitoring schoolId={activeSchool?.id ? BigInt(typeof activeSchool.id === 'string' ? parseInt(activeSchool.id) : activeSchool.id) : BigInt(1)} />;
-    }
-
+    // Switch de renderizado modular
     switch(currentView) {
+      case AppView.ANALYTICS_DASHBOARD:
+        return <AnalyticsDashboard schoolId={BigInt(1)} />;
+
+      case AppView.STUDENT_MONITORING:
+        return <StudentMonitoring schoolId={BigInt(1)} />;
+
       case AppView.STUDENT_DASHBOARD:
       case AppView.STUDENT_ID:
       case AppView.STUDENT_HISTORY:
@@ -142,22 +127,24 @@ function AppContent() {
         );
 
       case AppView.PARENT_ALERTS:
-        return (
-          <ParentAlertsConfigView 
-            parentId={currentUser?.id || 'parent_1'} 
-            schoolId={activeSchool?.id || 'school_1'}
-            onNavigate={setCurrentView}
-          />
-        );
+        return <ParentAlertsConfigView parentId={currentUser?.id || 'parent_1'} schoolId={activeSchool?.id || 'school_1'} onNavigate={setCurrentView} />;
 
       case AppView.PARENT_MONITORING:
-        return (
-          <ParentTransactionMonitoringView 
-            children={myStudents.map(s => s.id)} 
-            transactions={transactions}
-            onNavigate={setCurrentView}
-          />
-        );
+        return <ParentTransactionMonitoringView 
+                  children={myStudents.map(s => s.id)} 
+                  transactions={transactions} 
+                  onNavigate={setCurrentView}
+                  initialSelectedChildId={selectedStudentId}
+                />;
+
+      case AppView.PARENT_REPORTS:
+        return <ParentReportsView 
+                  students={myStudents}
+                  transactions={transactions}
+                  onNavigate={setCurrentView}
+                  onNavigateWithStudent={handleNavigateWithStudent}
+                  recentDocuments={MOCK_DOCUMENTS}
+                />;
 
       case AppView.SCHOOL_ADMIN_DASHBOARD:
         return (
@@ -166,9 +153,7 @@ function AppContent() {
             onUpdateStudent={handleUpdateStudent}
             onBulkAddStudents={(news) => setMyStudents(p => [...news, ...p])}
             operatingUnits={MOCK_UNITS as OperatingUnit[]}
-            onAddUnit={() => {}}
-            onUpdateUnit={() => {}}
-            onDeleteUnit={() => {}}
+            onAddUnit={() => {}} onUpdateUnit={() => {}} onDeleteUnit={() => {}}
           />
         );
 
@@ -176,14 +161,7 @@ function AppContent() {
         return <ConcessionaireDashboard unit={MOCK_UNITS[0] as OperatingUnit} />;
 
       case AppView.CONCESSIONAIRE_SALES:
-        return (
-          <ConcessionaireSalesReportsView 
-            unitId={MOCK_UNITS[0].id} 
-            transactions={transactions}
-            products={PRODUCTS}
-            onNavigate={setCurrentView}
-          />
-        );
+        return <ConcessionaireSalesReportsView unitId={MOCK_UNITS[0].id} transactions={transactions} products={PRODUCTS} onNavigate={setCurrentView} />;
 
       case AppView.CASHIER_VIEW:
         return <CashierView student={student} onDeposit={(amt) => handleUpdateStudent(student.id, { balance: student.balance + amt })} />;
@@ -193,7 +171,7 @@ function AppContent() {
         return (
           <PosView 
             mode={currentView === AppView.POS_STATIONERY ? 'stationery' : 'cafeteria'}
-            cart={cart} student={student} addToCart={addToCart} removeFromCart={removeFromCart}
+            cart={cart} student={student} addToCart={(p) => setCart([...cart, p])} removeFromCart={(id) => setCart(cart.filter(i => i.id !== id))}
             clearCart={() => setCart([])}
             onPurchase={(total) => {
               handleUpdateStudent(student.id, { balance: student.balance - total, spentToday: student.spentToday + total });
@@ -207,17 +185,21 @@ function AppContent() {
         return <GiftRedemptionView unitId={MOCK_UNITS[0].id} onBack={() => setCurrentView(AppView.POS_CAFETERIA)} />;
 
       case AppView.HELP_DESK:
-        return <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN || isSuperAdminMode} />;
+        return <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN || userRole === UserRole.SUPER_ADMIN} />;
 
       default:
-        return <MeCardPlatform onLogout={handleLogout} />;
+        return <LoginView onLogin={handleLogin} />;
     }
   };
 
   return (
     <div className="flex h-screen w-full bg-gray-50 text-gray-900 font-sans overflow-hidden">
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} userRole={userRole!} onLogout={handleLogout} />
-      
+      <Sidebar 
+        currentView={currentView} 
+        onNavigate={setCurrentView} 
+        userRole={userRole!} 
+        onLogout={handleLogout} 
+      />
       <main className="flex-1 h-full relative ml-64 overflow-hidden bg-white">
         {renderCurrentView()}
       </main>
@@ -225,12 +207,10 @@ function AppContent() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <PlatformProvider>
       <AppContent />
     </PlatformProvider>
   );
 }
-
-export default App;

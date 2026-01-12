@@ -404,6 +404,14 @@ export interface PurchaseOrderItem {
   product?: Product; // For joining data
 }
 
+export interface RecentDocument {
+  id: string;
+  name: string;
+  date: string;
+  type: 'PDF' | 'CSV' | 'XML';
+  url: string;
+}
+
 export interface PurchaseOrder {
   id: string;
   school_id: string;
@@ -435,6 +443,7 @@ export enum AppView {
   PARENT_WALLET = 'PARENT_WALLET',
   PARENT_ALERTS = 'PARENT_ALERTS',
   PARENT_MONITORING = 'PARENT_MONITORING',
+  PARENT_REPORTS = 'PARENT_REPORTS',
   PARENT_SETTINGS = 'PARENT_SETTINGS',
   PARENT_MENU = 'PARENT_MENU',
   STUDENT_DASHBOARD = 'STUDENT_DASHBOARD',
@@ -445,5 +454,6 @@ export enum AppView {
   HELP_DESK = 'HELP_DESK',
   POS_GIFT_REDEEM = 'POS_GIFT_REDEEM',
   ANALYTICS_DASHBOARD = 'ANALYTICS_DASHBOARD',
-  STUDENT_MONITORING = 'STUDENT_MONITORING'
+  STUDENT_MONITORING = 'STUDENT_MONITORING',
+  PARENT_BILLING_SETTINGS = 'PARENT_BILLING_SETTINGS'
 }

@@ -1,5 +1,5 @@
 
-import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket } from './types';
+import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, RecentDocument } from './types';
 
 // Add missing clabePersonal property
 export const MOCK_STUDENT: StudentProfile = {
@@ -86,6 +86,12 @@ export const MOCK_UNITS: OperatingUnit[] = [
   { id: 'unit_01', schoolId: 'mx_01', name: 'Cafetería Central', type: 'CAFETERIA', ownerType: EntityOwner.CONCESSIONAIRE, managerId: 'mgr_01' },
   { id: 'unit_02', schoolId: 'mx_01', name: 'Papelería Secundaria', type: 'STATIONERY', ownerType: EntityOwner.SCHOOL },
   { id: 'unit_03', schoolId: 'mx_02', name: 'Comedor Principal', type: 'CAFETERIA', ownerType: EntityOwner.CONCESSIONAIRE }
+];
+
+export const MOCK_DOCUMENTS: RecentDocument[] = [
+  { id: 'doc_1', name: 'Estado de Cuenta - Diciembre 2023', date: '2024-01-05', type: 'PDF', url: '/docs/statement-2023-12.pdf' },
+  { id: 'doc_2', name: 'Factura CFDI - Recarga #ABCD-1234', date: '2024-01-02', type: 'PDF', url: '/docs/invoice-abcd-1234.pdf' },
+  { id: 'doc_3', name: 'Estado de Cuenta - Noviembre 2023', date: '2023-12-05', type: 'PDF', url: '/docs/statement-2023-11.pdf' },
 ];
 
 export const PRODUCTS: Product[] = [
