@@ -12,12 +12,14 @@ import MeCardPlatform from './MeCardPlatform';
 import { LoginView } from './components/LoginView';
 import { SupportSystem } from './components/SupportSystem';
 import { GiftRedemptionView } from './components/GiftRedemptionView';
+import { BusinessModelConfiguration } from './components/BusinessModelConfiguration';
+import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { AppView, CartItem, Product, UserRole, Transaction, StudentProfile, SupportTicket, OperatingUnit, School } from './types';
-import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_STUDENTS_LIST, PRODUCTS } from './constants';
+import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_STUDENTS_LIST, PRODUCTS, MOCK_SCHOOLS } from './constants';
 import { PlatformProvider, usePlatform } from './contexts/PlatformContext';
 
 function AppContent() {
-  const { activeSchool, currentUser } = usePlatform();
+  const { schools, activeSchool, impersonateSchool, updateSchoolModel } = usePlatform();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [currentView, setCurrentView] = useState<AppView>(AppView.SUPER_ADMIN_DASHBOARD);
@@ -70,15 +72,33 @@ function AppContent() {
 
   if (!isLoggedIn) return <LoginView onLogin={handleLogin} />;
   
-  // El Super Admin ahora ve el Sidebar y el MeCardPlatform es solo UNA de sus vistas
   const isSuperAdminMode = userRole === UserRole.SUPER_ADMIN;
 
   const renderCurrentView = () => {
     if (isSuperAdminMode && currentView === AppView.SUPER_ADMIN_DASHBOARD) {
-        return <MeCardPlatform onLogout={handleLogout} />;
+        return <SuperAdminDashboard />;
     }
 
     switch(currentView) {
+      case AppView.BUSINESS_MODEL_CONFIG:
+        return (
+            <BusinessModelConfiguration 
+                schoolId={activeSchool?.id}
+                schoolName={activeSchool?.name}
+                onSave={(newModel) => {
+                    if (activeSchool) {
+                        // Mapeo simple para fines de demostración al modelo de negocio de School
+                        updateSchoolModel(activeSchool.id, {
+                            setupFee: newModel.operatingCosts.cardIssuanceFee * 100, // Simulado
+                            cafeteriaFeePercent: newModel.margins.schoolMargin
+                        });
+                    }
+                    setCurrentView(AppView.SUPER_ADMIN_DASHBOARD);
+                }}
+                onCancel={() => setCurrentView(AppView.SUPER_ADMIN_DASHBOARD)}
+            />
+        );
+
       case AppView.STUDENT_DASHBOARD:
       case AppView.STUDENT_ID:
       case AppView.STUDENT_HISTORY:
@@ -138,7 +158,7 @@ function AppContent() {
         return <SupportSystem tickets={MOCK_TICKETS} isAdmin={userRole === UserRole.SCHOOL_ADMIN || isSuperAdminMode} />;
 
       default:
-        return <MeCardPlatform onLogout={handleLogout} />;
+        return <SuperAdminDashboard />;
     }
   };
 

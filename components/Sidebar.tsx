@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShoppingCart, UtensilsCrossed, Settings, LogOut, 
   Wallet, Ban, Building2, PenTool, UserCircle, QrCode, CalendarDays, 
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
-  ShieldCheck, Globe, Rocket, HelpCircle, Gift, Layers, Terminal
+  ShieldCheck, Globe, Rocket, HelpCircle, Gift, Layers, Terminal, PieChart
 } from 'lucide-react';
 import { AppView, UserRole } from '../types';
 import { NotificationCenter } from './NotificationCenter';
@@ -50,6 +50,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, userR
               </div>
               <button onClick={() => onNavigate(AppView.SUPER_ADMIN_DASHBOARD)} className={navItemClass(AppView.SUPER_ADMIN_DASHBOARD)}>
                 <Globe className="w-5 h-5 mr-3" /> Infraestructura
+              </button>
+              <button onClick={() => onNavigate(AppView.BUSINESS_MODEL_CONFIG)} className={navItemClass(AppView.BUSINESS_MODEL_CONFIG)}>
+                <PieChart className="w-5 h-5 mr-3" /> Config. Negocio
               </button>
             </div>
 
