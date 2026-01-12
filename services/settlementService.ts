@@ -18,7 +18,13 @@ export class SettlementService {
     });
 
     const grossRevenue = periodTransactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-    const platformCommission = grossRevenue * 0.045; // 4.5% Fee MeCard Fixed
+    
+    // Use dynamic percentages from school businessModel
+    const PLATFORM_COMMISSION_PERCENT = 0.045; // 4.5% Fee MeCard Fixed
+    const POS_MARKUP_PERCENT = school.businessModel.posMarkupPercent / 100;
+    const POS_INCENTIVE_PERCENT = school.businessModel.posOperatorIncentivePercent / 100;
+    
+    const platformCommission = grossRevenue * PLATFORM_COMMISSION_PERCENT;
 
     let totalSchoolShare = 0;
     let totalVendorShare = 0;

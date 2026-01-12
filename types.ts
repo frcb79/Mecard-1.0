@@ -212,7 +212,87 @@ export interface School {
     speiDepositFeeFixed: number;
     cafeteriaFeePercent: number;
     cafeteriaFeeAutoMarkup: boolean;
+    // Dynamic POS configuration
+    posMarkupPercent: number;
+    posOperatorIncentivePercent: number;
+    pointsExchangeRate: number;
   };
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  isLocked: boolean;
+  releaseDate: string;
+  status: 'active' | 'completed' | 'cancelled';
+}
+
+export interface FinancialProfile {
+  studentId: string;
+  schoolId: string;
+  wallet: {
+    availableBalance: number;
+    lockedBalance: number;
+    points: number;
+  };
+  savingsGoals: SavingsGoal[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  parentId: string;
+  type: 'DEBIT_CARD' | 'CREDIT_CARD' | 'BANK_ACCOUNT';
+  last4: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface Deposit {
+  id: string;
+  parentId: string;
+  amount: number;
+  paymentMethodId: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  depositDate: string;
+  completedDate?: string;
+  speiReference?: string;
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SpendingLimit {
+  id: string;
+  parentId: string;
+  studentId: string;
+  dailyLimit: number;
+  weeklyLimit: number;
+  monthlyLimit: number;
+  restrictedCategories: Category[];
+  restrictedProducts: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ParentProfile {
+  id: string;
+  email: string;
+  phoneNumber: string;
+  fullName: string;
+  schoolId: string;
+  children: string[]; // Array of student IDs
+  totalWalletBalance: number;
+  paymentMethods: PaymentMethod[];
+  spendingLimits: SpendingLimit[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StudentProfile {
@@ -271,6 +351,84 @@ export interface SupportTicket {
   messages: TicketMessage[];
 }
 
+export interface AlertConfig {
+  id: string;
+  parentId: string;
+  lowBalanceAlert: boolean;
+  lowBalanceThreshold: number;
+  largePurchaseAlert: boolean;
+  largePurchaseThreshold: number;
+  deniedPurchaseAlert: boolean;
+  alertChannels: ('EMAIL' | 'SMS' | 'IN_APP')[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlertLog {
+  id: string;
+  parentId: string;
+  studentId: string;
+  type: 'LOW_BALANCE' | 'LARGE_PURCHASE' | 'DENIED_PURCHASE';
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  school_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export enum PurchaseOrderStatus {
+  DRAFT = 'DRAFT',
+  SENT = 'SENT',
+  PARTIALLY_RECEIVED = 'PARTIALLY_RECEIVED',
+  RECEIVED = 'RECEIVED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  purchase_order_id: string;
+  product_id: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  unit_cost?: number;
+  product?: Product; // For joining data
+}
+
+export interface RecentDocument {
+  id: string;
+  name: string;
+  date: string;
+  type: 'PDF' | 'CSV' | 'XML';
+  url: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  school_id: string;
+  unit_id: string;
+  supplier_id: string;
+  status: PurchaseOrderStatus;
+  order_date: string;
+  expected_delivery_date?: string;
+  notes?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  items?: PurchaseOrderItem[]; // For joining data
+  supplier?: Supplier; // For joining data
+  unit?: OperatingUnit; // For joining data
+}
+
 export enum AppView {
   SUPER_ADMIN_DASHBOARD = 'SUPER_ADMIN_DASHBOARD',
   SCHOOL_ADMIN_DASHBOARD = 'SCHOOL_ADMIN_DASHBOARD',
@@ -283,12 +441,19 @@ export enum AppView {
   CASHIER_VIEW = 'CASHIER_VIEW',
   PARENT_DASHBOARD = 'PARENT_DASHBOARD',
   PARENT_WALLET = 'PARENT_WALLET',
+  PARENT_ALERTS = 'PARENT_ALERTS',
+  PARENT_MONITORING = 'PARENT_MONITORING',
+  PARENT_REPORTS = 'PARENT_REPORTS',
   PARENT_SETTINGS = 'PARENT_SETTINGS',
   PARENT_MENU = 'PARENT_MENU',
   STUDENT_DASHBOARD = 'STUDENT_DASHBOARD',
   STUDENT_ID = 'STUDENT_ID',
   STUDENT_HISTORY = 'STUDENT_HISTORY',
   STUDENT_MENU = 'STUDENT_MENU',
+  CONCESSIONAIRE_SALES = 'CONCESSIONAIRE_SALES',
   HELP_DESK = 'HELP_DESK',
-  POS_GIFT_REDEEM = 'POS_GIFT_REDEEM'
+  POS_GIFT_REDEEM = 'POS_GIFT_REDEEM',
+  ANALYTICS_DASHBOARD = 'ANALYTICS_DASHBOARD',
+  STUDENT_MONITORING = 'STUDENT_MONITORING',
+  PARENT_BILLING_SETTINGS = 'PARENT_BILLING_SETTINGS'
 }

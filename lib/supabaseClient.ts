@@ -1,77 +1,130 @@
+// lib/supabaseClient.ts
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getEnvironmentConfig, logger, isDevelopment } from '../utils/environment';
 
-import { createClient } from '@supabase/supabase-js';
+const config = getEnvironmentConfig();
 
-// Access variables safely from the environment
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
-/**
- * isSupabaseConfigured
- * Checks if the environment has been provided with real Supabase credentials.
- * If false, the app will enter Demo Mode automatically.
- */
+// Verificar si Supabase está configurado
 export const isSupabaseConfigured = 
-  SUPABASE_URL !== '' && 
-  SUPABASE_URL !== 'https://your-project-url.supabase.co' && 
-  SUPABASE_ANON_KEY !== '' && 
-  SUPABASE_ANON_KEY !== 'your-anon-key';
+  !!config.supabaseUrl && 
+  !!config.supabaseAnonKey && 
+  !config.useMockData;
 
-// Initialize with placeholders if not configured to satisfy the singleton pattern
-// We use a safe dummy URL to prevent library-level crashes
-const finalUrl = isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder-project.supabase.co';
-const finalKey = isSupabaseConfigured ? SUPABASE_ANON_KEY : 'placeholder-key';
+// Cliente de Supabase (solo si está configurado)
+let supabaseInstance: SupabaseClient | null = null;
 
-export const supabase = createClient(finalUrl, finalKey);
+if (isSupabaseConfigured) {
+  try {
+    supabaseInstance = createClient(
+      config.supabaseUrl,
+      config.supabaseAnonKey,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: localStorage,
+          storageKey: `mecard-auth-${config.env}`
+        },
+        global: {
+          headers: {
+            'x-mecard-env': config.env
+          }
+        },
+        db: {
+          schema: config.env === 'production' ? 'public' : config.env
+        }
+      }
+    );
+    
+    logger.info('Supabase client initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize Supabase client:', error);
+  }
+} else {
+  if (isDevelopment()) {
+    logger.info('Running in MOCK mode - Supabase disabled');
+  } else {
+    logger.warn('Supabase not configured properly for', config.env);
+  }
+}
 
-export type Database = {
-  public: {
-    Tables: {
-      profiles: {
-        Row: {
-          id: string;
-          email: string;
-          full_name: string;
-          role: string;
-          school_id: string;
-          student_id: string;
-          grade: string;
-          balance: number;
-          created_at: string;
-        };
-        Insert: any;
-        Update: any;
-      };
-      inventory_items: {
-        Row: {
-          id: string;
-          name: string;
-          category: string;
-          price: number;
-          image_url: string;
-          calories: number | null;
-          unit_id: string;
-          status: string;
-          created_at: string;
-        };
-        Insert: any;
-        Update: any;
-      };
-      transactions: {
-        Row: {
-          id: string;
-          school_id: string;
-          unit_id: string;
-          student_id: string;
-          amount: number;
-          items: any;
-          payment_method: string;
-          type: string;
-          status: string;
-          created_at: string;
-        };
-        Insert: any;
-        Update: any;
-      };
-    };
-  };
+export const supabase = supabaseInstance!;
+
+// Helper para verificar conexión
+export const checkSupabaseConnection = async (): Promise<boolean> => {
+  if (!isSupabaseConfigured || !supabase) {
+    logger.warn('Supabase not configured');
+    return false;
+  }
+  
+  try {
+    const { error } = await supabase.from('_health_check').select('*').limit(1);
+    
+    if (error && error.code !== 'PGRST116') {
+      logger.error('Supabase connection check failed:', error);
+      return false;
+    }
+    
+    logger.info('Supabase connection OK');
+    return true;
+  } catch (error) {
+    logger.error('Supabase connection error:', error);
+    return false;
+  }
 };
+
+// API Helpers
+export const supabaseAPI = {
+  async getSchools() {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('schools').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  
+  async getStudents(schoolId?: string) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    let query = supabase.from('students').select('*');
+    if (schoolId) query = query.eq('school_id', schoolId);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  
+  async createStudent(student: any) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('students').insert([student]).select().single();
+    if (error) throw error;
+    logger.info('Student created:', data.id);
+    return data;
+  },
+  
+  async updateStudent(id: string, updates: any) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('students').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    logger.info('Student updated:', data.id);
+    return data;
+  },
+  
+  async getTransactions(filters?: { studentId?: string; schoolId?: string }) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    let query = supabase.from('transactions').select('*');
+    if (filters?.studentId) query = query.eq('student_id', filters.studentId);
+    if (filters?.schoolId) query = query.eq('school_id', filters.schoolId);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  
+  async createTransaction(transaction: any) {
+    if (!isSupabaseConfigured) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('transactions').insert([transaction]).select().single();
+    if (error) throw error;
+    logger.info('Transaction created:', data.id);
+    return data;
+  }
+};
+
+export default supabase;
