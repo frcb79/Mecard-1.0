@@ -2,7 +2,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { Product, SalesData, Category, School, OperatingUnit, CartItem } from '../types';
 
-const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Use process.env.API_KEY exclusively as per Google GenAI guidelines
+const getAIClient = () => {
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+};
 
 export const getSalesAnalysis = async (salesData: SalesData[]): Promise<string> => {
   try {
@@ -10,6 +13,7 @@ export const getSalesAnalysis = async (salesData: SalesData[]): Promise<string> 
     const dataSummary = salesData.map(d => `${d.name}: $${d.revenue} revenue, ${d.orders} orders`).join('\n');
     const prompt = `Como analista de negocios de MeCard Network, analiza estas ventas semanales:\n${dataSummary}\n\nDa 3 consejos para aumentar ventas. Máximo 80 palabras. Usa emojis.`;
     
+    // Using gemini-3-flash-preview for basic text tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -29,6 +33,7 @@ export const getSmartUpsell = async (cart: CartItem[], allProducts: Product[]): 
     const available = allProducts.slice(0, 10).map(p => p.name).join(', ');
     const prompt = `Cart has: ${cartItems}. Suggestions from: ${available}. Suggest ONE complementary item for a school student to add. Max 10 words.`;
     
+    // Using gemini-3-flash-preview for basic text tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -51,6 +56,7 @@ export const getPlatformStrategicAudit = async (
     Analiza riesgos de seguridad y dame una recomendación audaz para el roadmap técnico de los próximos 6 meses.
     Sé conciso y directo.`;
 
+    // Using gemini-3-pro-preview for complex reasoning and audit tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
@@ -71,6 +77,7 @@ export const getNutritionalInsights = async (product: Product): Promise<string> 
   try {
     const ai = getAIClient();
     const prompt = `Resumen nutricional divertido para un estudiante sobre: ${product.name}. Calorías: ${product.calories || 'N/A'}. Máximo 50 palabras.`;
+    // Using gemini-3-flash-preview for basic text tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -86,6 +93,7 @@ export const getHealthyAlternatives = async (blockedCategory: Category, availabl
     const ai = getAIClient();
     const productsList = availableProducts.filter(p => p.isAvailable).map(p => p.name).join(', ');
     const prompt = `El alumno no puede comprar ${blockedCategory}. De esta lista: ${productsList}, sugiere una alternativa saludable. Máximo 15 palabras.`;
+    // Using gemini-3-flash-preview for basic text tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,

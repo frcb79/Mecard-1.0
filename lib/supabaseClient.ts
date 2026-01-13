@@ -1,14 +1,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Access variables safely from the environment
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+// Use process.env as shimmed in vite.config.ts to avoid TS error on import.meta.env
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 /**
  * isSupabaseConfigured
- * Checks if the environment has been provided with real Supabase credentials.
- * If false, the app will enter Demo Mode automatically.
+ * Verifica si las credenciales son reales.
  */
 export const isSupabaseConfigured = 
   SUPABASE_URL !== '' && 
@@ -16,8 +15,7 @@ export const isSupabaseConfigured =
   SUPABASE_ANON_KEY !== '' && 
   SUPABASE_ANON_KEY !== 'your-anon-key';
 
-// Initialize with placeholders if not configured to satisfy the singleton pattern
-// We use a safe dummy URL to prevent library-level crashes
+// Inicialización segura
 const finalUrl = isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder-project.supabase.co';
 const finalKey = isSupabaseConfigured ? SUPABASE_ANON_KEY : 'placeholder-key';
 

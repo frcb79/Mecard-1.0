@@ -23,6 +23,10 @@ export enum UserRole {
   POS_OPERATOR = 'POS_OPERATOR'
 }
 
+export type SchoolStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'CANCELLED';
+export type ContractType = 'TRIAL' | 'STANDARD';
+export type TrialDuration = 1 | 2 | 3;
+
 export interface User {
   id: string;
   name: string;
@@ -112,7 +116,8 @@ export enum NotificationType {
   LOW_BALANCE = 'LOW_BALANCE',
   LOW_STOCK_ALERT = 'LOW_STOCK_ALERT',
   DEPOSIT_CONFIRMED = 'DEPOSIT_CONFIRMED',
-  SETTLEMENT_READY = 'SETTLEMENT_READY'
+  SETTLEMENT_READY = 'SETTLEMENT_READY',
+  TRIAL_EXPIRY = 'TRIAL_EXPIRY'
 }
 
 export interface Notification {
@@ -187,6 +192,35 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+// BusinessModel interface extracted for explicit use
+export interface BusinessModel {
+  setupFee: number;
+  annualFee: number;
+  monthlyRentFee: number;
+  parentAppFee: number;
+  saasPerStudent: number;
+  saasPerStaff: number;
+  chargeStaffUsage: boolean;
+  cardDepositFeePercent: number;
+  speiDepositFeeFixed: number;
+  cafeteriaFeePercent: number;
+  cafeteriaFeeAutoMarkup: boolean;
+  posMethods: {
+    allowQrBarcode: boolean;
+    allowMatricula: boolean;
+    allowAnonymous: boolean;
+  };
+  margins: {
+    concessionaireMargin: number;
+    schoolMargin: number;
+    mecardMargin: number;
+  };
+  settlement: {
+    frequency: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+    method: 'BANK_TRANSFER' | 'CHECK';
+  };
+}
+
 export interface School {
   id: string;
   name: string;
@@ -197,22 +231,30 @@ export interface School {
   settlementCLABE?: string;
   platformFeePercent: number;
   onboardingStatus: 'PENDING' | 'COMPLETED';
+  status: SchoolStatus;
+  contractType: ContractType;
+  trialDurationMonths?: TrialDuration;
   rfc?: string;
   legalName?: string;
+  createdAt: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  contact?: {
+    email: string;
+    phone: string;
+    contactPerson: string;
+    position?: string;
+  };
   branding?: {
     primary: string;
     secondary: string;
   };
-  businessModel: {
-    setupFee: number;
-    annualFee: number;
-    monthlyRentFee: number;
-    parentAppFee: number;
-    cardDepositFeePercent: number;
-    speiDepositFeeFixed: number;
-    cafeteriaFeePercent: number;
-    cafeteriaFeeAutoMarkup: boolean;
-  };
+  businessModel: BusinessModel;
 }
 
 export interface StudentProfile {

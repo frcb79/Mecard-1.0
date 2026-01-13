@@ -39,19 +39,38 @@ export const MOCK_SCHOOLS: School[] = [
     studentCount: 1200, 
     balance: 450000.00, 
     stpCostCenter: '123',
-    // Added missing platformFeePercent and onboardingStatus properties to satisfy School type
     platformFeePercent: 4.5,
     onboardingStatus: 'COMPLETED',
+    status: 'ACTIVE',
+    contractType: 'STANDARD',
+    createdAt: '2023-01-01T00:00:00Z',
     branding: { primary: '#4f46e5', secondary: '#818cf8' },
     businessModel: {
       setupFee: 25000,
       annualFee: 15000,
       monthlyRentFee: 5000,
       parentAppFee: 25,
+      saasPerStudent: 45,
+      saasPerStaff: 25,
+      chargeStaffUsage: false,
       cardDepositFeePercent: 3.5,
       speiDepositFeeFixed: 8.0,
       cafeteriaFeePercent: 5.0,
-      cafeteriaFeeAutoMarkup: true
+      cafeteriaFeeAutoMarkup: true,
+      posMethods: {
+        allowQrBarcode: true,
+        allowMatricula: true,
+        allowAnonymous: false
+      },
+      margins: {
+        concessionaireMargin: 85,
+        schoolMargin: 10,
+        mecardMargin: 5
+      },
+      settlement: {
+        frequency: 'WEEKLY',
+        method: 'BANK_TRANSFER'
+      }
     }
   },
   { 
@@ -61,19 +80,38 @@ export const MOCK_SCHOOLS: School[] = [
     studentCount: 850, 
     balance: 230000.00, 
     stpCostCenter: '456',
-    // Added missing platformFeePercent and onboardingStatus properties to satisfy School type
     platformFeePercent: 4.5,
     onboardingStatus: 'COMPLETED',
+    status: 'ACTIVE',
+    contractType: 'STANDARD',
+    createdAt: '2023-01-01T00:00:00Z',
     branding: { primary: '#0f172a', secondary: '#334155' },
     businessModel: {
       setupFee: 18000,
       annualFee: 10000,
       monthlyRentFee: 3500,
       parentAppFee: 20,
+      saasPerStudent: 40,
+      saasPerStaff: 20,
+      chargeStaffUsage: false,
       cardDepositFeePercent: 3.2,
       speiDepositFeeFixed: 7.0,
       cafeteriaFeePercent: 4.5,
-      cafeteriaFeeAutoMarkup: false
+      cafeteriaFeeAutoMarkup: false,
+      posMethods: {
+        allowQrBarcode: true,
+        allowMatricula: true,
+        allowAnonymous: false
+      },
+      margins: {
+        concessionaireMargin: 85,
+        schoolMargin: 10,
+        mecardMargin: 5
+      },
+      settlement: {
+        frequency: 'WEEKLY',
+        method: 'BANK_TRANSFER'
+      }
     }
   }
 ];

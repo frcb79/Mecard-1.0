@@ -8,7 +8,6 @@ import { SchoolAdminStudentsView } from './components/SchoolAdminStudentsView';
 import { SchoolAdminView } from './components/SchoolAdminView';
 import { CashierView } from './components/CashierView';
 import { ConcessionaireDashboard } from './components/ConcessionaireDashboard';
-import MeCardPlatform from './MeCardPlatform';
 import { LoginView } from './components/LoginView';
 import { SupportSystem } from './components/SupportSystem';
 import { GiftRedemptionView } from './components/GiftRedemptionView';
@@ -19,7 +18,7 @@ import { MOCK_STUDENT, MOCK_TRANSACTIONS, MOCK_TICKETS, MOCK_UNITS, MOCK_STUDENT
 import { PlatformProvider, usePlatform } from './contexts/PlatformContext';
 
 function AppContent() {
-  const { schools, activeSchool, impersonateSchool, updateSchoolModel } = usePlatform();
+  const { schools, activeSchool, updateSchoolModel } = usePlatform();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [currentView, setCurrentView] = useState<AppView>(AppView.SUPER_ADMIN_DASHBOARD);
@@ -87,9 +86,7 @@ function AppContent() {
                 schoolName={activeSchool?.name}
                 onSave={(newModel) => {
                     if (activeSchool) {
-                        // Mapeo simple para fines de demostración al modelo de negocio de School
                         updateSchoolModel(activeSchool.id, {
-                            setupFee: newModel.operatingCosts.cardIssuanceFee * 100, // Simulado
                             cafeteriaFeePercent: newModel.margins.schoolMargin
                         });
                     }
