@@ -1,3 +1,7 @@
+import { useAuth } from '../hooks/useAuth';
+
+export default function StudentDashboard() {
+  const { user, isStudent, logout } = useAuth();
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import QRCodeReact from 'qrcode.react';
 import { 
@@ -59,8 +63,6 @@ export default function StudentDashboard() {
     return <Navigate to="/login" replace />;
   }
 
-  const userId = user.id;
-  const schoolId = user.schoolId!;
 
   // State
   const [activeTab, setActiveTab] = useState<'wallet' | 'explore' | 'social' | 'gifts'>('wallet');
