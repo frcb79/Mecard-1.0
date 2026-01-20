@@ -73,3 +73,10 @@ export type Database = {
     };
   };
 };
+export const supabase = createClient(finalUrl, finalKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
