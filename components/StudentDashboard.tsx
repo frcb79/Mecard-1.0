@@ -107,7 +107,7 @@ export default function StudentDashboard() {
   // ============================================
   // STATE
   // ============================================
-  const [activeTab, setActiveTab] = useState<'wallet' | 'explore' | 'social' | 'gifts'>('wallet');
+  const [activeTab, setActiveTab] = useState<'wallet' | 'explore' | 'social' | 'gifts' | 'history'>('wallet');
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [gifts, setGifts] = useState<GiftType[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -115,8 +115,7 @@ export default function StudentDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const isTogglingRef = useRef(new Set<string>());
-  const [activeTab, setActiveTab] = useState<'wallet' | 'explore' | 'social' | 'gifts' | 'history'>('wallet');
-
+ 
   // ============================================
   // BÚSQUEDA Y FILTROS
   // ============================================
