@@ -22,12 +22,19 @@ interface TransactionHistoryProps {
   studentName: string;
 }
 
+// TIPOS DE TRANSACCIÓN SEGÚN TU SISTEMA
 const TRANSACTION_CONFIG = {
   DEPOSIT: {
     icon: ArrowDownLeft,
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
     label: 'Depósito'
+  },
+  SALE: {
+    icon: ArrowUpRight,
+    color: 'text-rose-600',
+    bg: 'bg-rose-50',
+    label: 'Compra'
   },
   PURCHASE: {
     icon: ArrowUpRight,
@@ -52,6 +59,12 @@ const TRANSACTION_CONFIG = {
     color: 'text-blue-600',
     bg: 'bg-blue-50',
     label: 'Devolución'
+  },
+  WITHDRAWAL: {
+    icon: ArrowUpRight,
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+    label: 'Retiro'
   }
 } as const;
 
@@ -222,23 +235,39 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
           transactions.map(tx => {
             const config = TRANSACTION_CONFIG[tx.type as keyof typeof TRANSACTION_CONFIG] || TRANSACTION_CONFIG.PURCHASE;
             const Icon = config.icon;
-            const isNegative = tx.type === 'PURCHASE' || tx.type === 'GIFT_SENT';
+            const isNegative = tx.type === 'PURCHASE' || tx.type === 'SALE' || tx.type === 'GIFT_SENT';
+
+            // Parsear items si existen
+            let itemsText = '';
+            if (tx.metadata?.items && Array.isArray(tx.metadata.items)) {
+              itemsText = tx.metadata.items
+                .map((item: any) => `${item.quantity}x ${item.name}`)
+                .join(', ');
+            }
 
             return (
               <div
                 key={tx.id}
                 className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all flex items-center justify-between group"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`p-4 rounded-2xl ${config.bg}`}>
+                <div className="flex items-center gap-4 flex-1">
+                  <div className={`p-4 rounded-2xl ${config.bg} shrink-0`}>
                     <Icon size={24} className={config.color} />
                   </div>
 
-                  <div>
-                    <p className="font-black text-slate-800 text-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-slate-800 text-lg truncate">
                       {tx.description || config.label}
                     </p>
-                    <div className="flex gap-3 mt-1">
+                    
+                    {/* Mostrar items comprados */}
+                    {itemsText && (
+                      <p className="text-sm text-slate-600 mt-1 truncate">
+                        {itemsText}
+                      </p>
+                    )}
+                    
+                    <div className="flex gap-3 mt-2 flex-wrap">
                       <p className="text-xs text-slate-500 font-medium">
                         {new Date(tx.createdAt).toLocaleDateString('es-MX', {
                           day: 'numeric',
@@ -247,14 +276,21 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
                           minute: '2-digit'
                         })}
                       </p>
-                      {tx.unitName && (
-                        <span className="text-xs text-slate-400">• {tx.unitName}</span>
+                      {tx.metadata?.payment_method && (
+                        <span className="text-xs text-slate-400">
+                          • {tx.metadata.payment_method}
+                        </span>
+                      )}
+                      {tx.metadata?.mecard_fee && (
+                        <span className="text-xs text-amber-600 font-bold">
+                          • Fee: ${Number(tx.metadata.mecard_fee).toFixed(2)}
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right shrink-0 ml-4">
                   <p className={`text-2xl font-black ${isNegative ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {isNegative ? '-' : '+'}${Math.abs(tx.amount).toFixed(2)}
                   </p>
