@@ -27,7 +27,7 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
     types: []
   });
 
-  // Cargar transacciones
+  // Cargar transacciones - ADAPTADO A TU TABLA
   useEffect(() => {
     const loadTransactions = async () => {
       setLoading(true);
@@ -49,24 +49,53 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
         if (txError) throw txError;
 
         if (data) {
-          setTransactions(data.map((tx: any) => ({
-            id: tx.id,
-            studentId: tx.student_id,
-            studentName: '', // Se puede cargar después
-            type: tx.type as TransactionType,
-            amount: tx.amount,
-            balanceBefore: tx.balance_before || 0,
-            balanceAfter: tx.balance_after || 0,
-            referenceId: tx.reference_id,
-            referenceType: tx.reference_type,
-            unitId: tx.unit_id,
-            unitName: tx.unit_name,
-            description: tx.description || '',
-            category: tx.category,
-            metadata: tx.metadata,
-            createdBy: tx.created_by,
-            createdAt: tx.created_at
-          })));
+          // Cargar saldo actual del estudiante para calcular balances
+          const { data: studentData } = await supabase
+            .from('profiles')
+            .select('balance')
+            .eq('id', studentId)
+            .single();
+
+          const currentBalance = studentData?.balance || 0;
+
+          setTransactions(data.map((tx: any, index: number) => {
+            // Calcular balance después de esta transacción
+            // (sumando hacia atrás desde el balance actual)
+            let balanceAfter = currentBalance;
+            for (let i = 0; i < index; i++) {
+              const prevTx = data[i];
+              if (prevTx.type === 'DEPOSIT') {
+                balanceAfter -= prevTx.amount;
+              } else if (prevTx.type === 'SALE' || prevTx.type === 'PURCHASE') {
+                balanceAfter += prevTx.amount;
+              }
+            }
+
+            const balanceBefore = tx.type === 'DEPOSIT' 
+              ? balanceAfter - tx.amount 
+              : balanceAfter + tx.amount;
+
+            return {
+              id: tx.id,
+              studentId: tx.student_id,
+              studentName: '',
+              type: tx.type as TransactionType,
+              amount: tx.amount,
+              balanceBefore,
+              balanceAfter,
+              referenceId: tx.settlement_id,
+              referenceType: tx.type,
+              unitId: tx.unit_id,
+              unitName: '', // Se puede cargar desde otra tabla si existe
+              description: tx.type === 'SALE' || tx.type === 'PURCHASE'
+                ? `Compra - ${tx.payment_method}`
+                : tx.type,
+              category: tx.items?.[0]?.category || '',
+              metadata: tx.metadata,
+              createdBy: '',
+              createdAt: tx.created_at
+            };
+          }));
         }
       } catch (err: any) {
         console.error('Error loading transactions:', err);
@@ -113,9 +142,11 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
     return results;
   }, [transactions, filters]);
 
-  // Estadísticas
+  // Estadísticas - ADAPTADO A TU ESTRUCTURA
   const stats = useMemo(() => {
-    const purchases = filteredTransactions.filter(tx => tx.type === 'PURCHASE');
+    const purchases = filteredTransactions.filter(tx => 
+      tx.type === 'SALE' || tx.type === 'PURCHASE'
+    );
     const deposits = filteredTransactions.filter(tx => tx.type === 'DEPOSIT');
 
     return {
