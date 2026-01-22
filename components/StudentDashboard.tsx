@@ -36,6 +36,8 @@ import { ProductSearch } from '../components/ProductSearch';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { SortSelector } from '../components/SortSelector';
 import { PriceRangeFilter } from '../components/PriceRangeFilter';
+import { TransactionHistory } from '../components/TransactionHistory';
+import { NotificationBell } from '../components/NotificationBell';
 
 import {
   StudentProfile,
@@ -73,7 +75,21 @@ const TabButton = ({ active, onClick, icon, label }: any) => (
     {label}
   </button>
 );
-
+<TabButton 
+  active={activeTab === 'history'} 
+  onClick={() => setActiveTab('history')} 
+  icon={<Activity size={18}/>} 
+  label="Historial" 
+/>
+{activeTab === 'history' && (
+  <div className="animate-in fade-in duration-500">
+    <TransactionHistory 
+      studentId={userId} 
+      studentName={profile?.fullName || ''} 
+    />
+  </div>
+)}
+*/
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -99,6 +115,7 @@ export default function StudentDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const isTogglingRef = useRef(new Set<string>());
+  const [activeTab, setActiveTab] = useState<'wallet' | 'explore' | 'social' | 'gifts' | 'history'>('wallet');
 
   // ============================================
   // BÚSQUEDA Y FILTROS
