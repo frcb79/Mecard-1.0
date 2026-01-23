@@ -1,6 +1,6 @@
 // ============================================
 // ARCHIVO: src/components/StudentDashboard.tsx
-// VERSIÓN CON BÚSQUEDA INTEGRADA
+// VERSIÓN FINAL CON TODO INTEGRADO
 // ============================================
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -9,7 +9,6 @@ import {
   Wallet,
   Users,
   Gift,
-  Bell,
   ShoppingBag,
   Globe,
   Lock,
@@ -25,6 +24,7 @@ import {
   Sparkles,
   Coffee,
   AlertCircle,
+  FileText
 } from 'lucide-react';
 
 import { useAuth } from '../hooks/useAuth';
@@ -36,6 +36,8 @@ import { ProductSearch } from '../components/ProductSearch';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { SortSelector } from '../components/SortSelector';
 import { PriceRangeFilter } from '../components/PriceRangeFilter';
+
+// Componentes de transacciones y notificaciones
 import { TransactionHistory } from '../components/TransactionHistory';
 import { NotificationBell } from '../components/NotificationBell';
 
@@ -75,21 +77,7 @@ const TabButton = ({ active, onClick, icon, label }: any) => (
     {label}
   </button>
 );
-<TabButton 
-  active={activeTab === 'history'} 
-  onClick={() => setActiveTab('history')} 
-  icon={<Activity size={18}/>} 
-  label="Historial" 
-/>
-{activeTab === 'history' && (
-  <div className="animate-in fade-in duration-500">
-    <TransactionHistory 
-      studentId={userId} 
-      studentName={profile?.fullName || ''} 
-    />
-  </div>
-)}
-*/
+
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -115,7 +103,7 @@ export default function StudentDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const isTogglingRef = useRef(new Set<string>());
- 
+
   // ============================================
   // BÚSQUEDA Y FILTROS
   // ============================================
@@ -360,10 +348,6 @@ export default function StudentDashboard() {
   // ============================================
   // MAIN RENDER
   // ============================================
-  const dailyLimitPercent = profile?.dailyLimit 
-    ? Math.min((profile.spentToday / profile.dailyLimit) * 100, 100)
-    : 0;
-
   return (
     <div className="flex flex-col h-screen bg-[#FDFDFD] overflow-hidden font-sans text-slate-900 selection:bg-indigo-100">
       
@@ -398,21 +382,18 @@ export default function StudentDashboard() {
              )}
           </div>
           
-          <button className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all relative group">
-            <Bell size={22} className="group-hover:rotate-12 transition-transform"/>
-            {activeGifts.length > 0 && (
-              <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm"></span>
-            )}
-          </button>
+          {/* ✅ CAMPANA DE NOTIFICACIONES */}
+          <NotificationBell userId={userId} role={user.role} />
         </div>
       </header>
 
       {/* NAVIGATION */}
       <nav className="bg-white border-b border-slate-50 flex px-12 overflow-x-auto scrollbar-hide shrink-0 shadow-sm">
         <TabButton active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')} icon={<Wallet size={18}/>} label="Billetera" />
-        <TabButton active={activeTab === 'explore'} onClick={() => setActiveTab('explore')} icon={<ShoppingBag size={18}/>} label="Explorar Catálogo" />
+        <TabButton active={activeTab === 'explore'} onClick={() => setActiveTab('explore')} icon={<ShoppingBag size={18}/>} label="Explorar" />
+        <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<FileText size={18}/>} label="Historial" />
         <TabButton active={activeTab === 'social'} onClick={() => setActiveTab('social')} icon={<Users size={18}/>} label="Red Social" />
-        <TabButton active={activeTab === 'gifts'} onClick={() => setActiveTab('gifts')} icon={<Gift size={18}/>} label={`Mis Regalos (${activeGifts.length})`} />
+        <TabButton active={activeTab === 'gifts'} onClick={() => setActiveTab('gifts')} icon={<Gift size={18}/>} label={`Regalos (${activeGifts.length})`} />
       </nav>
 
       {/* CONTENT */}
@@ -465,7 +446,7 @@ export default function StudentDashboard() {
                     
                     <div className="bg-white p-6 rounded-[32px] shadow-2xl hover:scale-110 active:scale-95 transition-all cursor-pointer">
                       <div className="w-32 h-32 bg-slate-900 rounded-2xl flex items-center justify-center">
-                        <p className="text-white text-xs text-center font-mono">
+                        <p className="text-white text-xs text-center font-mono break-all px-2">
                           {profile?.credential?.qrCode}
                         </p>
                       </div>
@@ -487,7 +468,7 @@ export default function StudentDashboard() {
                         92<span className="text-lg text-slate-300">/100</span>
                       </p>
                       <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-rose-500 rounded-full" style={{ width: '92%' }}></div>
+                        <div className="h-full bg-rose-500 rounded-full transition-all" style={{ width: '92%' }}></div>
                       </div>
                     </div>
                   </div>
@@ -530,7 +511,10 @@ export default function StudentDashboard() {
                     </button>
                  </div>
 
-                 <div className="bg-indigo-50 rounded-[40px] p-10 border border-indigo-100 flex items-center justify-between shadow-sm group">
+                 <div 
+                   onClick={() => setActiveTab('history')}
+                   className="bg-indigo-50 rounded-[40px] p-10 border border-indigo-100 flex items-center justify-between shadow-sm group cursor-pointer hover:shadow-lg transition-all"
+                 >
                     <div className="flex items-center gap-6">
                        <div className="w-16 h-16 bg-white rounded-[22px] flex items-center justify-center text-indigo-600 shadow-sm">
                           <Activity size={28}/>
@@ -544,7 +528,7 @@ export default function StudentDashboard() {
                           </p>
                        </div>
                     </div>
-                    <button className="p-4 bg-white text-indigo-600 rounded-2xl shadow-sm hover:scale-110 transition-all">
+                    <button className="p-4 bg-white text-indigo-600 rounded-2xl shadow-sm group-hover:scale-110 transition-all">
                        <ChevronRight size={24}/>
                     </button>
                  </div>
@@ -552,7 +536,7 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* TAB: EXPLORAR CON BÚSQUEDA ✨ */}
+          {/* TAB: EXPLORAR CON BÚSQUEDA */}
           {activeTab === 'explore' && (
             <div className="space-y-8 animate-in fade-in duration-500 pb-20">
               
@@ -562,7 +546,74 @@ export default function StudentDashboard() {
                   <h3 className="text-5xl font-black text-slate-800 italic uppercase tracking-tighter leading-none">
                     Cafetería
                   </h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[6px] mt-4">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[10px]">
+                    Cupones listos para canjear
+                  </p>
+                </div>
+
+                {activeGifts.length === 0 && (
+                  <div className="py-40 bg-white rounded-[72px] border-4 border-dashed border-slate-100 text-center grayscale opacity-20 flex flex-col items-center">
+                     <Gift size={100} strokeWidth={1} className="mb-6"/>
+                     <p className="text-sm font-black uppercase tracking-[10px] italic">
+                       Sin regalos pendientes
+                     </p>
+                  </div>
+                )}
+             </div>
+          )}
+
+          {/* TAB: SOCIAL */}
+          {activeTab === 'social' && (
+             <div className="h-full flex items-center justify-center animate-in fade-in duration-500">
+                <div className="text-center max-w-md">
+                   <div className="w-24 h-24 bg-slate-100 rounded-[32px] flex items-center justify-center text-slate-300 mx-auto mb-8">
+                      <Users size={48} strokeWidth={1} />
+                   </div>
+                   <h3 className="text-2xl font-black text-slate-800 uppercase italic tracking-tighter">
+                     Red MeCard
+                   </h3>
+                   <p className="text-slate-400 font-medium text-sm mt-4 italic leading-relaxed">
+                     Próximamente: busca amigos y envía regalos.
+                   </p>
+                </div>
+             </div>
+          )}
+
+        </div>
+      </main>
+
+      {/* ERROR TOAST */}
+      {error && (
+        <div className="fixed bottom-8 right-8 bg-rose-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-4 z-50">
+          <AlertCircle size={20} />
+          <div>
+            <p className="font-bold text-sm">Error</p>
+            <p className="text-xs opacity-90">{error}</p>
+          </div>
+          <button onClick={() => setError(null)} className="ml-4 text-white/80 hover:text-white">
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="bg-white border-t border-slate-100 py-4 px-12 flex justify-between items-center shrink-0">
+         <div className="flex items-center gap-4">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              MeCard Engine v2.6
+            </p>
+         </div>
+         <div className="flex items-center gap-2">
+            <ShieldCheck size={14} className="text-indigo-400" />
+            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest italic">
+              Datos Protegidos
+            </p>
+         </div>
+      </footer>
+    </div>
+  );
+}-400 uppercase tracking-[6px] mt-4">
                     {totalResults} {totalResults === 1 ? 'producto' : 'productos'} disponibles
                   </p>
                 </div>
@@ -688,6 +739,16 @@ export default function StudentDashboard() {
             </div>
           )}
 
+          {/* ✅ TAB: HISTORIAL */}
+          {activeTab === 'history' && (
+            <div className="animate-in fade-in duration-500">
+              <TransactionHistory 
+                studentId={userId} 
+                studentName={profile?.fullName || ''} 
+              />
+            </div>
+          )}
+
           {/* TAB: REGALOS */}
           {activeTab === 'gifts' && (
              <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500">
@@ -695,71 +756,4 @@ export default function StudentDashboard() {
                   <h3 className="text-5xl font-black text-slate-800 italic uppercase tracking-tighter mb-4">
                     Mis Regalos
                   </h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[10px]">
-                    Cupones listos para canjear
-                  </p>
-                </div>
-
-                {activeGifts.length === 0 && (
-                  <div className="py-40 bg-white rounded-[72px] border-4 border-dashed border-slate-100 text-center grayscale opacity-20 flex flex-col items-center">
-                     <Gift size={100} strokeWidth={1} className="mb-6"/>
-                     <p className="text-sm font-black uppercase tracking-[10px] italic">
-                       Sin regalos pendientes
-                     </p>
-                  </div>
-                )}
-             </div>
-          )}
-
-          {/* TAB: SOCIAL */}
-          {activeTab === 'social' && (
-             <div className="h-full flex items-center justify-center animate-in fade-in duration-500">
-                <div className="text-center max-w-md">
-                   <div className="w-24 h-24 bg-slate-100 rounded-[32px] flex items-center justify-center text-slate-300 mx-auto mb-8">
-                      <Users size={48} strokeWidth={1} />
-                   </div>
-                   <h3 className="text-2xl font-black text-slate-800 uppercase italic tracking-tighter">
-                     Red MeCard
-                   </h3>
-                   <p className="text-slate-400 font-medium text-sm mt-4 italic leading-relaxed">
-                     Próximamente: busca amigos y envía regalos.
-                   </p>
-                </div>
-             </div>
-          )}
-
-        </div>
-      </main>
-
-      {/* ERROR TOAST */}
-      {error && (
-        <div className="fixed bottom-8 right-8 bg-rose-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-4 z-50">
-          <AlertCircle size={20} />
-          <div>
-            <p className="font-bold text-sm">Error</p>
-            <p className="text-xs opacity-90">{error}</p>
-          </div>
-          <button onClick={() => setError(null)} className="ml-4 text-white/80 hover:text-white">
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* FOOTER */}
-      <footer className="bg-white border-t border-slate-100 py-4 px-12 flex justify-between items-center shrink-0">
-         <div className="flex items-center gap-4">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              MeCard Engine v2.6
-            </p>
-         </div>
-         <div className="flex items-center gap-2">
-            <ShieldCheck size={14} className="text-indigo-400" />
-            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest italic">
-              Datos Protegidos
-            </p>
-         </div>
-      </footer>
-    </div>
-  );
-}
+                  <p className="text-[10px] font-black text-slate
