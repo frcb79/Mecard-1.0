@@ -1,5 +1,4 @@
 import React from "react";
-import "./App.css";
 import Pos from "./pages/Pos";
 
 function App() {
