@@ -1,7 +1,14 @@
+import { usePos } from "../hooks/usePos";
 import React from "react";
 import "./Pos.css";
 
 const Pos: React.FC = () => {
+  const {
+  student,
+  cartItems,
+  total,
+  canPay,
+} = usePos();
   return (
     <div className="pos-container">
       {/* Header */}
@@ -28,11 +35,15 @@ const Pos: React.FC = () => {
             No hay productos aún
           </div>
           <div className="pos-total">
-            Total: $0.00
+            Total: ${total.toFixed(2)}
           </div>
-          <button className="pos-pay-button" disabled>
-            COBRAR
-          </button>
+          <button
+  className="pos-pay-button"
+  disabled={!canPay}
+>
+  COBRAR
+</button>
+
         </section>
       </main>
 
