@@ -1,142 +1,183 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import React, { useState } from "react";
+import { Plus, Settings, Building2 } from "lucide-react";
+import { BusinessModelConfiguration } from "../components/BusinessModelConfiguration";
 import { Button } from "../components/Button";
 
-type SchoolStatus = "trial" | "active" | "suspended";
+/**
+ * MODELOS BASE
+ * ============================
+ */
 
-type School = {
+interface School {
   id: string;
   name: string;
-  status: SchoolStatus;
-  created_at: string;
-};
+  city: string;
+  status: "ACTIVE" | "INACTIVE";
+}
 
+/**
+ * MOCK DATA (luego va API)
+ * ============================
+ */
+const MOCK_SCHOOLS: School[] = [
+  {
+    id: "SCH-001",
+    name: "Colegio MeCard Norte",
+    city: "Monterrey",
+    status: "ACTIVE",
+  },
+  {
+    id: "SCH-002",
+    name: "Instituto Central",
+    city: "CDMX",
+    status: "ACTIVE",
+  },
+  {
+    id: "SCH-003",
+    name: "Campus del Valle",
+    city: "Guadalajara",
+    status: "INACTIVE",
+  },
+];
+
+/**
+ * MAIN VIEW
+ * ============================
+ */
 export default function Schools() {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingList, setLoadingList] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [schools] = useState<School[]>(MOCK_SCHOOLS);
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [showBusinessConfig, setShowBusinessConfig] = useState(false);
 
-  useEffect(() => {
-    loadSchools();
-  }, []);
-
-  async function loadSchools() {
-    setError(null);
-    setLoadingList(true);
-
-    const { data, error } = await supabase
-      .from("schools")
-      .select("id, name, status, created_at")
-      .order("created_at", { ascending: false });
-
-    setLoadingList(false);
-
-    if (error) {
-      console.error(error);
-      setError("Error cargando escuelas");
-      return;
-    }
-
-    setSchools(data ?? []);
-  }
-
-  async function createSchool() {
-    if (!name.trim()) return;
-
-    setLoading(true);
-    setError(null);
-
-    const { error } = await supabase.from("schools").insert({
-      name: name.trim(),
-      status: "trial",
+  /**
+   * SAVE HANDLER
+   * ============================
+   * Aquí después conectas API real
+   */
+  const handleSaveBusinessModel = (model: any) => {
+    console.log("💾 Guardando modelo de negocio:", {
+      schoolId: selectedSchool?.id,
+      model,
     });
 
-    setLoading(false);
+    // 🔜 API CALL
+    // await api.saveBusinessModel(selectedSchool.id, model)
 
-    if (error) {
-      console.error(error);
-      setError("Error creando la escuela");
-      return;
-    }
-
-    setName("");
-    loadSchools();
-  }
-
-  function statusBadge(status: SchoolStatus) {
-    const styles: Record<SchoolStatus, string> = {
-      trial: "bg-yellow-100 text-yellow-800",
-      active: "bg-green-100 text-green-800",
-      suspended: "bg-red-100 text-red-800",
-    };
-
-    const labels: Record<SchoolStatus, string> = {
-      trial: "Trial",
-      active: "Activa",
-      suspended: "Suspendida",
-    };
-
-    return (
-      <span
-        className={`px-3 py-1 rounded-full text-xs font-bold ${styles[status]}`}
-      >
-        {labels[status]}
-      </span>
-    );
-  }
+    setShowBusinessConfig(false);
+  };
 
   return (
-    <div className="p-8 max-w-5xl">
-      <h1 className="text-3xl font-black mb-6">Escuelas</h1>
-
-      {/* Crear escuela */}
-      <div className="bg-white border rounded-xl p-6 mb-8 flex gap-4 items-end">
-        <div className="flex-1">
-          <label className="block text-sm font-bold mb-1">
-            Nombre de la escuela
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Colegio MeCard"
-            className="w-full border rounded-lg px-4 py-2"
-          />
+    <div className="h-full p-12 bg-[#f8fafc]">
+      {/* HEADER */}
+      <header className="flex justify-between items-center mb-12">
+        <div>
+          <p className="text-indigo-600 font-black uppercase text-[10px] tracking-[6px] mb-4">
+            MeCard Admin
+          </p>
+          <h1 className="text-5xl font-black tracking-tight text-slate-800 flex items-center gap-4">
+            <Building2 size={48} className="text-indigo-600" />
+            Schools
+          </h1>
+          <p className="text-slate-400 text-sm mt-2">
+            Gestión de campus y configuración financiera
+          </p>
         </div>
 
-        <Button onClick={createSchool} disabled={loading}>
-          {loading ? "Creando..." : "Crear escuela"}
+        <Button className="px-8 py-6 rounded-[28px] font-black uppercase tracking-[4px] text-xs">
+          <Plus className="mr-2" /> Nueva Escuela
         </Button>
-      </div>
+      </header>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-4 text-red-600 font-semibold">
-          {error}
-        </div>
-      )}
+      {/* CONTENT */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+        {/* LISTADO DE ESCUELAS */}
+        <div className="bg-white rounded-[48px] p-10 border border-slate-100 shadow-sm space-y-6">
+          <h2 className="text-2xl font-black text-slate-800 mb-6">
+            Campus Registrados
+          </h2>
 
-      {/* Loading */}
-      {loadingList && <p>Cargando escuelas...</p>}
-
-      {/* Lista */}
-      {!loadingList && schools.length > 0 && (
-        <div className="bg-white border rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-50 text-left text-sm">
-              <tr>
-                <th className="p-4">Escuela</th>
-                <th className="p-4">Estado</th>
-                <th className="p-4">Creada</th>
-              </tr>
-            </thead>
-            <tbody>
-              {schools.map((school) => (
-                <tr
-                  key={school.id}
-                  className="border-t hover:bg-slate-50"
-                >
-                  <td className="p-4 font-semibold">
+          {schools.map((school) => (
+            <div
+              key={school.id}
+              className={`p-6 rounded-3xl border cursor-pointer transition-all ${
+                selectedSchool?.id === school.id
+                  ? "border-indigo-600 bg-indigo-50/50"
+                  : "border-slate-100 hover:border-indigo-200"
+              }`}
+              onClick={() => setSelectedSchool(school)}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-black text-slate-800">
                     {school.name}
+                  </p>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                    {school.city}
+                  </p>
+                </div>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-full ${
+                    school.status === "ACTIVE"
+                      ? "bg-emerald-100 text-emerald-600"
+                      : "bg-slate-200 text-slate-500"
+                  }`}
+                >
+                  {school.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* PANEL DE DETALLE */}
+        <div className="xl:col-span-2">
+          {!selectedSchool && (
+            <div className="h-full bg-white rounded-[48px] border border-slate-100 flex items-center justify-center text-slate-400 font-black text-lg">
+              Selecciona una escuela para administrar
+            </div>
+          )}
+
+          {selectedSchool && !showBusinessConfig && (
+            <div className="bg-white rounded-[48px] p-12 border border-slate-100 shadow-sm space-y-8">
+              <div>
+                <h2 className="text-3xl font-black text-slate-800">
+                  {selectedSchool.name}
+                </h2>
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-2">
+                  ID: {selectedSchool.id}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Button
+                  onClick={() => setShowBusinessConfig(true)}
+                  className="rounded-[32px] py-8 font-black uppercase tracking-[4px]"
+                >
+                  <Settings className="mr-3" />
+                  Configurar Modelo de Negocio
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="rounded-[32px] py-8 font-black uppercase tracking-[4px]"
+                >
+                  Ver Reportes
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* CONFIGURACIÓN FINANCIERA */}
+          {selectedSchool && showBusinessConfig && (
+            <BusinessModelConfiguration
+              schoolId={selectedSchool.id}
+              schoolName={selectedSchool.name}
+              onSave={handleSaveBusinessModel}
+              onCancel={() => setShowBusinessConfig(false)}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
