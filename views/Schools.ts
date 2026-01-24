@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 type School = {
   id: string;
   name: string;
+  status: string;
   created_at: string;
 };
 
