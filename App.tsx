@@ -1,12 +1,13 @@
-import React from "react";
-import Pos from "./pages/Pos";
+import { useState } from "react";
+import Home from "./views/Home";
+import AdminLayout from "./components/AdminLayout";
 
-function App() {
-  return (
-    <div className="app">
-      <Pos />
-    </div>
-  );
+export default function App() {
+  const [screen, setScreen] = useState<"home" | "admin">("home");
+
+  if (screen === "admin") {
+    return <AdminLayout onExit={() => setScreen("home")} />;
+  }
+
+  return <Home onEnterAdmin={() => setScreen("admin")} />;
 }
-
-export default App;
