@@ -1,13 +1,19 @@
-import { useState } from "react";
-import Home from "./views/Home";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminLayout from "./components/AdminLayout";
+import AdminDashboard from "./views/AdminDashboard";
+import Schools from "./views/Schools";
+import Students from "./views/Students";
 
 export default function App() {
-  const [screen, setScreen] = useState<"home" | "admin">("home");
-
-  if (screen === "admin") {
-    return <AdminLayout onExit={() => setScreen("home")} />;
-  }
-
-  return <Home onEnterAdmin={() => setScreen("admin")} />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AdminLayout />}>
+          <Route path="/" element={<AdminDashboard />} />
+          <Route path="/schools" element={<Schools />} />
+          <Route path="/students" element={<Students />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
