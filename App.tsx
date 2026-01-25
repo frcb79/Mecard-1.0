@@ -15,6 +15,9 @@ export default function App() {
           {/* Gestión */}
           <Route path="/schools" element={<Schools />} />
           <Route path="/students" element={<Students />} />
+          <Route path="/schools" element={<Schools />} />
+          <Route path="/schools/:id" element={<SchoolDetail />} />
+
         </Route>
       </Routes>
     </BrowserRouter>
