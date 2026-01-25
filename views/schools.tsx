@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Plus, School as SchoolIcon, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type School = {
   id: string;
@@ -16,6 +17,7 @@ export default function Schools() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSchools();
