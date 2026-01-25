@@ -3,6 +3,7 @@ import AdminLayout from "./components/AdminLayout";
 import { SuperAdminDashboard } from "./components/SuperAdminDashboard";
 import Schools from "./views/Schools";
 import Students from "./views/Students";
+import SchoolDetail from "./views/SchoolDetail";
 
 export default function App() {
   return (
@@ -14,12 +15,11 @@ export default function App() {
 
           {/* Gestión */}
           <Route path="/schools" element={<Schools />} />
-          <Route path="/students" element={<Students />} />
-          <Route path="/schools" element={<Schools />} />
           <Route path="/schools/:id" element={<SchoolDetail />} />
-
+          <Route path="/students" element={<Students />} />
         </Route>
       </Routes>
     </BrowserRouter>
   );
 }
+
