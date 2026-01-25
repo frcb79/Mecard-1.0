@@ -17,6 +17,7 @@ export default function Schools() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -145,6 +146,7 @@ export default function Schools() {
           {schools.map((school) => (
             <div
               key={school.id}
+              onClick={() => navigate(`/schools/${school.id}`)}
               className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition cursor-pointer"
             >
               <h3 className="text-xl font-black text-slate-800">
