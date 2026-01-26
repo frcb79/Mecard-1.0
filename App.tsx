@@ -10,7 +10,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<AdminLayout />}>
-          {/* Dashboard principal */}
+          {/* Dashboard */}
           <Route path="/" element={<SuperAdminDashboard />} />
 
           {/* Gestión */}
@@ -22,4 +22,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
