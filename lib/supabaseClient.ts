@@ -1,26 +1,42 @@
+import { createClient } from "@supabase/supabase-js";
 
-import { createClient } from '@supabase/supabase-js';
-
-// Use process.env as shimmed in vite.config.ts to avoid TS error on import.meta.env
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
+// Variables de entorno (Vite las inyecta en build)
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || "";
 
 /**
- * isSupabaseConfigured
- * Verifica si las credenciales son reales.
+ * Verifica si Supabase está configurado correctamente
  */
-export const isSupabaseConfigured = 
-  SUPABASE_URL !== '' && 
-  SUPABASE_URL !== 'https://your-project-url.supabase.co' && 
-  SUPABASE_ANON_KEY !== '' && 
-  SUPABASE_ANON_KEY !== 'your-anon-key';
+export const isSupabaseConfigured =
+  SUPABASE_URL !== "" &&
+  SUPABASE_URL !== "https://your-project-url.supabase.co" &&
+  SUPABASE_ANON_KEY !== "" &&
+  SUPABASE_ANON_KEY !== "your-anon-key";
 
-// Inicialización segura
-const finalUrl = isSupabaseConfigured ? SUPABASE_URL : 'https://placeholder-project.supabase.co';
-const finalKey = isSupabaseConfigured ? SUPABASE_ANON_KEY : 'placeholder-key';
+// Fallback seguro para evitar crash en build
+const finalUrl = isSupabaseConfigured
+  ? SUPABASE_URL
+  : "https://placeholder-project.supabase.co";
 
-export const supabase = createClient(finalUrl, finalKey);
+const finalKey = isSupabaseConfigured
+  ? SUPABASE_ANON_KEY
+  : "placeholder-key";
 
+/**
+ * ✅ CLIENTE ÚNICO DE SUPABASE
+ * ⚠️ NO duplicar este export en ningún lugar del archivo
+ */
+export const supabase = createClient(finalUrl, finalKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
+
+/**
+ * Tipado base (opcional pero correcto)
+ */
 export type Database = {
   public: {
     Tables: {
@@ -30,9 +46,9 @@ export type Database = {
           email: string;
           full_name: string;
           role: string;
-          school_id: string;
-          student_id: string;
-          grade: string;
+          school_id: string | null;
+          student_id: string | null;
+          grade: string | null;
           balance: number;
           created_at: string;
         };
@@ -73,10 +89,3 @@ export type Database = {
     };
   };
 };
-export const supabase = createClient(finalUrl, finalKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
