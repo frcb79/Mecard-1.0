@@ -1,3 +1,4 @@
+import SchoolCampusTab from "./SchoolCampusTab";
 import { useState } from "react";
 import { Building2, DollarSign, MapPin, Terminal } from "lucide-react";
 import { BusinessModelConfiguration } from "./BusinessModelConfiguration";
@@ -51,19 +52,9 @@ export default function SchoolTabs({ schoolId }: { schoolId: string }) {
         />
       )}
 
-      {activeTab === "campus" && (
-        <div className="bg-white p-8 rounded-3xl border space-y-4">
-          <h2 className="text-2xl font-black">Campus</h2>
-          <p className="text-slate-500">
-            Aquí vivirá el multicampus:
-          </p>
-          <ul className="list-disc pl-6 text-slate-600">
-            <li>Campus Primaria</li>
-            <li>Campus Secundaria</li>
-            <li>Campus Prepa</li>
-          </ul>
-        </div>
-      )}
+     {activeTab === "campus" && (
+  <SchoolCampusTab schoolId={schoolId} />
+)}
 
       {activeTab === "pos" && (
         <div className="bg-white p-8 rounded-3xl border space-y-4">
