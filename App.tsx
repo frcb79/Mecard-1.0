@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./components/AdminLayout";
-import Schools from "./views/schools";
+import Schools from "./views/Schools";
 import SchoolDetail from "./views/SchoolDetail";
 
 export default function App() {
