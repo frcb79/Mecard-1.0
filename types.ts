@@ -1,4 +1,4 @@
-/**
+  /**
  * MECARD PLATFORM - COMPLETE TYPE DEFINITIONS
  * Versión Final: Consolidada, sin duplicados, con todos los modelos necesarios
  * Convención: camelCase para propiedades, PascalCase para tipos/interfaces
