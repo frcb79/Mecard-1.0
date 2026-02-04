@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminLayout from "./components/AdminLayout";
 import SuperAdminDashboard from "./components/SuperAdminDashboard";
-import Schools from "./views/schools";
+import Schools from "./views/Schools";
 import Students from "./views/Students";
 import SchoolDetail from "./views/SchoolDetail";
 
