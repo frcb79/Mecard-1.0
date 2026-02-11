@@ -198,3 +198,4 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
     </div>
   );
 };
+export default SchoolAdminStudentsView;

@@ -1,0 +1,315 @@
+/**
+ * StudentManagementView Component
+ * Vista mejorada para administradores de escuela
+ * CRUD completo de estudiantes (crear, leer, actualizar, eliminar)
+ */
+
+import React, { useState, useMemo } from 'react';
+import { Search, Plus, Edit2, Trash2, Eye, MoreVertical, Users } from 'lucide-react';
+
+export default function StudentManagementView() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+
+  // MOCK: Lista de estudiantes
+  const [students, setStudents] = useState([
+    {
+      id: '1',
+      name: 'Juan Carlos López',
+      email: 'juan.lopez@escuela.mx',
+      curp: 'LOJC980415HDFRNN09',
+      phone: '5551234567',
+      balance: 850.00,
+      status: 'active' as const,
+      clabe: '002341234567890123',
+      createdAt: '2026-01-15'
+    },
+    {
+      id: '2',
+      name: 'María Elena García',
+      email: 'maria.garcia@escuela.mx',
+      curp: 'GAGM991020HDFRNN12',
+      phone: '5559876543',
+      balance: 1200.50,
+      status: 'active' as const,
+      clabe: '002341234567890124',
+      createdAt: '2026-01-10'
+    },
+    {
+      id: '3',
+      name: 'Pedro Rodríguez Sánchez',
+      email: 'pedro.rodriguez@escuela.mx',
+      curp: 'ROSS890512HDFRNN05',
+      phone: '5554569999',
+      balance: 0,
+      status: 'inactive' as const,
+      clabe: '002341234567890125',
+      createdAt: '2025-11-20'
+    },
+  ]);
+
+  // Filtrar y buscar
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      const matchesSearch =
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.curp.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        filterStatus === 'all' || student.status === filterStatus;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchTerm, filterStatus, students]);
+
+  const handleAddStudent = () => {
+    setModalMode('add');
+    setSelectedStudent(null);
+    setShowModal(true);
+  };
+
+  const handleEditStudent = (id: string) => {
+    setModalMode('edit');
+    setSelectedStudent(id);
+    setShowModal(true);
+  };
+
+  const handleDeleteStudent = (id: string) => {
+    if (confirm('¿Eliminar este estudiante?')) {
+      setStudents(students.filter(s => s.id !== id));
+    }
+  };
+
+  const handleToggleStatus = (id: string) => {
+    setStudents(
+      students.map(s =>
+        s.id === id
+          ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' }
+          : s
+      )
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* HEADER */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2 flex items-center gap-3">
+              <Users className="w-8 h-8 text-blue-600" />
+              Gestión de Estudiantes
+            </h1>
+            <p className="text-slate-500 font-medium">
+              Administra registro, saldos y credenciales de estudiantes
+            </p>
+          </div>
+          <button
+            onClick={handleAddStudent}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-4 rounded-[24px] transition-all shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            Agregar Estudiante
+          </button>
+        </div>
+
+        {/* FILTROS */}
+        <div className="bg-white rounded-[28px] shadow-lg p-6 mb-8 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* BÚSQUEDA */}
+            <div className="md:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, email o CURP..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-[16px] outline-none focus:border-blue-600 transition-all font-medium"
+                />
+              </div>
+            </div>
+
+            {/* FILTRO DE ESTADO */}
+            <div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as any)}
+                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-[16px] outline-none focus:border-blue-600 transition-all font-medium"
+              >
+                <option value="all">Todos los Estados</option>
+                <option value="active">Solo Activos</option>
+                <option value="inactive">Solo Inactivos</option>
+              </select>
+            </div>
+          </div>
+
+          {/* ESTADÍSTICAS */}
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[2px]">Total</p>
+              <p className="text-2xl font-black text-slate-900">{students.length}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[2px]">Activos</p>
+              <p className="text-2xl font-black text-emerald-600">
+                {students.filter(s => s.status === 'active').length}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[2px]">Saldo Total</p>
+              <p className="text-2xl font-black text-slate-900">
+                ${students.reduce((acc, s) => acc + s.balance, 0).toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* TABLA */}
+        <div className="bg-white rounded-[28px] shadow-lg overflow-hidden">
+          {filteredStudents.length === 0 ? (
+            <div className="p-12 text-center">
+              <Users className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+              <p className="text-slate-500 font-bold text-lg">No hay estudiantes que coincidan</p>
+              <p className="text-slate-400 text-sm mt-1">Intenta cambiar tus filtros de búsqueda</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 border-b-2 border-slate-100">
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[2px]">
+                      Nombre
+                    </th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[2px]">
+                      Email
+                    </th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[2px]">
+                      CURP
+                    </th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[2px]">
+                      Saldo
+                    </th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-[2px]">
+                      Estado
+                    </th>
+                    <th className="px-6 py-4 text-center text-[9px] font-black text-slate-400 uppercase tracking-[2px]">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredStudents.map((student, idx) => (
+                    <tr
+                      key={student.id}
+                      className={`border-b border-slate-100 hover:bg-slate-50 transition-all ${
+                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'
+                      }`}
+                    >
+                      <td className="px-6 py-4">
+                        <p className="font-black text-slate-900">{student.name}</p>
+                        <p className="text-[11px] text-slate-500 font-medium">{student.status === 'active' ? '✓ Activo' : '✗ Inactivo'}</p>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 font-medium">
+                        {student.email}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 font-medium font-mono">
+                        {student.curp}
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-black text-slate-900">
+                          ${student.balance.toFixed(2)}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleToggleStatus(student.id)}
+                          className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[1px] transition-all ${
+                            student.status === 'active'
+                              ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
+                              : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                          }`}
+                        >
+                          {student.status === 'active' ? 'Activo' : 'Inactivo'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEditStudent(student.id)}
+                            className="p-2 hover:bg-blue-100 rounded-[12px] transition-all text-blue-600"
+                            title="Editar"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStudent(student.id)}
+                            className="p-2 hover:bg-rose-100 rounded-[12px] transition-all text-rose-600"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* PAGINACIÓN */}
+        {filteredStudents.length > 0 && (
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-500">
+              Mostrando {filteredStudents.length} de {students.length} estudiantes
+            </p>
+            <div className="flex gap-2">
+              <button className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-[12px] font-black text-[10px] uppercase transition-all">
+                Anterior
+              </button>
+              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[12px] font-black text-[10px] uppercase transition-all">
+                1
+              </button>
+              <button className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-[12px] font-black text-[10px] uppercase transition-all">
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* INFO BOX */}
+        <div className="mt-8 bg-blue-50 border-2 border-blue-100 rounded-[24px] p-6">
+          <p className="text-sm text-blue-900 font-bold">
+            💡 <strong>Consejo:</strong> Usa la búsqueda para encontrar estudiantes rápidamente. Los cambios se guardan automáticamente.
+          </p>
+        </div>
+
+        {/* TODO: MODAL PARA AGREGAR/EDITAR - Implementar después */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-[32px] shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-black text-slate-900 mb-6">
+                {modalMode === 'add' ? 'Agregar Estudiante' : 'Editar Estudiante'}
+              </h2>
+              <p className="text-slate-600 font-medium">
+                [Modal form implementation - TODO]
+              </p>
+              <button
+                onClick={() => setShowModal(false)}
+                className="mt-6 w-full bg-slate-200 hover:bg-slate-300 text-slate-900 font-black px-4 py-2 rounded-[16px] transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

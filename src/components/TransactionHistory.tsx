@@ -3,7 +3,7 @@
 // ============================================
 
 import React from 'react';
-import { useTransactions } from '../hooks/useTransactions';
+import { useTransactions } from '../../hooks/useTransactions';
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -306,3 +306,4 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
     </div>
   );
 }
+export default TransactionHistory;

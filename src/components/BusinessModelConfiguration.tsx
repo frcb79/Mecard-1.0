@@ -450,3 +450,4 @@ const InputField = ({ label, value, onChange, prefix }: any) => (
         </div>
     </div>
 );
+export default BusinessModelConfiguration;

@@ -150,3 +150,4 @@ const KpiCard = ({ title, value, icon, color, subtitle, trend }: any) => (
     {trend && <p className="text-[10px] font-black text-emerald-500 mt-2 uppercase tracking-widest">{trend}</p>}
   </div>
 );
+export default ConcessionaireDashboard;

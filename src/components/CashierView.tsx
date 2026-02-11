@@ -177,3 +177,4 @@ export const CashierView: React.FC<CashierViewProps> = ({ student, onDeposit }) 
     </div>
   );
 };
+export default CashierView;

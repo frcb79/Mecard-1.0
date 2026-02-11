@@ -168,3 +168,4 @@ export const SuperAdminDashboard: React.FC = () => {
     </div>
   );
 };
+export default SuperAdminDashboard;

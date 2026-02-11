@@ -247,3 +247,4 @@ const ValidationCard = ({ title, value, icon, color }: any) => {
     </div>
   );
 };
+export default StudentImportWizard;

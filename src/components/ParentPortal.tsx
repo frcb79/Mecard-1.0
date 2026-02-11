@@ -343,3 +343,4 @@ const NavCard = ({ onClick, icon, title, color }: any) => (
         <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-widest">Configurar</p>
     </button>
 );
+export default ParentPortal;

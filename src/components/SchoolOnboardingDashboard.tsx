@@ -322,3 +322,4 @@ const CheckListItem = ({ label }: any) => (
         <span className="font-bold text-slate-200 text-sm">{label}</span>
     </li>
 );
+export default SchoolOnboardingDashboard;

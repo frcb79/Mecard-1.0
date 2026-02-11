@@ -229,3 +229,4 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
     </div>
   );
 };
+export default InventoryManagementView;

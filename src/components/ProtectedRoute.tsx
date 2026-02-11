@@ -3,7 +3,7 @@
 // ============================================
 
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { UserRole } from '../types';
 
 interface ProtectedRouteProps {
@@ -42,3 +42,4 @@ export function ProtectedRoute({
   return <>{children}</>;
 }
 
+export default ProtectedRoute;

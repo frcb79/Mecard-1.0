@@ -1,16 +1,20 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, Trash2, CreditCard, ScanLine, AlertTriangle, 
   LayoutGrid, Utensils, PenTool, X, ArrowRight, ShoppingBag, 
   ShoppingCart, Bot, Gift, Zap, ChevronRight, Receipt, Loader2, 
   ChefHat, Package, Plus, Minus, Hash, Tag, Store, CheckCircle2
 } from 'lucide-react';
-import { Product, CartItem, Category, StudentProfile, AppView } from '../types';
-import { PRODUCTS } from '../constants';
+import { Product, CartItem, Category, StudentProfile } from '../types';
+import { PRODUCTS, MOCK_STUDENT } from '../constants';
 import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { getSmartUpsell } from '../services/geminiService';
+import { usePaymentService, useInventoryService } from '../contexts/ServiceContext';
+import { useAuth } from '../../hooks/useAuth';
+import { CartOrder } from '../services/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -18,20 +22,20 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface PosViewProps {
-  mode: 'cafeteria' | 'stationery';
-  cart: CartItem[];
-  student: StudentProfile;
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  clearCart: () => void;
-  onPurchase: (total: number) => void;
-  onNavigate: (view: AppView) => void;
-}
-
 type ScanStage = 'idle' | 'verify' | 'active';
 
-export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart, removeFromCart, clearCart, onPurchase, onNavigate }) => {
+interface PosViewStandalone {
+  mode?: 'cafeteria' | 'stationery';
+}
+
+export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const paymentService = usePaymentService();
+  const inventoryService = useInventoryService();
+  
+  // Local cart state
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
   const [scanStage, setScanStage] = useState<ScanStage>('idle');
@@ -39,9 +43,51 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiUpsell, setAiUpsell] = useState<string | null>(null);
   const [loadingUpsell, setLoadingUpsell] = useState(false);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
+  const [transactionSuccess, setTransactionSuccess] = useState(false);
+  
+  // Get current student (from auth context or use mock)
+  const student: StudentProfile = {
+    ...MOCK_STUDENT,
+    // Override with authenticated user if available
+    ...(user?.id && { id: user.id, name: user.name || 'Estudiante' }),
+  };
 
   const isCafeteria = mode === 'cafeteria';
   const accentColor = isCafeteria ? 'indigo' : 'blue';
+
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const addToCart = (product: Product) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === productId);
+      if (!existing) return prev;
+      if (existing.quantity <= 1) {
+        return prev.filter((item) => item.id !== productId);
+      }
+      return prev.map((item) =>
+        item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
+      );
+    });
+  };
+
+  const clearCart = () => {
+    setCart([]);
+    setAiUpsell(null);
+    setTransactionError(null);
+  };
 
   useEffect(() => {
     if (cart.length > 0 && isCafeteria) {
@@ -88,19 +134,62 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
     }
   };
 
-  const handleCheckout = () => {
-      if (student.balance < total) { alert("⚠️ FONDOS INSUFICIENTES"); return; }
-      setIsProcessing(true);
-      setTimeout(() => {
-          onPurchase(total);
-          setIsProcessing(false);
-          setScanStage('idle');
-          setStudentIdInput('');
-          setAiUpsell(null);
-      }, 1500);
-  };
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    
+    setIsProcessing(true);
+    setTransactionError(null);
+    setTransactionSuccess(false);
 
-  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    try {
+      // Create cart order for payment service
+      const order: CartOrder = {
+        studentId: student.id,
+        schoolId: student.schoolId || 'school-001',
+        items: cart,
+        total,
+        clabeFrom: student.clabePersonal || '646180000000000000',
+        timestamp: new Date(),
+        metadata: {
+          posMode: mode,
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      // Process transaction
+      const result = await paymentService.processTransaction(order);
+
+      if (result.status === 'completed') {
+        // Decrement inventory for each item
+        for (const item of cart) {
+          try {
+            await inventoryService.decrementStock(item.id, item.quantity);
+          } catch (err) {
+            console.warn(`Inventory update failed for ${item.id}:`, err);
+            // Continue even if inventory update fails
+          }
+        }
+
+        setTransactionSuccess(true);
+        clearCart();
+        setScanStage('idle');
+        setStudentIdInput('');
+        
+        // Show success for 2 seconds then reset
+        setTimeout(() => {
+          setTransactionSuccess(false);
+        }, 2000);
+      } else {
+        setTransactionError(result.message || 'Transacción fallida');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al procesar transacción';
+      setTransactionError(errorMessage);
+      console.error('Transaction error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (scanStage === 'idle') {
       return (
@@ -134,7 +223,7 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
                       </form>
                       <div className="pt-10 border-t border-slate-200/50 flex flex-col gap-4">
                          <button 
-                            onClick={() => onNavigate(AppView.POS_GIFT_REDEEM)} 
+                            onClick={() => navigate('/student/gifts')} 
                             className="w-full py-8 flex items-center justify-center gap-6 bg-emerald-50 text-emerald-600 rounded-[40px] font-black uppercase tracking-widest text-[13px] hover:bg-emerald-100 transition-all group border border-emerald-100"
                          >
                             <Gift size={24} className="group-hover:animate-bounce"/> Canjear Código Digital
@@ -274,6 +363,26 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
         )}
 
         <div className="p-12 bg-white border-t border-slate-100 shadow-[0_-30px_60px_rgba(0,0,0,0.03)] relative z-40">
+            {transactionSuccess && (
+                <div className="mb-6 p-6 bg-emerald-50 border border-emerald-200 rounded-[24px] flex items-center gap-3">
+                    <CheckCircle2 className="text-emerald-600 flex-shrink-0" size={24} />
+                    <div>
+                        <p className="font-black text-emerald-900 text-sm">Transacción Exitosa</p>
+                        <p className="text-emerald-700 text-xs">Tu pago ha sido procesado</p>
+                    </div>
+                </div>
+            )}
+            
+            {transactionError && (
+                <div className="mb-6 p-6 bg-rose-50 border border-rose-200 rounded-[24px] flex items-center gap-3">
+                    <AlertTriangle className="text-rose-600 flex-shrink-0" size={24} />
+                    <div>
+                        <p className="font-black text-rose-900 text-sm">Error en Transacción</p>
+                        <p className="text-rose-700 text-xs">{transactionError}</p>
+                    </div>
+                </div>
+            )}
+            
             <div className="flex justify-between items-end mb-10">
                 <div>
                     <p className="text-[12px] font-black text-slate-400 uppercase tracking-[8px] mb-3">Total a Liquidar</p>
@@ -303,3 +412,4 @@ export const PosView: React.FC<PosViewProps> = ({ mode, cart, student, addToCart
     </div>
   );
 };
+export default PosView;

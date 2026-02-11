@@ -167,3 +167,4 @@ const TabButton = ({ active, onClick, icon, label }: any) => (
     {icon} <span>{label}</span>
   </button>
 );
+export default SchoolAdminView;

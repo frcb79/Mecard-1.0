@@ -1,6 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
+import { useAuth } from '../../hooks/useAuth';
 import { 
   Zap, ArrowRight, ShieldCheck, Mail, Lock, UserCircle, 
   GraduationCap, Smartphone, ChevronRight, X, CheckCircle2, 
@@ -10,13 +12,17 @@ import {
 } from 'lucide-react';
 import { Button } from './Button';
 
-interface LoginViewProps {
-  onLogin: (role: UserRole) => void;
-}
-
 type GatewayType = 'choice' | 'parent' | 'student' | 'institution' | 'corporate';
 
-export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
+/**
+ * LoginView Component
+ * Sistema de puertas de entrada (gateways) para diferentes tipos de usuarios
+ * Maneja autenticación y redirección automática al dashboard según rol
+ */
+export const LoginView: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, isDemoMode, loginAsRole, user } = useAuth();
+  
   const [gateway, setGateway] = useState<GatewayType>('choice');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,26 +33,82 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [pin, setPin] = useState('');
   const [masterKeyInput, setMasterKeyInput] = useState('');
 
-  const handleLogin = (role: UserRole) => {
-    // Verificación Crítica de Master Key
+  // Si ya está autenticado, redirigir al dashboard apropiado
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const dashboardPath = getDashboardPath(user.role);
+      navigate(dashboardPath);
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  /**
+   * Mapeo: Gateway → Rol → Dashboard URL
+   */
+  const getDashboardPath = (role: UserRole): string => {
+    const pathMap: Record<UserRole, string> = {
+      [UserRole.SUPER_ADMIN]: '/admin',
+      [UserRole.SCHOOL_ADMIN]: '/school',
+      [UserRole.SCHOOL_FINANCE]: '/school',
+      [UserRole.UNIT_MANAGER]: '/unit',
+      [UserRole.POS_OPERATOR]: '/pos',
+      [UserRole.CAFETERIA_STAFF]: '/pos',
+      [UserRole.STATIONERY_STAFF]: '/pos/stationery',
+      [UserRole.CASHIER]: '/cashier',
+      [UserRole.PARENT]: '/parent',
+      [UserRole.STUDENT]: '/student',
+    };
+    return pathMap[role] || '/login';
+  };
+
+  /**
+   * Manejar login: Usar loginAsRole en demo mode o llamar a API en prod
+   */
+  const handleLogin = async (role: UserRole) => {
+    // Verificación Crítica de Master Key para Super Admin
     if (role === UserRole.SUPER_ADMIN) {
-        if (masterKeyInput.toUpperCase() !== 'MECARD2025') {
-            alert("⚠️ Llave Maestra Incorrecta. Acceso Denegado.\nUsa: MECARD2025");
-            return;
-        }
+      if (masterKeyInput.toUpperCase() !== 'MECARD2025') {
+        alert("⚠️ Llave Maestra Incorrecta. Acceso Denegado.\nUsa: MECARD2025");
+        return;
+      }
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+    
+    try {
+      if (isDemoMode) {
+        // Modo demo - simular login y login como role
+        await new Promise(resolve => setTimeout(resolve, 800));
+        loginAsRole(role);
+        // Navigation ocurre automáticamente via useEffect
+      } else {
+        // Modo producción - llamar a API real
+        // TODO: Implementar login real con authService.login()
+        // const user = await authService.login(email, password, role);
+        throw new Error('Real auth not implemented yet');
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      alert('Error de autenticación. Intenta de nuevo.');
       setIsLoading(false);
-      onLogin(role);
-    }, 800);
+    }
   };
 
   const reset = () => {
     setGateway('choice');
     setMasterKeyInput('');
   };
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 font-semibold">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (gateway === 'choice') {
     return (
@@ -176,3 +238,4 @@ const GatewayCard = ({ onClick, icon, title, description, color, tag }: any) => 
     </button>
   );
 };
+export default LoginView;

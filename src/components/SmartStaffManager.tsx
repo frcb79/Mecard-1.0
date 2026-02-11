@@ -148,3 +148,4 @@ export const SmartStaffManager: React.FC<SmartStaffManagerProps> = ({
     </div>
   );
 };
+export default SmartStaffManager;
