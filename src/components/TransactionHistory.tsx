@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { useTransactions } from '../hooks/useTransactions';
+import { useAuth } from '../hooks/useAuth';
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -18,8 +19,8 @@ import {
 import { TransactionType } from '../types';
 
 interface TransactionHistoryProps {
-  studentId: string;
-  studentName: string;
+  studentId?: string;
+  studentName?: string;
 }
 
 // TIPOS DE TRANSACCIÓN SEGÚN TU SISTEMA
@@ -68,7 +69,10 @@ const TRANSACTION_CONFIG = {
   }
 } as const;
 
-export function TransactionHistory({ studentId, studentName }: TransactionHistoryProps) {
+export function TransactionHistory({ studentId, studentName }: TransactionHistoryProps = {}) {
+  const { user } = useAuth();
+  const effectiveId = studentId || user?.id || '';
+  
   const {
     transactions,
     loading,
@@ -77,7 +81,7 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
     setFilters,
     stats,
     refresh
-  } = useTransactions({ studentId });
+  } = useTransactions({ studentId: effectiveId });
 
   const [showFilters, setShowFilters] = React.useState(false);
 

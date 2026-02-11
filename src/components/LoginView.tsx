@@ -1,39 +1,26 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
+// CORRECCIÓN: La ruta ahora es ../hooks porque hooks está dentro de src
 import { useAuth } from '../hooks/useAuth';
 import { 
-  Zap, ArrowRight, ShieldCheck, Mail, Lock, UserCircle, 
-  GraduationCap, Smartphone, ChevronRight, X, CheckCircle2, 
-  Sparkles, Bot, Building2, Store, ShieldAlert, Key, 
-  Fingerprint, ChevronLeft, ArrowLeftRight, Utensils, PenTool,
-  User, LockKeyhole, Hash, Info
+  Zap, ArrowRight, ShieldCheck, UserCircle, 
+  GraduationCap, Building2, ShieldAlert, Info
 } from 'lucide-react';
 import { Button } from './Button';
 
 type GatewayType = 'choice' | 'parent' | 'student' | 'institution' | 'corporate';
 
-/**
- * LoginView Component
- * Sistema de puertas de entrada (gateways) para diferentes tipos de usuarios
- * Maneja autenticación y redirección automática al dashboard según rol
- */
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
+  // CORRECCIÓN: Renombramos isLoading a authLoading para evitar conflictos
   const { isAuthenticated, isDemoMode, loginAsRole, user, isLoading: authLoading } = useAuth();
   
   const [gateway, setGateway] = useState<GatewayType>('choice');
   const [isLoading, setIsLoading] = useState(false);
-
-  // Form States
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [studentId, setStudentId] = useState('');
-  const [pin, setPin] = useState('');
   const [masterKeyInput, setMasterKeyInput] = useState('');
 
-  // Si ya está autenticado, redirigir al dashboard apropiado
+  // Redirección automática si ya está autenticado
   useEffect(() => {
     if (isAuthenticated && user) {
       const dashboardPath = getDashboardPath(user.role);
@@ -41,9 +28,6 @@ export const LoginView: React.FC = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  /**
-   * Mapeo: Gateway → Rol → Dashboard URL
-   */
   const getDashboardPath = (role: UserRole): string => {
     const pathMap: Record<UserRole, string> = {
       [UserRole.SUPER_ADMIN]: '/admin',
@@ -60,11 +44,7 @@ export const LoginView: React.FC = () => {
     return pathMap[role] || '/login';
   };
 
-  /**
-   * Manejar login: Usar loginAsRole en demo mode o llamar a API en prod
-   */
   const handleLogin = async (role: UserRole) => {
-    // Verificación Crítica de Master Key para Super Admin
     if (role === UserRole.SUPER_ADMIN) {
       if (masterKeyInput.toUpperCase() !== 'MECARD2025') {
         alert("⚠️ Llave Maestra Incorrecta. Acceso Denegado.\nUsa: MECARD2025");
@@ -76,14 +56,9 @@ export const LoginView: React.FC = () => {
     
     try {
       if (isDemoMode) {
-        // Modo demo - simular login y login como role
         await new Promise(resolve => setTimeout(resolve, 800));
         loginAsRole(role);
-        // Navigation ocurre automáticamente via useEffect
       } else {
-        // Modo producción - llamar a API real
-        // TODO: Implementar login real con authService.login()
-        // const user = await authService.login(email, password, role);
         throw new Error('Real auth not implemented yet');
       }
     } catch (error) {
@@ -98,7 +73,7 @@ export const LoginView: React.FC = () => {
     setMasterKeyInput('');
   };
 
-  // Mostrar loading mientras se verifica la autenticación
+  // Usamos authLoading aquí
   if (authLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
@@ -202,7 +177,6 @@ export const LoginView: React.FC = () => {
     );
   }
 
-  // Fallback para otros portales (usando handleLogin directo para fines de demo)
   return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-100">
         <div className="bg-white p-16 rounded-[64px] shadow-2xl text-center">
@@ -238,4 +212,5 @@ const GatewayCard = ({ onClick, icon, title, description, color, tag }: any) => 
     </button>
   );
 };
+
 export default LoginView;

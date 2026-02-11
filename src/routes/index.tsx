@@ -28,9 +28,9 @@ import PosView from '../components/PosView';
 import SettlementsView from '../components/SettlementsView';
 
 // ========== SUPER ADMIN VIEWS (DISABLED TEMPORARILY) ==========
-// import SuperAdminDashboard from '../components/SuperAdminDashboard';
-// import SchoolManagement from '../components/SchoolManagement';
-// import BusinessModelConfiguration from '../components/BusinessModelConfiguration';
+import SuperAdminDashboard from '../components/SuperAdminDashboard';
+import SchoolManagement from '../components/SchoolManagement';
+import BusinessModelConfiguration from '../components/BusinessModelConfiguration';
 
 // ========== SCHOOL ADMIN VIEWS (DISABLED TEMPORARILY) ==========
 // import SchoolAdminView from '../components/SchoolAdminView';
@@ -49,11 +49,14 @@ import SettlementsView from '../components/SettlementsView';
 
 // ========== PARENT VIEWS (DISABLED TEMPORARILY) ==========
 // import ParentPortal from '../components/ParentPortal';
+import ParentWalletView from '../components/ParentWalletView';
 
 // ========== STUDENT VIEWS ==========
 import StudentDashboard from '../components/StudentDashboard';
-// import TransactionHistory from '../components/TransactionHistory';
-// import MeCardSocial from '../components/MeCardSocial';
+import TransactionHistory from '../components/TransactionHistory';
+import StudentCredentialView from '../components/StudentCredentialView';
+import StudentMenuView from '../components/StudentMenuView';
+// import MeCardSocial from '../components/MeCardSocial'; // Requiere props complejas aún
 
 // ========== PROTECTED LAYOUT ==========
 /**
@@ -85,7 +88,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Dashboard Super Admin" role={UserRole.SUPER_ADMIN} />
+              <SuperAdminDashboard />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -95,7 +98,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Gestión de Escuelas" role={UserRole.SUPER_ADMIN} />
+              <SchoolManagement />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -105,7 +108,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Configuración de Modelo de Negocio" role={UserRole.SUPER_ADMIN} />
+              <BusinessModelConfiguration onSave={() => {}} />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -243,7 +246,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Portal de Padres" role={UserRole.PARENT} />
+              <ParentWalletView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -265,7 +268,17 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Historial de Transacciones" role={UserRole.STUDENT} />
+              <TransactionHistory />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/id"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentCredentialView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -276,6 +289,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
               <DashboardPlaceholder title="MeCard Social" role={UserRole.STUDENT} />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/menu"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentMenuView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
