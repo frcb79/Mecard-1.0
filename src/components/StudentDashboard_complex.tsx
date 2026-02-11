@@ -27,8 +27,8 @@ import {
   FileText
 } from 'lucide-react';
 
-import { useAuth } from '../../hooks/useAuth';
-import { useProductSearch } from '../../hooks/useProductSearch';
+import { useAuth } from '../hooks/useAuth';
+import { useProductSearch } from '../hooks/useProductSearch';
 
 // Try to import supabase, but don't require it
 let supabase: any = null;

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { 
   Zap, ArrowRight, ShieldCheck, Mail, Lock, UserCircle, 
   GraduationCap, Smartphone, ChevronRight, X, CheckCircle2, 
@@ -21,7 +21,7 @@ type GatewayType = 'choice' | 'parent' | 'student' | 'institution' | 'corporate'
  */
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isDemoMode, loginAsRole, user } = useAuth();
+  const { isAuthenticated, isDemoMode, loginAsRole, user, isLoading: authLoading } = useAuth();
   
   const [gateway, setGateway] = useState<GatewayType>('choice');
   const [isLoading, setIsLoading] = useState(false);

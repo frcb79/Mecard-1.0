@@ -8,7 +8,7 @@ import {
   ShieldCheck, Globe, Rocket, HelpCircle, Gift, Layers, Terminal, PieChart
 } from 'lucide-react';
 import { UserRole } from '../types';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { NotificationCenter } from './NotificationCenter';
 
 /**

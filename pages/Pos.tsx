@@ -1,4 +1,4 @@
-import { usePos } from "../hooks/usePos";
+import { usePos } from "../src/hooks/usePos";
 import React from "react";
 import "./Pos.css";
 

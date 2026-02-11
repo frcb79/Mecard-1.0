@@ -3,7 +3,7 @@
 // ============================================
 
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../src/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Mail, AlertCircle, Zap } from 'lucide-react';
 

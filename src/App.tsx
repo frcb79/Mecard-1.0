@@ -1,18 +1,17 @@
-import { Routes, Route } from "react-router-dom";
-import AdminLayout from "./components/AdminLayout";
-import Schools from "./views/Schools";
-import Students from "./views/Students";
-import SchoolDetail from "./views/SchoolDetail";
+import React from 'react';
+import { AuthProvider } from './contexts/AuthContext';
+import { ServiceProvider } from './contexts/ServiceContext';
+import { PlatformProvider } from './contexts/PlatformContext';
+import AppRoutes from './routes';
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<AdminLayout />}>
-        <Route path="/" element={<div>Dashboard</div>} />
-        <Route path="/schools" element={<Schools />} />
-        <Route path="/schools/:id" element={<SchoolDetail />} />
-        <Route path="/students" element={<Students />} />
-      </Route>
-    </Routes>
+    <AuthProvider>
+      <ServiceProvider>
+        <PlatformProvider>
+          <AppRoutes />
+        </PlatformProvider>
+      </ServiceProvider>
+    </AuthProvider>
   );
 }

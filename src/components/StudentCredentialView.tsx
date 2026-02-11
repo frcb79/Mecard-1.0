@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { QrCode, Download, Share2, Copy, CheckCircle } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 export default function StudentCredentialView() {
   const { user } = useAuth();

@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { usePaymentService } from '../contexts/ServiceContext';
 import { Button } from './Button';
 import { MOCK_STUDENTS_LIST } from '../constants';

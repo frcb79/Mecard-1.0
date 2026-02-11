@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured } from '../src/lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface DbTransaction {

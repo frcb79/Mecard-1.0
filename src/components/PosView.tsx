@@ -13,7 +13,7 @@ import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { getSmartUpsell } from '../services/geminiService';
 import { usePaymentService, useInventoryService } from '../contexts/ServiceContext';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { CartOrder } from '../services/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';

@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Bell, X, Check } from 'lucide-react';
-import { useNotifications } from '../../hooks/useNotifications';
+import { useNotifications } from '../hooks/useNotifications';
 
 interface NotificationBellProps {
   userId: string;
