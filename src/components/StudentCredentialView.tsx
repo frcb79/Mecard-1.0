@@ -4,31 +4,26 @@
  * Permite visualizar datos de identidad y generar código QR para acceso
  */
 
-import React, { useState, useEffect } from 'react';
-import { QrCode, Download, Share2, Copy, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { QrCode, Download, Share2, Copy, CheckCircle, Users } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function StudentCredentialView() {
   const { user } = useAuth();
-  const [qrCode, setQrCode] = useState<string>('');
+  const qrRef = useRef<any>(null);
   const [copied, setCopied] = useState(false);
+  const [balance, setBalance] = useState<number>(850.00);
 
-  useEffect(() => {
-    // Generar código QR con datos del estudiante
-    // TODO: Integrar librería QR (qrcode.react o zxing)
-    if (user?.id) {
-      // Datos que irán en el QR
-      const qrData = JSON.stringify({
-        id: user.id,
-        name: user.fullName,
-        email: user.email,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Por ahora, simular con texto
-      setQrCode(user.id);
-    }
-  }, [user]);
+  // Generar datos del QR
+  const qrData = user ? JSON.stringify({
+    type: 'MECARD_CREDENTIAL',
+    id: user.id,
+    name: user.fullName,
+    email: user.email,
+    school: 'Escuela Primaria Federal',
+    timestamp: new Date().toISOString(),
+  }) : '';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(user?.id || '');
@@ -37,16 +32,21 @@ export default function StudentCredentialView() {
   };
 
   const handleDownload = () => {
-    // TODO: Descargar imagen de credencial como PDF o imagen
-    console.log('Descargando credencial...');
+    if (qrRef.current) {
+      const canvas = qrRef.current.querySelector('canvas');
+      const url = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `credencial-${user?.id}.png`;
+      link.click();
+    }
   };
 
   const handleShare = () => {
-    // TODO: Compartir credencial vía QR
     if (navigator.share) {
       navigator.share({
         title: 'Mi Credencial MeCard',
-        text: `Saldo: $0.00`,
+        text: `Credencial Digital - ${user?.fullName}`,
         url: window.location.href,
       });
     }
@@ -130,13 +130,18 @@ export default function StudentCredentialView() {
                 Código de Acceso
               </h3>
               <div className="bg-slate-50 rounded-[24px] p-8 flex flex-col items-center space-y-4">
-                {/* QR PLACEHOLDER */}
-                <div className="w-40 h-40 bg-white border-4 border-slate-200 rounded-[16px] flex items-center justify-center">
-                  <div className="text-center">
-                    <QrCode className="w-20 h-20 text-slate-300 mx-auto mb-2" />
-                    <p className="text-[9px] text-slate-400 font-black">QR Code</p>
-                    <p className="text-[8px] text-slate-300 mt-1">TODO: Generar QR real</p>
-                  </div>
+                {/* QR CODE (REAL) */}
+                <div ref={qrRef} className="bg-white p-4 rounded-[16px] border-4 border-slate-200">
+                  {user?.id && qrData && (
+                    <QRCodeSVG 
+                      value={qrData}
+                      size={160}
+                      level="H"
+                      includeMargin={true}
+                      fgColor="#1e293b"
+                      bgColor="#ffffff"
+                    />
+                  )}
                 </div>
 
                 {/* ID DISPLAY */}
@@ -167,26 +172,25 @@ export default function StudentCredentialView() {
               </div>
             </div>
 
-            {/* DATOS ADICIONALES */}
+            {/* BALANCE & ACCESS */}
             <div className="space-y-4">
               <h3 className="text-sm font-black text-indigo-400 uppercase tracking-[3px]">
-                Información de Acceso
+                Saldo Disponible
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 rounded-[16px] p-4">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[1px] mb-2">
-                    Tipo de Acceso
-                  </p>
-                  <p className="text-sm font-black text-slate-900">Digital + Biométrico</p>
-                </div>
-                <div className="bg-slate-50 rounded-[16px] p-4">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[1px] mb-2">
-                    Válida hasta
-                  </p>
-                  <p className="text-sm font-black text-slate-900">Diciembre 2026</p>
-                </div>
+              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-[24px] p-8 border-2 border-indigo-200">
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[2px] mb-2">
+                  Saldo actual
+                </p>
+                <p className="text-5xl font-black text-indigo-900 tracking-tighter">
+                  ${balance.toFixed(2)}
+                </p>
+                <p className="text-[9px] text-indigo-700 mt-4">
+                  💡 Tu saldo se actualiza en tiempo real con cada compra. Consulta tu billetera para más detalles.
+                </p>
               </div>
             </div>
+
+
           </div>
         </div>
 

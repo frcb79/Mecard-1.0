@@ -18,37 +18,29 @@ import { Sidebar } from '../components/Sidebar';
 import LoginView from '../components/LoginView';
 import UnauthorizedView from '../../pages/Unauthorized';
 
-// ========== PLACEHOLDER DASHBOARD ==========
-import { DashboardPlaceholder } from '../components/DashboardPlaceholder';
-
-// ========== POS VIEWS ==========
-import PosView from '../components/PosView';
-
-// ========== SETTLEMENT VIEWS ==========
-import SettlementsView from '../components/SettlementsView';
-
-// ========== SUPER ADMIN VIEWS (DISABLED TEMPORARILY) ==========
+// ========== SUPER ADMIN VIEWS ==========
 import SuperAdminDashboard from '../components/SuperAdminDashboard';
 import SchoolManagement from '../components/SchoolManagement';
 import BusinessModelConfiguration from '../components/BusinessModelConfiguration';
+import SettlementsView from '../components/SettlementsView';
+import ReportsView from '../components/ReportsView';
 
-// ========== SCHOOL ADMIN VIEWS (DISABLED TEMPORARILY) ==========
-// import SchoolAdminView from '../components/SchoolAdminView';
-// import SchoolAdminStudentsView from '../components/SchoolAdminStudentsView';
-// import SchoolOnboardingDashboard from '../components/SchoolOnboardingDashboard';
-// import SmartStaffManager from '../components/SmartStaffManager';
-// import StudentImportWizard from '../components/StudentImportWizard';
+// ========== SCHOOL ADMIN VIEWS ==========
+import SchoolAdminView from '../components/SchoolAdminView';
+import StudentManagementView from '../components/StudentManagementView';
+import SmartStaffManager from '../components/SmartStaffManager';
+import StudentImportWizard from '../components/StudentImportWizard';
 
-// ========== UNIT MANAGER VIEWS (DISABLED TEMPORARILY) ==========
-// import ConcessionaireDashboard from '../components/ConcessionaireDashboard';
-// import InventoryManagementView from '../components/InventoryManagementView';
+// ========== UNIT MANAGER VIEWS ==========
+import ConcessionaireDashboard from '../components/ConcessionaireDashboard';
+import InventoryManagementView from '../components/InventoryManagementView';
 
-// ========== POS VIEWS (DISABLED TEMPORARILY) ==========
-// import PosView from '../components/PosView';
-// import CashierView from '../components/CashierView';
+// ========== POS VIEWS ==========
+import PosView from '../components/PosView';
+import CashierView from '../components/CashierView';
 
-// ========== PARENT VIEWS (DISABLED TEMPORARILY) ==========
-// import ParentPortal from '../components/ParentPortal';
+// ========== PARENT VIEWS ==========
+import ParentPortal from '../components/ParentPortal';
 import ParentWalletView from '../components/ParentWalletView';
 
 // ========== STUDENT VIEWS ==========
@@ -104,6 +96,26 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/admin/settlement"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <SettlementsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <ReportsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/config"
         element={
           <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
@@ -120,7 +132,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Dashboard Escolar" role={UserRole.SCHOOL_ADMIN} />
+              <SchoolAdminView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -130,7 +142,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Gestión de Estudiantes" role={UserRole.SCHOOL_ADMIN} />
+              <StudentManagementView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -140,7 +152,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Gestión de Personal" role={UserRole.SCHOOL_ADMIN} />
+              <SmartStaffManager />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -150,17 +162,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Importar Estudiantes" role={UserRole.SCHOOL_ADMIN} />
-            </RoleBasedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/school/onboarding"
-        element={
-          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
-            <RoleBasedLayout>
-              <DashboardPlaceholder title="Onboarding de Escuela" role={UserRole.SCHOOL_ADMIN} />
+              <StudentImportWizard />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -170,7 +172,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Configuración Escolar" role={UserRole.SCHOOL_ADMIN} />
+              <BusinessModelConfiguration onSave={() => {}} />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -182,7 +184,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.UNIT_MANAGER]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Dashboard de Unidad" role={UserRole.UNIT_MANAGER} />
+              <ConcessionaireDashboard />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -192,7 +194,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.UNIT_MANAGER]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Gestión de Inventario" role={UserRole.UNIT_MANAGER} />
+              <InventoryManagementView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -202,7 +204,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.UNIT_MANAGER]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Gestión de Personal de Unidad" role={UserRole.UNIT_MANAGER} />
+              <SmartStaffManager />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -234,7 +236,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.CASHIER, UserRole.UNIT_MANAGER]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="Sistema de Caja" role={UserRole.CASHIER} />
+              <CashierView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -243,6 +245,16 @@ export default function AppRoutes() {
       {/* ====== PARENT ROUTES ====== */}
       <Route
         path="/parent"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentPortal />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/wallet"
         element={
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>

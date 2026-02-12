@@ -20,11 +20,27 @@ export const LoginView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [masterKeyInput, setMasterKeyInput] = useState('');
 
+  // Mapear gateway a rol de usuario
+  const gatewayToRole = (gw: GatewayType): UserRole => {
+    switch (gw) {
+      case 'parent':
+        return UserRole.PARENT;
+      case 'student':
+        return UserRole.STUDENT;
+      case 'institution':
+        return UserRole.SCHOOL_ADMIN;
+      case 'corporate':
+        return UserRole.SUPER_ADMIN;
+      default:
+        return UserRole.STUDENT;
+    }
+  };
+
   // Redirección automática si ya está autenticado
   useEffect(() => {
     if (isAuthenticated && user) {
       const dashboardPath = getDashboardPath(user.role);
-      navigate(dashboardPath);
+      navigate(dashboardPath, { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -45,6 +61,7 @@ export const LoginView: React.FC = () => {
   };
 
   const handleLogin = async (role: UserRole) => {
+    // Validación especial para Super Admin
     if (role === UserRole.SUPER_ADMIN) {
       if (masterKeyInput.toUpperCase() !== 'MECARD2025') {
         alert("⚠️ Llave Maestra Incorrecta. Acceso Denegado.\nUsa: MECARD2025");
@@ -56,8 +73,14 @@ export const LoginView: React.FC = () => {
     
     try {
       if (isDemoMode) {
+        // Simular delay de autenticación
         await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Hacer login con el rol especificado
         loginAsRole(role);
+        
+        // Aquí la redirección ocurre automáticamente via useEffect
+        // porque loginAsRole actualiza el state `user` que dispara isAuthenticated
       } else {
         throw new Error('Real auth not implemented yet');
       }
@@ -71,6 +94,7 @@ export const LoginView: React.FC = () => {
   const reset = () => {
     setGateway('choice');
     setMasterKeyInput('');
+    setIsLoading(false);
   };
 
   // Usamos authLoading aquí
@@ -177,15 +201,122 @@ export const LoginView: React.FC = () => {
     );
   }
 
-  return (
-    <div className="h-screen w-full flex items-center justify-center bg-slate-100">
-        <div className="bg-white p-16 rounded-[64px] shadow-2xl text-center">
-            <h2 className="text-3xl font-black mb-8">Portal en Desarrollo</h2>
-            <Button onClick={() => handleLogin(gateway.toUpperCase() as any)} className="px-12 py-6 rounded-3xl">Simular Entrada</Button>
-            <button onClick={reset} className="block w-full mt-6 text-slate-400 font-black uppercase text-[10px]">Volver</button>
+  if (gateway === 'parent') {
+    return (
+      <div className="h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full animate-in zoom-in duration-500">
+          <div className="bg-white p-12 rounded-[48px] shadow-2xl space-y-8">
+            <div className="text-center">
+              <div className="bg-indigo-100 w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-200">
+                <UserCircle className="text-indigo-600 w-12 h-12" />
+              </div>
+              <h2 className="text-3xl font-black text-slate-800 tracking-tighter">Portal Familiar</h2>
+              <p className="text-[10px] text-slate-400 uppercase tracking-[2px] font-bold mt-2">Gestiona el saldo de tus hijos</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Email</label>
+                <input type="email" placeholder="tu-email@gmail.com" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Contraseña</label>
+                <input type="password" placeholder="••••••••" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all" />
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => handleLogin(UserRole.PARENT)} 
+              disabled={isLoading}
+              className="w-full py-6 rounded-[24px] bg-indigo-600 text-white font-black text-xs uppercase tracking-[3px] shadow-lg"
+            >
+              {isLoading ? 'Entrando...' : 'Entrar a Billetera'}
+            </Button>
+
+            <button onClick={reset} className="block w-full text-slate-400 font-black text-[9px] uppercase tracking-[3px]">← Volver</button>
+          </div>
         </div>
-    </div>
-  );
+      </div>
+    );
+  }
+
+  if (gateway === 'student') {
+    return (
+      <div className="h-screen w-full bg-gradient-to-br from-emerald-50 via-white to-emerald-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full animate-in zoom-in duration-500">
+          <div className="bg-white p-12 rounded-[48px] shadow-2xl space-y-8">
+            <div className="text-center">
+              <div className="bg-emerald-100 w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-200">
+                <GraduationCap className="text-emerald-600 w-12 h-12" />
+              </div>
+              <h2 className="text-3xl font-black text-slate-800 tracking-tighter">Portal Estudiante</h2>
+              <p className="text-[10px] text-slate-400 uppercase tracking-[2px] font-bold mt-2">Accede a tu credencial y saldo</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Matrícula</label>
+                <input type="text" placeholder="2024-12345" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium uppercase outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all text-center" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">PIN</label>
+                <input type="password" placeholder="••••" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all text-center" />
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => handleLogin(UserRole.STUDENT)} 
+              disabled={isLoading}
+              className="w-full py-6 rounded-[24px] bg-emerald-600 text-white font-black text-xs uppercase tracking-[3px] shadow-lg"
+            >
+              {isLoading ? 'Entrando...' : 'Acceder a Mi Perfil'}
+            </Button>
+
+            <button onClick={reset} className="block w-full text-slate-400 font-black text-[9px] uppercase tracking-[3px]">← Volver</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (gateway === 'institution') {
+    return (
+      <div className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full animate-in zoom-in duration-500">
+          <div className="bg-white p-12 rounded-[48px] shadow-2xl space-y-8">
+            <div className="text-center">
+              <div className="bg-slate-100 w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-slate-200">
+                <Building2 className="text-slate-700 w-12 h-12" />
+              </div>
+              <h2 className="text-3xl font-black text-slate-800 tracking-tighter">Portal Escolar</h2>
+              <p className="text-[10px] text-slate-400 uppercase tracking-[2px] font-bold mt-2">Panel administrativo de la institución</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Email Institucional</label>
+                <input type="email" placeholder="admin@escuela.mx" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none focus:border-slate-700 focus:ring-2 focus:ring-slate-100 transition-all" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Contraseña</label>
+                <input type="password" placeholder="••••••••" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none focus:border-slate-700 focus:ring-2 focus:ring-slate-100 transition-all" />
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => handleLogin(UserRole.SCHOOL_ADMIN)} 
+              disabled={isLoading}
+              className="w-full py-6 rounded-[24px] bg-slate-800 text-white font-black text-xs uppercase tracking-[3px] shadow-lg"
+            >
+              {isLoading ? 'Entrando...' : 'Panel Administrativo'}
+            </Button>
+
+            <button onClick={reset} className="block w-full text-slate-400 font-black text-[9px] uppercase tracking-[3px]">← Volver</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 };
 
 const GatewayCard = ({ onClick, icon, title, description, color, tag }: any) => {
