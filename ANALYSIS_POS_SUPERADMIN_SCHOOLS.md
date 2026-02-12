@@ -177,15 +177,14 @@ VALUES (?, ?, ?, ?)
 
 Hoy solo soporta "cartera digital" (wallet). Necesita:
 ```
-- ¿Pagar en efectivo?
-- ¿Cheque escolar?
-- ¿Transferencia bancaria?
+- Pagar en efectivo (CASH)
+- Confirmación manual de efectivo recibido
 ```
 
 **Ubicación:** `handleCheckout()` - parámetro paymentMethod
 
 ```tsx
-const paymentMethod = selectedPaymentMethod || 'WALLET';  // vs 'CASH', 'CHECK'
+const paymentMethod = selectedPaymentMethod || 'WALLET';  // vs 'CASH'
 
 const result = await paymentService.processTransaction({
   ...order,
@@ -342,7 +341,7 @@ Formulario:
 ├───────────────────────────────────────┤
 │ Período: [2026-02-01] - [2026-02-28]  │
 │ Alcance: ◉ Todas | ○ Escuela específica│
-│ Método: ◉ SPEI | ○ Cheque | ○ Depósito│
+│ Método: ◉ SPEI | ○ Depósito│
 ├───────────────────────────────────────┤
 │ [Cambiar período] [Generar ▶]         │
 └───────────────────────────────────────┘

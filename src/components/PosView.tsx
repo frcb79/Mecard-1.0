@@ -12,6 +12,7 @@ import { PRODUCTS, MOCK_STUDENT } from '../constants';
 import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { getSmartUpsell } from '../services/geminiService';
+import { rewardsService } from '../services/rewardsService';
 import { usePaymentService, useInventoryService } from '../contexts/ServiceContext';
 import { useAuth } from '../hooks/useAuth';
 import { CartOrder } from '../services/types';
@@ -160,6 +161,50 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
       const result = await paymentService.processTransaction(order);
 
       if (result.status === 'completed') {
+        // 🏆 MeCard Rewards: Calculate and record points
+        try {
+          // Step 1: Get school rewards config
+          const schoolConfig = await rewardsService.mockGetSchoolRewardsConfig(
+            student.schoolId || 'school-001'
+          );
+
+          // Step 2: Calculate points earned
+          const { markupAmount, pointsEarned } = rewardsService.calculatePointsFromPurchase(
+            total,
+            schoolConfig
+          );
+
+          // Step 3: Get old tier before update
+          const oldPointsData = await rewardsService.mockGetStudentRewardsPoints(
+            student.id,
+            student.schoolId || 'school-001'
+          );
+          const oldTier = oldPointsData.tier;
+
+          // Step 4: Record points transaction
+          await rewardsService.mockProcessRedemption(student.id, 'pos-' + result.transactionId, pointsEarned);
+          console.log(`✨ ${pointsEarned} puntos generados para ${student.name} (Markup: $${markupAmount.toFixed(2)})`);
+
+          // Step 5: Update state to show points earned
+          setAiUpsell(
+            `🎉 ${student.name} ganó ${pointsEarned} puntos!`
+          );
+
+          // Step 6: Check tier elevation
+          const newPointsData = await rewardsService.mockGetStudentRewardsPoints(
+            student.id,
+            student.schoolId || 'school-001'
+          );
+          
+          if (newPointsData.tier !== oldTier) {
+            const tierInfo = rewardsService.getTierInfo(newPointsData.tier);
+            console.log(`🆙 TIER UP! ${student.name} ascendió a ${tierInfo.label}`);
+          }
+        } catch (rewardError) {
+          console.warn('⚠️ Error processing rewards:', rewardError);
+          // Continue with transaction even if rewards fail
+        }
+
         // Decrement inventory for each item
         for (const item of cart) {
           try {
