@@ -1,21 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Wallet, ShoppingBag, History, Users, Zap } from 'lucide-react';
+import { Wallet, ShoppingBag, History, Users, Zap, Sparkles, Award, Gift } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { StudentProfile } from '../types';
+import { getFinancialEducation, getHealthChallenges } from '../services/geminiService';
+import { StudentRewardsDashboard } from './StudentRewardsDashboard';
+import { RewardsMarketplace } from './RewardsMarketplace';
 
 /**
  * Simplified StudentDashboard - Demo Mode
  * Works with or without Supabase
+ * Now includes MeCard Rewards integration
  */
 export default function StudentDashboard() {
   const { user, isAuthenticated, isStudent } = useAuth();
+  const [activeTab, setActiveTab] = useState<'wallet' | 'shop' | 'history' | 'learning' | 'rewards' | 'marketplace'>('wallet');
+  const [dailyLesson, setDailyLesson] = useState<string>('');
+  const [dailyChallenge, setDailyChallenge] = useState<string>('');
+  const [aiLoading, setAiLoading] = useState(false);
   
   if (!isAuthenticated || !isStudent) {
     return <Navigate to="/login" replace />;
   }
 
-  const [activeTab, setActiveTab] = useState<'wallet' | 'shop' | 'history'>('wallet');
+  useEffect(() => {
+    loadAIContent();
+  }, []);
+
+  const loadAIContent = async () => {
+    setAiLoading(true);
+    try {
+      const lesson = await getFinancialEducation(15, 'cafeteria');
+      setDailyLesson(lesson);
+
+      const challenge = await getHealthChallenges(15, [], []);
+      setDailyChallenge(challenge);
+    } catch (error) {
+      console.error('Error loading AI content:', error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Demo student profile
   const profile: StudentProfile = {
@@ -80,8 +105,8 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Tabs Grid - 2 rows x 3 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {/* Wallet Tab */}
           <div
             onClick={() => setActiveTab('wallet')}
@@ -129,12 +154,60 @@ export default function StudentDashboard() {
               Tus transacciones
             </p>
           </div>
+
+          {/* Learning Tab */}
+          <div
+            onClick={() => setActiveTab('learning')}
+            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
+              activeTab === 'learning'
+                ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                : 'bg-white text-slate-700 hover:shadow-lg'
+            }`}
+          >
+            <Sparkles className="w-8 h-8 mb-4" />
+            <h3 className="font-black text-lg mb-2">Aprender</h3>
+            <p className={`text-sm ${activeTab === 'learning' ? 'text-indigo-100' : 'text-slate-500'}`}>
+              Retos & Educación
+            </p>
+          </div>
+
+          {/* Rewards Tab */}
+          <div
+            onClick={() => setActiveTab('rewards')}
+            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
+              activeTab === 'rewards'
+                ? 'bg-yellow-500 text-white shadow-lg scale-105'
+                : 'bg-white text-slate-700 hover:shadow-lg'
+            }`}
+          >
+            <Award className="w-8 h-8 mb-4" />
+            <h3 className="font-black text-lg mb-2">Mis Puntos</h3>
+            <p className={`text-sm ${activeTab === 'rewards' ? 'text-yellow-100' : 'text-slate-500'}`}>
+              MeCard Rewards
+            </p>
+          </div>
+
+          {/* Marketplace Tab */}
+          <div
+            onClick={() => setActiveTab('marketplace')}
+            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
+              activeTab === 'marketplace'
+                ? 'bg-rose-600 text-white shadow-lg scale-105'
+                : 'bg-white text-slate-700 hover:shadow-lg'
+            }`}
+          >
+            <Gift className="w-8 h-8 mb-4" />
+            <h3 className="font-black text-lg mb-2">Canjear</h3>
+            <p className={`text-sm ${activeTab === 'marketplace' ? 'text-rose-100' : 'text-slate-500'}`}>
+              Premios & Regalos
+            </p>
+          </div>
         </div>
 
         {/* Content Area */}
-        <div className="mt-8 bg-white rounded-[32px] p-8 shadow-lg">
+        <div className="mt-8">
           {activeTab === 'wallet' && (
-            <div>
+            <div className="bg-white rounded-[32px] p-8 shadow-lg">
               <h2 className="text-2xl font-black mb-6">Mi Billetera</h2>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-4 bg-slate-50 rounded-[20px]">
@@ -156,7 +229,7 @@ export default function StudentDashboard() {
           )}
 
           {activeTab === 'shop' && (
-            <div>
+            <div className="bg-white rounded-[32px] p-8 shadow-lg">
               <h2 className="text-2xl font-black mb-6">Tienda</h2>
               <p className="text-slate-500 text-lg">
                 🎯 La tienda estará disponible pronto en el modo completo.
@@ -168,7 +241,7 @@ export default function StudentDashboard() {
           )}
 
           {activeTab === 'history' && (
-            <div>
+            <div className="bg-white rounded-[32px] p-8 shadow-lg">
               <h2 className="text-2xl font-black mb-6">Historial de Transacciones</h2>
               <p className="text-slate-500 text-lg">
                 📊 No hay transacciones aún.
@@ -177,6 +250,62 @@ export default function StudentDashboard() {
                 Tus compras aparecerán aquí.
               </p>
             </div>
+          )}
+
+          {activeTab === 'learning' && (
+            <div className="space-y-6">
+              {/* DAILY LESSON */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[24px] p-6 border-2 border-blue-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-6 h-6 text-indigo-600" />
+                  <h3 className="text-xl font-black text-slate-900">Lección del Día 📚</h3>
+                </div>
+                {aiLoading ? (
+                  <p className="text-slate-600 font-medium">Gemini está preparando tu lección...</p>
+                ) : (
+                  <p className="text-slate-800 leading-relaxed">{dailyLesson}</p>
+                )}
+              </div>
+
+              {/* DAILY CHALLENGE */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-[24px] p-6 border-2 border-green-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Award className="w-6 h-6 text-green-600" />
+                  <h3 className="text-xl font-black text-slate-900">Reto de Hoy 🎮</h3>
+                </div>
+                {aiLoading ? (
+                  <p className="text-slate-600 font-medium">Gemini está creando tu reto...</p>
+                ) : (
+                  <p className="text-slate-800 leading-relaxed">{dailyChallenge}</p>
+                )}
+                <button className="mt-4 bg-green-600 hover:bg-green-700 text-white font-black px-6 py-3 rounded-[20px] text-[10px] uppercase tracking-[2px] transition-all">
+                  ✓ Completar Reto
+                </button>
+              </div>
+
+              {/* INFO */}
+              <div className="bg-indigo-50 rounded-[24px] p-6 border-2 border-indigo-200">
+                <p className="text-indigo-900 font-bold">
+                  💡 <strong>Gemini AI Coach:</strong> Completa los retos y aprende lecciones diarias para desbloquear logros especiales.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'rewards' && (
+            <StudentRewardsDashboard
+              studentId={profile.id}
+              schoolId={profile.schoolId}
+              onMarketplaceClick={() => setActiveTab('marketplace')}
+            />
+          )}
+
+          {activeTab === 'marketplace' && (
+            <RewardsMarketplace
+              studentId={profile.id}
+              schoolId={profile.schoolId}
+              onRedemptionSuccess={() => setActiveTab('rewards')}
+            />
           )}
         </div>
 

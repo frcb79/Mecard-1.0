@@ -4,12 +4,40 @@
  * Accesible desde student y parent dashboards
  */
 
-import React, { useState } from 'react';
-import { Search, UtensilsCrossed, Salad, Coffee, Cake, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, UtensilsCrossed, Salad, Coffee, Cake, TrendingUp, Sparkles } from 'lucide-react';
+import { getNutritionalRecommendations } from '../services/geminiService';
 
 export default function StudentMenuView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | string>('all');
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [nutritionTip, setNutritionTip] = useState<string>('');
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+
+  // Load AI nutrition insights on component mount
+  useEffect(() => {
+    loadAIInsights();
+  }, []);
+
+  const loadAIInsights = async () => {
+    setAiLoading(true);
+    try {
+      // Get nutritional insights for today
+      const insights = await getNutritionalRecommendations(
+        ['Pollo Asado', 'Ensalada Mixta', 'Sandwich Jamón y Queso'],
+        [{ calories: 450, protein: '32g', carbs: '45g' }],
+        'healthy' // dietary preference
+      );
+      setAiInsights(insights);
+      setNutritionTip('💚 Recuerda mantener un balance nutricional en tus comidas del día');
+    } catch (error) {
+      setAiInsights('Elige opciones balanceadas de proteína, carbohidratos y vegetales para una alimentación saludable');
+      setNutritionTip('🌟 Consulta con la nutricionista escolar para recomendaciones personalizadas');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // MOCK: Menú del día disponible
   const menuItems = [
@@ -107,6 +135,39 @@ export default function StudentMenuView() {
           <p className="text-slate-500 font-medium">
             Consulta los productos disponibles en nuestras unidades de venta
           </p>
+        </div>
+
+        {/* AI NUTRITION INSIGHTS */}
+        <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-[28px] shadow-lg p-6 mb-8 border-2 border-emerald-200">
+          {aiLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="animate-spin mr-3">
+                <Sparkles className="w-6 h-6 text-emerald-600" />
+              </div>
+              <p className="text-emerald-700 font-bold text-lg">Analizando opciones nutricionales...</p>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-start gap-3 mb-4">
+                <TrendingUp className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h3 className="font-black text-slate-900 text-lg mb-2">💚 Recomendación Nutricional de Hoy</h3>
+                  <p className="text-emerald-900 font-medium">{aiInsights}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm bg-white rounded-[16px] p-3">
+                <span className="text-lg">🌟</span>
+                <p className="text-slate-700 font-semibold">{nutritionTip}</p>
+              </div>
+              <button
+                onClick={loadAIInsights}
+                disabled={aiLoading}
+                className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-[12px] transition-all disabled:opacity-50"
+              >
+                Actualizar Recomendación
+              </button>
+            </div>
+          )}
         </div>
 
         {/* BÚSQUEDA */}

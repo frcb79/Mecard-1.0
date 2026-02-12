@@ -5,17 +5,18 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2, Sparkles, TrendingDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { usePaymentService } from '../contexts/ServiceContext';
 import { Button } from './Button';
 import { MOCK_STUDENTS_LIST } from '../constants';
+import { getSpendingAnalysis, getSmartAlerts } from '../services/geminiService';
 
 export default function ParentWalletView() {
   const { user } = useAuth();
   const paymentService = usePaymentService();
   
-  const [activeTab, setActiveTab] = useState<'deposit' | 'manage'>('deposit');
+  const [activeTab, setActiveTab] = useState<'deposit' | 'manage' | 'insights'>('deposit');
   const [depositAmount, setDepositAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'spei' | 'card'>('spei');
   const [selectedChild, setSelectedChild] = useState<string>('');
@@ -24,6 +25,11 @@ export default function ParentWalletView() {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [transactionHistory, setTransactionHistory] = useState<any[]>([]);
+  
+  // AI Features State
+  const [aiInsight, setAiInsight] = useState<string>('');
+  const [aiAlerts, setAiAlerts] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Mock parent's children (in real scenario: get from API with parent ID)
   const children = MOCK_STUDENTS_LIST.slice(0, 2).map(student => ({
@@ -42,7 +48,31 @@ export default function ParentWalletView() {
         console.error(`Failed to load balance for ${child.id}:`, error);
       }
     });
+    
+    // Load AI Insights on mount
+    loadAIInsights();
   }, []);
+
+  const loadAIInsights = async () => {
+    setAiLoading(true);
+    try {
+      // Get spending analysis
+      const insight = await getSpendingAnalysis(
+        transactionHistory.slice(0, 10),
+        [],
+        5000
+      );
+      setAiInsight(insight);
+
+      // Get smart alerts
+      const alerts = await getSmartAlerts(2450.50, 100, 35.50, transactionHistory.slice(0, 5));
+      setAiAlerts(alerts);
+    } catch (error) {
+      console.error('Error loading AI insights:', error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleDeposit = async () => {
     if (!depositAmount) {
@@ -218,6 +248,16 @@ export default function ParentWalletView() {
                 }`}
               >
                 <Send className="w-4 h-4 inline mr-2" /> Asignar Dinero
+              </button>
+              <button
+                onClick={() => setActiveTab('insights')}
+                className={`flex-1 px-6 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-[2px] transition-all ${
+                  activeTab === 'insights'
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 inline mr-2" /> IA Insights
               </button>
             </div>
 
@@ -398,6 +438,65 @@ export default function ParentWalletView() {
                     'Asignar Dinero'
                   )}
                 </Button>
+              </div>
+            )}
+
+            {/* TAB: AI INSIGHTS */}
+            {activeTab === 'insights' && (
+              <div className="space-y-6">
+                {/* SPENDING ANALYSIS */}
+                <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-[32px] shadow-xl p-8 border-2 border-indigo-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Sparkles className="w-6 h-6 text-indigo-600" />
+                    <h3 className="text-2xl font-black text-slate-900">Análisis de Gasto</h3>
+                  </div>
+                  
+                  {aiLoading ? (
+                    <div className="flex items-center gap-2 text-indigo-600">
+                      <Loader2 className="animate-spin w-5 h-5" />
+                      <p className="font-black">Analizando patrones...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-slate-700 leading-relaxed font-medium">
+                        {aiInsight || "💡 Gemini está analizando los patrones de gasto..."}
+                      </p>
+                      <button
+                        onClick={loadAIInsights}
+                        className="text-indigo-600 font-black text-[10px] uppercase tracking-[2px] hover:text-indigo-700 transition-colors"
+                      >
+                        ↻ Actualizar Análisis
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* SMART ALERTS */}
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-[32px] shadow-xl p-8 border-2 border-amber-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <TrendingDown className="w-6 h-6 text-amber-600" />
+                    <h3 className="text-2xl font-black text-slate-900">Alertas Inteligentes</h3>
+                  </div>
+                  
+                  {aiAlerts.length > 0 ? (
+                    <div className="space-y-3">
+                      {aiAlerts.map((alert, idx) => (
+                        <div key={idx} className="bg-white rounded-[16px] p-4 border-l-4 border-amber-600">
+                          <p className="text-slate-800 font-medium">{alert}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-700 font-medium">✅ No hay alertas importantes en este momento.</p>
+                  )}
+                </div>
+
+                {/* INFO */}
+                <div className="bg-blue-50 rounded-[24px] p-6 border-2 border-blue-100">
+                  <p className="text-blue-900 font-bold text-sm">
+                    💡 <strong>Inteligencia Artificial:</strong> Estos análisis se actualizan diariamente con los últimos patrones de gasto de tu hijo. Basados en Gemini AI.
+                  </p>
+                </div>
               </div>
             )}
           </div>
