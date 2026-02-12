@@ -252,6 +252,9 @@ export interface StudentProfile {
   // Finanzas
   clabePersonal?: string;  // Para devoluciones
   
+  // Rewards & Puntos
+  rewardsPoints?: StudentRewardsPoints;
+  
   // Audit
   createdAt: string;
   updatedAt: string;
@@ -1310,6 +1313,129 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.PARENT]: 'Padre/Tutor',
   [UserRole.STUDENT]: 'Estudiante'
 };
+
+// ============================================
+// 21. MECARD REWARDS SYSTEM
+// ============================================
+
+export enum RewardsTier {
+  BRONZE = 'BRONZE',
+  SILVER = 'SILVER',
+  GOLD = 'GOLD',
+  PLATINUM = 'PLATINUM'
+}
+
+export enum PointsTransactionType {
+  EARN = 'EARN',
+  REDEEM = 'REDEEM',
+  EXPIRE = 'EXPIRE',
+  ADJUST = 'ADJUST'
+}
+
+export enum RedemptionStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum MarketplaceCategory {
+  TECH = 'TECH',
+  SCHOOL_SUPPLIES = 'SCHOOL_SUPPLIES',
+  SPORTS = 'SPORTS',
+  ENTERTAINMENT = 'ENTERTAINMENT',
+  GIFT_CARDS = 'GIFT_CARDS',
+  EXPERIENCES = 'EXPERIENCES'
+}
+
+export interface StudentRewardsPoints {
+  studentId: string;
+  schoolId: string;
+  totalPoints: number;
+  earnedThisCycle: number;
+  redeemedThisCycle: number;
+  tier: RewardsTier;
+  lastUpdated: string;
+}
+
+export interface SchoolRewardsConfig {
+  id: string;
+  schoolId: string;
+  schoolName?: string;
+  
+  // Configuration
+  markupPercentage: number;        // 5-15% sobre precio base
+  pointsPerPeso: number;            // Default: 10 puntos por peso
+  enabled: boolean;
+  
+  // Ciclo escolar
+  cycleStartDate: string;
+  cycleEndDate: string;
+  
+  // Tier thresholds
+  tierThresholds: {
+    silver: number;                 // Default: 1000
+    gold: number;                   // Default: 3000
+    platinum: number;               // Default: 7000
+  };
+  
+  // Audit
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceProduct {
+  id: string;
+  name: string;
+  description: string;
+  category: MarketplaceCategory;
+  pointsCost: number;
+  stockQuantity: number;
+  currentStock: number;
+  imageUrl?: string;
+  featured: boolean;
+  available: boolean;
+  schoolId?: string;                // null = available para todas las escuelas
+  popularityScore: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PointsTransaction {
+  id: string;
+  studentId: string;
+  schoolId: string;
+  type: PointsTransactionType;
+  pointsAmount: number;
+  referenceId?: string;             // sale_id o redemption_id
+  description: string;
+  metadata?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface StudentRedemption {
+  id: string;
+  studentId: string;
+  schoolId: string;
+  product: MarketplaceProduct;
+  pointsSpent: number;
+  status: RedemptionStatus;
+  deliveryDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface POSTransactionWithRewards {
+  id: string;
+  studentId: string;
+  amount: number;                   // Precio con markup
+  baseAmount: number;               // Precio sin markup
+  markupAmount: number;             // Markup que genera puntos
+  pointsEarned: number;
+  description: string;
+  createdAt: string;
+}
 
 // ============================================
 // 22. TYPE GUARDS
