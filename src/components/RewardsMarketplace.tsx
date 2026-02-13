@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Zap,
   Package,
-  ChevronRight
+  ChevronRight,
+  Gift
 } from 'lucide-react';
 import { useRewards } from '../hooks/useRewards';
 import { rewardsService } from '../services/rewardsService';
