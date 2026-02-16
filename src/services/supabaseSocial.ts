@@ -133,7 +133,9 @@ export const socialService = {
   },
 
   /**
-   * ENVIAR REGALO
+   * ENVIAR REGALO - DEFERRED CHARGING
+   * NO COBRA al sender hasta que el receiver lo canjee en POS
+   * Solo crea un record de regalo con status PENDING
    */
   async sendGift(
     senderId: string,
@@ -142,34 +144,96 @@ export const socialService = {
     schoolId: string,
     message?: string
   ): Promise<{ giftId: string; code: string }> {
-    const { data, error } = await supabase.rpc('process_gift_purchase', {
-      p_sender_id: senderId,
-      p_receiver_id: receiverId,
-      p_item_id: item.id,
-      p_amount: item.price,
-      p_school_id: schoolId,
-      p_message: message || null,
-    });
+    // Generate unique redemption code
+    const redemptionCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    // Create gift record WITHOUT charging sender
+    const { data, error } = await supabase
+      .from('gifts')
+      .insert({
+        sender_id: senderId,
+        receiver_id: receiverId,
+        inventory_item_id: item.id,
+        product_name: item.name,
+        amount: item.price,
+        school_id: schoolId,
+        status: 'pending',
+        message: message || null,
+        redemption_code: redemptionCode,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // Expires in 30 days
+      })
+      .select('id')
+      .single();
 
     if (error) throw error;
+
     return {
-      giftId: data[0].gift_id,
-      code: data[0].redemption_code,
+      giftId: data.id,
+      code: redemptionCode
     };
   },
 
   /**
    * CANJEAR REGALO EN POS
+   * CRITICAL: Triggers deferred charging when gift is redeemed
    */
   async redeemGift(code: string, unitId: string): Promise<Gift> {
-    const { data, error } = await supabase
+    // First, fetch the gift to get sender/receiver info
+    const { data: giftData, error: fetchError } = await supabase
       .from('gifts')
-      .update({ 
-        status: 'redeemed', 
-        redeemed_at: new Date().toISOString()
-      })
+      .select('*')
       .eq('redemption_code', code.toUpperCase())
       .eq('status', 'pending')
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') throw new Error('Código no encontrado o ya canjeado.');
+      throw fetchError;
+    }
+
+    if (!giftData) throw new Error('Código no encontrado o ya canjeado.');
+
+    // Create wallet transactions: sender charged, receiver credited
+    const transactionId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    // Insert two transactions: GIFT_SENT (sender debit) and GIFT_RECEIVED (receiver credit)
+    const { error: transactionError } = await supabase
+      .from('wallet_transactions')
+      .insert([
+        {
+          id: crypto.randomUUID(),
+          user_id: giftData.sender_id,
+          transaction_type: 'GIFT_SENT',
+          amount: -giftData.amount,
+          description: `Regalaste ${giftData.product_name} a un compañero`,
+          gift_id: giftData.id,
+          created_at: now,
+          school_id: giftData.school_id
+        },
+        {
+          id: crypto.randomUUID(),
+          user_id: giftData.receiver_id,
+          transaction_type: 'GIFT_RECEIVED',
+          amount: 0, // Receiver doesn't pay, gets product
+          description: `Recibiste ${giftData.product_name} como regalo`,
+          gift_id: giftData.id,
+          created_at: now,
+          school_id: giftData.school_id
+        }
+      ]);
+
+    if (transactionError) throw transactionError;
+
+    // Update gift to redeemed status
+    const { data: redeemedGift, error: updateError } = await supabase
+      .from('gifts')
+      .update({
+        status: 'redeemed',
+        redeemed_at: now
+      })
+      .eq('redemption_code', code.toUpperCase())
       .select(`
         *,
         item:inventory_items(name, price, image_url),
@@ -177,10 +241,109 @@ export const socialService = {
       `)
       .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') throw new Error('Código no encontrado o ya canjeado.');
-      throw error;
+    if (updateError) throw updateError;
+
+    return redeemedGift as Gift;
+  },
+
+  // ============================================
+  // STUDENT FAVORITES / WISHLIST
+  // ============================================
+
+  /**
+   * Agrega un producto a favoritos
+   */
+  async addFavorite(
+    studentId: string,
+    schoolId: string,
+    productId: string,
+    productName: string,
+    productImage?: string,
+    isPublic: boolean = true
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('student_favorites')
+      .insert({
+        student_id: studentId,
+        school_id: schoolId,
+        product_id: productId,
+        product_name: productName,
+        product_image: productImage,
+        is_public: isPublic,
+        created_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
+  },
+
+  /**
+   * Remueve un producto de favoritos
+   */
+  async removeFavorite(studentId: string, productId: string): Promise<void> {
+    const { error } = await supabase
+      .from('student_favorites')
+      .delete()
+      .eq('student_id', studentId)
+      .eq('product_id', productId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Obtiene todos los favoritos de un estudiante
+   */
+  async getStudentFavorites(studentId: string) {
+    const { data, error } = await supabase
+      .from('student_favorites')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Obtiene favoritos públicos de un estudiante (para que otros vean qué regalarle)
+   */
+  async getPublicFavorites(studentId: string) {
+    const { data, error } = await supabase
+      .from('student_favorites')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('is_public', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Toggle favori status de un producto
+   */
+  async toggleProductFavorite(
+    studentId: string,
+    schoolId: string,
+    productId: string,
+    productName: string,
+    productImage?: string
+  ): Promise<boolean> {
+    // Verificar si existe
+    const { data: existing } = await supabase
+      .from('student_favorites')
+      .select('id')
+      .eq('student_id', studentId)
+      .eq('product_id', productId)
+      .single();
+
+    if (existing) {
+      // Remover
+      await this.removeFavorite(studentId, productId);
+      return false;
+    } else {
+      // Agregar
+      await this.addFavorite(studentId, schoolId, productId, productName, productImage, true);
+      return true;
     }
-    return data as Gift;
   }
 };

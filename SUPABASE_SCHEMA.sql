@@ -530,6 +530,45 @@ CREATE INDEX idx_revenue_tracking_category ON revenue_tracking(revenue_category)
 
 
 -- ============================================
+-- 16. STUDENT FAVORITES / WISHLIST
+-- ============================================
+CREATE TABLE IF NOT EXISTS student_favorites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  student_id UUID NOT NULL,
+  school_id UUID NOT NULL,
+  product_id UUID NOT NULL,
+
+  -- Product info (denormalized for quick display)
+  product_name VARCHAR(255),
+  product_image TEXT,
+
+  -- Privacy control
+  is_public BOOLEAN NOT NULL DEFAULT true,  -- Others can see what they want gifted
+
+  -- Audit
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+
+  -- Constraints
+  CONSTRAINT fk_student_favorites_student
+    FOREIGN KEY (student_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_student_favorites_school
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+  CONSTRAINT fk_student_favorites_product
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+
+  -- Prevent duplicates (each student can only favorite a product once)
+  CONSTRAINT uq_student_product_favorite
+    UNIQUE(student_id, product_id)
+);
+
+CREATE INDEX idx_student_favorites_student_id ON student_favorites(student_id);
+CREATE INDEX idx_student_favorites_school_id ON student_favorites(school_id);
+CREATE INDEX idx_student_favorites_is_public ON student_favorites(is_public);
+
+
+-- ============================================
 -- 12. NOTAS IMPORTANTES
 -- ============================================
 /*

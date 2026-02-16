@@ -883,42 +883,62 @@ export interface Disbursement {
 
 export interface Gift {
   id: string;
-  
+
   // Remitente
   senderId: string;
   senderName: string;
   senderStudentId: string;
-  
+
   // Destinatario
   receiverId: string;
   receiverName: string;
   receiverStudentId: string;
-  
+
   // Producto
   inventoryItemId: string;
   productName: string;
   productImage?: string;
-  
+
   // Monto
   amount: number;
-  
+
   // Código de canje
   redemptionCode: string;
-  
+
   // Status
   status: GiftStatus;
-  
+
   // Mensajes
   message?: string;
   thankYouMessage?: string;
-  
+
   // Timestamps
   createdAt: string;
   expiresAt: string;
-  redeemedAt?: string;
-  
+
+  // Redemption tracking (NEW)
+  redeemableAt?: string;        // When gif can be redeemed (typically immediately)
+  redeemedAt?: string;          // When gift was actually redeemed
+  redeemingStudentId?: string;  // Which student redeemed it
+  redeemingAt?: string;         // Timestamp of redemption
+  locationId?: string;          // POS location where redeemed
+
   // Metadata
   metadata?: Record<string, any>;
+}
+
+export interface StudentFavorite {
+  id: string;
+  studentId: string;
+  schoolId: string;
+  productId: string;
+  productName?: string;
+  productImage?: string;
+
+  isPublic: boolean;  // Others can see what you added to favorites
+
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Friend {

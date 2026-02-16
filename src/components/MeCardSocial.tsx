@@ -1,13 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, Heart, Gift, Search, Star, Lock, Globe, UserPlus, Zap, X, 
-  ShoppingBag, AlertCircle, CheckCircle, Loader2, Trash2
+import {
+  Users, Heart, Gift, Search, Star, Lock, Globe, UserPlus, Zap, X,
+  ShoppingBag, AlertCircle, CheckCircle, Loader2, Trash2, Tabs
 } from 'lucide-react';
 import { socialService } from '../services/supabaseSocial';
 import { inventoryService } from '../services/supabaseInventory';
 import { Friend, Product } from '../types';
 import { Button } from './Button';
+import { GiftSender } from './GiftSender';
+import { GiftInbox } from './GiftInbox';
+import { StudentFavorites } from './StudentFavorites';
 
 export const MeCardSocial: React.FC<{ 
   currentStudent: any; 

@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, Trash2, CreditCard, ScanLine, AlertTriangle, 
-  LayoutGrid, Utensils, PenTool, X, ArrowRight, ShoppingBag, 
-  ShoppingCart, Bot, Gift, Zap, ChevronRight, Receipt, Loader2, 
+import {
+  Search, Trash2, CreditCard, ScanLine, AlertTriangle,
+  LayoutGrid, Utensils, PenTool, X, ArrowRight, ShoppingBag,
+  ShoppingCart, Bot, Gift, Zap, ChevronRight, Receipt, Loader2,
   ChefHat, Package, Plus, Minus, Hash, Tag, Store, CheckCircle2
 } from 'lucide-react';
 import { Product, CartItem, Category, StudentProfile } from '../types';
@@ -13,6 +13,7 @@ import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { getSmartUpsell } from '../services/geminiService';
 import { rewardsService } from '../services/rewardsService';
+import { socialService } from '../services/supabaseSocial';
 import { usePaymentService, useInventoryService } from '../contexts/ServiceContext';
 import { useAuth } from '../hooks/useAuth';
 import { CartOrder } from '../services/types';
@@ -46,6 +47,11 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   const [loadingUpsell, setLoadingUpsell] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
   const [transactionSuccess, setTransactionSuccess] = useState(false);
+
+  // Gift redemption state
+  const [giftRedemptionCode, setGiftRedemptionCode] = useState('');
+  const [isRedeemingGift, setIsRedeemingGift] = useState(false);
+  const [giftRedemptionSuccess, setGiftRedemptionSuccess] = useState<string | null>(null);
   
   // Get current student (from auth context or use mock)
   const student: StudentProfile = {
@@ -236,6 +242,34 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
     }
   };
 
+  const handleRedeemGift = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!giftRedemptionCode.trim()) {
+      setTransactionError('Ingresa un código de regalo');
+      return;
+    }
+
+    setIsRedeemingGift(true);
+    setTransactionError(null);
+    setGiftRedemptionSuccess(null);
+
+    try {
+      const redeemedGift = await socialService.redeemGift(giftRedemptionCode, '');
+      setGiftRedemptionSuccess(`¡Regalo canjeado! Recibiste ${redeemedGift.product_name}`);
+      setGiftRedemptionCode('');
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setGiftRedemptionSuccess(null);
+      }, 3000);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Código inválido o ya canjeado';
+      setTransactionError(errorMessage);
+    } finally {
+      setIsRedeemingGift(false);
+    }
+  };
+
   if (scanStage === 'idle') {
       return (
           <div className="h-screen flex items-center justify-center bg-slate-900 p-8 font-sans overflow-hidden">
@@ -364,6 +398,42 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
                 </div>
             </div>
         </div>
+
+        {/* Gift Redemption Section */}
+        {scanStage === 'active' && (
+          <div className="px-10 pt-6 border-b border-slate-100">
+            <div className="space-y-4 pb-6">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-[6px]">Canjear Regalo</p>
+              <form onSubmit={handleRedeemGift} className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                  <input
+                    type="text"
+                    placeholder="Código de regalo (6 dígitos)"
+                    value={giftRedemptionCode}
+                    onChange={(e) => setGiftRedemptionCode(e.target.value.toUpperCase())}
+                    maxLength={6}
+                    className="w-full pl-10 pr-4 py-3 border border-emerald-100 bg-emerald-50 rounded-2xl text-sm font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-emerald-300"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isRedeemingGift || giftRedemptionCode.length < 6}
+                  className="px-4 py-3 bg-emerald-600 text-white font-black text-xs rounded-2xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                >
+                  {isRedeemingGift ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                </button>
+              </form>
+
+              {giftRedemptionSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-emerald-800 font-semibold">{giftRedemptionSuccess}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-10 space-y-6 scrollbar-hide">
             <div className="flex justify-between items-center mb-2 px-2">

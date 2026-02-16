@@ -49,6 +49,7 @@ import TransactionHistory from '../components/TransactionHistory';
 import StudentCredentialView from '../components/StudentCredentialView';
 import StudentMenuView from '../components/StudentMenuView';
 import DashboardPlaceholder from '../components/DashboardPlaceholder';
+import StudentSocialHub from '../components/StudentSocialHub';
 // import MeCardSocial from '../components/MeCardSocial'; // Requiere props complejas aún
 
 // ========== PROTECTED LAYOUT ==========
@@ -301,7 +302,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
-              <DashboardPlaceholder title="MeCard Social" role={UserRole.STUDENT} />
+              <StudentSocialHub />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
