@@ -45,9 +45,15 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
   }
 
   const [dailyLimit, setDailyLimit] = useState<number | string>(student.dailyLimit);
-  const [restrictions, setRestrictions] = useState<Category[]>(student.restrictedCategories);
-  const [restrictedProducts, setRestrictedProducts] = useState<string[]>(student.restrictedProducts || []);
-  const [allergies, setAllergies] = useState<string[]>(student.allergies);
+  const [restrictions, setRestrictions] = useState<Category[]>(
+    student.restrictions?.restrictedCategories || []
+  );
+  const [restrictedProducts, setRestrictedProducts] = useState<string[]>(
+    student.restrictions?.restrictedProducts || []
+  );
+  const [allergies, setAllergies] = useState<string[]>(
+    student.restrictions?.allergens || []
+  );
   
   const [depositStep, setDepositStep] = useState<'amount' | 'method' | 'summary' | 'processing' | 'success' | 'spei_instructions'>('amount');
   const [selectedAmount, setSelectedAmount] = useState<string>('');
@@ -55,10 +61,10 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
 
   useEffect(() => {
     setDailyLimit(student.dailyLimit);
-    setRestrictions(student.restrictedCategories);
-    setRestrictedProducts(student.restrictedProducts || []);
-    setAllergies(student.allergies);
-  }, [student.id, student.dailyLimit, student.restrictedCategories, student.restrictedProducts, student.allergies]);
+    setRestrictions(student.restrictions?.restrictedCategories || []);
+    setRestrictedProducts(student.restrictions?.restrictedProducts || []);
+    setAllergies(student.restrictions?.allergens || []);
+  }, [student.id, student.dailyLimit, student.restrictions]);
 
   useEffect(() => {
     if (view === AppView.PARENT_WALLET) {

@@ -26,7 +26,7 @@ import SettlementsView from '../components/SettlementsView';
 import ReportsView from '../components/ReportsView';
 
 // ========== SCHOOL ADMIN VIEWS ==========
-import SchoolAdminView from '../components/SchoolAdminView';
+import SchoolAdminContainer from '../components/SchoolAdminContainer';
 import StudentManagementView from '../components/StudentManagementView';
 import SmartStaffManager from '../components/SmartStaffManager';
 import StudentImportWizard from '../components/StudentImportWizard';
@@ -40,7 +40,7 @@ import PosView from '../components/PosView';
 import CashierView from '../components/CashierView';
 
 // ========== PARENT VIEWS ==========
-import ParentPortal from '../components/ParentPortal';
+import ParentPortalContainer from '../components/ParentPortalContainer';
 import ParentWalletView from '../components/ParentWalletView';
 
 // ========== STUDENT VIEWS ==========
@@ -134,7 +134,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
             <RoleBasedLayout>
-              <SchoolAdminView />
+              <SchoolAdminContainer />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -250,7 +250,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>
-              <ParentPortal />
+              <ParentPortalContainer />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
