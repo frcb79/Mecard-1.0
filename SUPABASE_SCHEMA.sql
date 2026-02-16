@@ -383,6 +383,153 @@ ON CONFLICT DO NOTHING;
 
 
 -- ============================================
+-- 12. BILLING CONFIGURATION - SCHOOL
+-- ============================================
+CREATE TABLE IF NOT EXISTS school_billing_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL UNIQUE,
+
+  -- ========== SETUP & ONE-TIME FEES ==========
+  setup_fee DECIMAL(10,2) DEFAULT 25000.00,
+  setup_fee_paid_by VARCHAR(20) DEFAULT 'SCHOOL',  -- SCHOOL | CONCESSIONAIRE
+
+  -- ========== MONTHLY/ANNUAL INFRASTRUCTURE ==========
+  monthly_rent DECIMAL(10,2) DEFAULT 3500.00,
+  annual_license DECIMAL(10,2) DEFAULT 42000.00,
+
+  -- ========== CREDENTIAL/CARD COSTS ==========
+  yearly_card_cost DECIMAL(10,2) DEFAULT 140.00,
+  card_design_fee DECIMAL(10,2) DEFAULT 0.00,
+
+  -- ========== DEPOSIT FEES (Parents) ==========
+  deposit_fee_card DECIMAL(5,3) DEFAULT 0.035,      -- 3.5%
+  deposit_fee_spei DECIMAL(10,2) DEFAULT 8.00,      -- $8
+  deposit_fee_cash DECIMAL(10,2) DEFAULT 0.00,      -- FREE
+
+  -- ========== POS COMMISSIONS ==========
+  pos_markup_percentage DECIMAL(5,3) DEFAULT 0.03,  -- 3%
+  pos_commission_percentage DECIMAL(5,3) DEFAULT 0.03,  -- 3%
+
+  -- ========== CONCESSIONAIRE FEES ==========
+  concess_monthly_system_fee DECIMAL(10,2) DEFAULT 0.00,
+  concess_tech_support_fee DECIMAL(10,2) DEFAULT 0.00,
+  concess_card_processing_fee DECIMAL(5,3) DEFAULT 0.00,
+
+  -- ========== EARLY WITHDRAWAL FEE ==========
+  early_withdrawal_fee_percentage DECIMAL(5,3) DEFAULT 0.02,  -- 2%
+
+  -- ========== SECURITY LIMITS ==========
+  max_deposit_per_tx DECIMAL(10,2) DEFAULT 50000.00,
+  student_daily_limit DECIMAL(10,2) DEFAULT 500.00,
+  student_weekly_limit DECIMAL(10,2) DEFAULT 2000.00,
+
+  -- ========== PAYMENT TERMS & SUSPENSION ==========
+  invoice_due_date INT DEFAULT 10,  -- days
+  overdue_days_before_suspension INT DEFAULT 30,  -- 1 month
+
+  billing_cycle VARCHAR(10) DEFAULT 'MONTHLY',
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+
+  CONSTRAINT fk_school_billing_config_school
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_school_billing_config_school_id ON school_billing_config(school_id);
+
+
+-- ============================================
+-- 13. INVOICES & BILLING
+-- ============================================
+CREATE TABLE IF NOT EXISTS invoices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  school_id UUID NOT NULL,
+  invoice_number VARCHAR(50) NOT NULL UNIQUE,
+
+  issue_date DATE NOT NULL,
+  due_date DATE NOT NULL,
+
+  subtotal DECIMAL(10,2) NOT NULL,
+  taxes DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(10,2) NOT NULL,
+
+  status VARCHAR(20) DEFAULT 'ISSUED',  -- DRAFT | ISSUED | PAID | OVERDUE | CANCELLED
+  payment_method VARCHAR(50),  -- SPEI | BANK_TRANSFER
+  paid_at TIMESTAMP WITH TIME ZONE,
+
+  line_items JSONB,  -- Array of {description, quantity, unitPrice, amount}
+  notes TEXT,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+
+  CONSTRAINT fk_invoices_school
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+  CONSTRAINT ck_invoice_status
+    CHECK (status IN ('DRAFT', 'ISSUED', 'PAID', 'OVERDUE', 'CANCELLED'))
+);
+
+CREATE INDEX idx_invoices_school_id ON invoices(school_id);
+CREATE INDEX idx_invoices_status ON invoices(status);
+CREATE INDEX idx_invoices_due_date ON invoices(due_date);
+
+
+-- ============================================
+-- 14. SCHOOL BLOCKING RULES
+-- ============================================
+CREATE TABLE IF NOT EXISTS school_blocking_rules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  school_id UUID NOT NULL UNIQUE,
+  blocked_reason VARCHAR(50) NOT NULL,  -- OVERDUE_INVOICE | MANUAL_SUSPENSION | POLICY_VIOLATION
+  blocked_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  blocked_until_payment BOOLEAN DEFAULT true,
+  overdue_days INT DEFAULT 0,
+
+  -- Escalation
+  notification_sent BOOLEAN DEFAULT false,
+  legal_escalation_eligible BOOLEAN DEFAULT false,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+
+  CONSTRAINT fk_school_blocking_rules_school
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+  CONSTRAINT ck_blocked_reason
+    CHECK (blocked_reason IN ('OVERDUE_INVOICE', 'MANUAL_SUSPENSION', 'POLICY_VIOLATION'))
+);
+
+CREATE INDEX idx_school_blocking_rules_school_id ON school_blocking_rules(school_id);
+CREATE INDEX idx_school_blocking_rules_blocked_until_payment ON school_blocking_rules(blocked_until_payment);
+
+
+-- ============================================
+-- 15. REVENUE TRACKING & ANALYTICS
+-- ============================================
+CREATE TABLE IF NOT EXISTS revenue_tracking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  school_id UUID NOT NULL,
+  period DATE NOT NULL,  -- YYYY-MM-01
+
+  revenue_category VARCHAR(50) NOT NULL,  -- DEPOSIT_FEE | CARD_EMISSION | MONTHLY_RENT | POS_COMMISSION
+  amount DECIMAL(10,2) NOT NULL,
+  transaction_count INT DEFAULT 0,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+
+  CONSTRAINT fk_revenue_tracking_school
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_revenue_tracking_school_id ON revenue_tracking(school_id);
+CREATE INDEX idx_revenue_tracking_period ON revenue_tracking(period);
+CREATE INDEX idx_revenue_tracking_category ON revenue_tracking(revenue_category);
+
+
+-- ============================================
 -- 12. NOTAS IMPORTANTES
 -- ============================================
 /*

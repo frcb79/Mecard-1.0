@@ -5,12 +5,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2, Sparkles, TrendingDown } from 'lucide-react';
+import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2, Sparkles, TrendingDown, Info } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { usePaymentService } from '../contexts/ServiceContext';
 import { Button } from './Button';
 import { MOCK_STUDENTS_LIST } from '../constants';
 import { getSpendingAnalysis, getSmartAlerts } from '../services/geminiService';
+import { calculateDepositFee, getBillingConfig, formatCurrency } from '../services/BillingService';
+import { DepositMethod, DepositWithFeeCalculation, SchoolBillingConfig } from '../types';
 
 export default function ParentWalletView() {
   const { user } = useAuth();
@@ -25,7 +27,12 @@ export default function ParentWalletView() {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [transactionHistory, setTransactionHistory] = useState<any[]>([]);
-  
+
+  // Billing Feature State
+  const [billingConfig, setBillingConfig] = useState<SchoolBillingConfig | null>(null);
+  const [feeCalculation, setFeeCalculation] = useState<DepositWithFeeCalculation | null>(null);
+  const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
+
   // AI Features State
   const [aiInsight, setAiInsight] = useState<string>('');
   const [aiAlerts, setAiAlerts] = useState<string[]>([]);
@@ -48,10 +55,45 @@ export default function ParentWalletView() {
         console.error(`Failed to load balance for ${child.id}:`, error);
       }
     });
-    
+
+    // Load Billing Configuration
+    loadBillingConfig();
+
     // Load AI Insights on mount
     loadAIInsights();
   }, []);
+
+  // ========================================
+  // BILLING FEATURES
+  // ========================================
+
+  const loadBillingConfig = async () => {
+    try {
+      // TODO: Pass actual schoolId from context/props
+      const config = await getBillingConfig('school-001');
+      setBillingConfig(config);
+    } catch (error) {
+      console.error('Failed to load billing config:', error);
+    }
+  };
+
+  const handleDepositAmountChange = (value: string) => {
+    setDepositAmount(value);
+
+    // Calculate fee in real-time
+    if (value && billingConfig) {
+      const amount = parseFloat(value);
+      if (amount > 0) {
+        const method = paymentMethod === 'spei' ? DepositMethod.SPEI : DepositMethod.CARD;
+        const calculation = calculateDepositFee(amount, method, billingConfig);
+        setFeeCalculation(calculation);
+        setShowFeeBreakdown(true);
+      } else {
+        setFeeCalculation(null);
+        setShowFeeBreakdown(false);
+      }
+    }
+  };
 
   const loadAIInsights = async () => {
     setAiLoading(true);
@@ -278,12 +320,57 @@ export default function ParentWalletView() {
                     <input
                       type="number"
                       value={depositAmount}
-                      onChange={(e) => setDepositAmount(e.target.value)}
+                      onChange={(e) => handleDepositAmountChange(e.target.value)}
                       placeholder="0.00"
                       className="w-full px-6 py-4 pl-10 bg-slate-50 border-2 border-slate-200 rounded-[20px] font-black text-2xl text-right outline-none focus:border-emerald-600 transition-all"
                     />
                   </div>
                 </div>
+
+                {/* FEE BREAKDOWN - NUEVA SECCIÓN */}
+                {showFeeBreakdown && feeCalculation && (
+                  <div className="bg-amber-50 border-2 border-amber-200 rounded-[20px] p-4 space-y-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Info className="w-5 h-5 text-amber-600" />
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-[2px]">
+                        Desglose de Depósito
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      {/* Monto solicitado */}
+                      <div className="flex justify-between items-center p-3 bg-white rounded-[12px]">
+                        <span className="text-sm text-amber-900 font-medium">Monto a depositar:</span>
+                        <span className="font-bold text-amber-900">{formatCurrency(feeCalculation.amountRequested)}</span>
+                      </div>
+
+                      {/* Fee */}
+                      <div className="flex justify-between items-center p-3 bg-white rounded-[12px]">
+                        <span className="text-sm text-amber-900 font-medium">
+                          Comisión plataforma:
+                        </span>
+                        <span className="font-bold text-red-600">
+                          -{formatCurrency(feeCalculation.totalFee)}
+                          {feeCalculation.feePercentage && ` (${(feeCalculation.feePercentage * 100).toFixed(1)}%)`}
+                        </span>
+                      </div>
+
+                      {/* Net Amount */}
+                      <div className="border-t-2 border-amber-200 pt-2">
+                        <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-[12px]">
+                          <span className="text-sm font-black text-emerald-900">Saldo para tu hijo:</span>
+                          <span className="text-lg font-black text-emerald-600">
+                            {formatCurrency(feeCalculation.netAmount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-amber-700 font-medium">
+                      💡 {feeCalculation.description}
+                    </p>
+                  </div>
+                )}
 
                 {/* MÉTODOS DE PAGO */}
                 <div>
@@ -292,7 +379,17 @@ export default function ParentWalletView() {
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => setPaymentMethod('spei')}
+                      onClick={() => {
+                        setPaymentMethod('spei');
+                        // Recalculate fees with new method
+                        if (depositAmount && billingConfig) {
+                          const amount = parseFloat(depositAmount);
+                          if (amount > 0) {
+                            const calculation = calculateDepositFee(amount, DepositMethod.SPEI, billingConfig);
+                            setFeeCalculation(calculation);
+                          }
+                        }
+                      }}
                       className={`p-4 rounded-[20px] border-2 transition-all text-center font-black text-[10px] uppercase tracking-[1px] flex items-center justify-center gap-2 ${
                         paymentMethod === 'spei'
                           ? 'border-emerald-600 bg-emerald-50 text-emerald-600'
@@ -302,7 +399,17 @@ export default function ParentWalletView() {
                       <Building2 className="w-4 h-4" /> SPEI
                     </button>
                     <button
-                      onClick={() => setPaymentMethod('card')}
+                      onClick={() => {
+                        setPaymentMethod('card');
+                        // Recalculate fees with new method
+                        if (depositAmount && billingConfig) {
+                          const amount = parseFloat(depositAmount);
+                          if (amount > 0) {
+                            const calculation = calculateDepositFee(amount, DepositMethod.CARD, billingConfig);
+                            setFeeCalculation(calculation);
+                          }
+                        }
+                      }}
                       className={`p-4 rounded-[20px] border-2 transition-all text-center font-black text-[10px] uppercase tracking-[1px] flex items-center justify-center gap-2 ${
                         paymentMethod === 'card'
                           ? 'border-emerald-600 bg-emerald-50 text-emerald-600'
@@ -315,24 +422,24 @@ export default function ParentWalletView() {
                 </div>
 
                 {/* DETALLES DEL MÉTODO */}
-                {paymentMethod === 'spei' && (
+                {paymentMethod === 'spei' && billingConfig && (
                   <div className="bg-blue-50 border-2 border-blue-100 rounded-[20px] p-4">
                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-[2px] mb-2">
                       Información SPEI
                     </p>
                     <p className="text-sm text-blue-900 font-medium">
-                      Recibirás instrucciones para transferencia bancaria. El depósito se procesará en máximo 2 horas hábiles.
+                      Comisión SPEI: {formatCurrency(billingConfig.depositFeeSPEI)} por transferencia. El depósito se procesará en máximo 2 horas hábiles.
                     </p>
                   </div>
                 )}
 
-                {paymentMethod === 'card' && (
+                {paymentMethod === 'card' && billingConfig && (
                   <div className="bg-blue-50 border-2 border-blue-100 rounded-[20px] p-4">
                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-[2px] mb-2">
                       Pago con Tarjeta
                     </p>
                     <p className="text-sm text-blue-900 font-medium">
-                      Serás redirigido a nuestro procesador seguro de pagos. Se aplicará una comisión del 2.9%.
+                      Comisión: {(billingConfig.depositFeeCard * 100).toFixed(1)}% del monto. Serás redirigido a nuestro procesador seguro de pagos.
                     </p>
                   </div>
                 )}

@@ -1438,7 +1438,154 @@ export interface POSTransactionWithRewards {
 }
 
 // ============================================
-// 22. TYPE GUARDS
+// 23. BILLING TYPES
+// ============================================
+
+export enum InvoiceStatus {
+  DRAFT = 'DRAFT',
+  ISSUED = 'ISSUED',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum RevenueCategoryType {
+  DEPOSIT_FEE = 'DEPOSIT_FEE',
+  CARD_EMISSION = 'CARD_EMISSION',
+  MONTHLY_RENT = 'MONTHLY_RENT',
+  POS_COMMISSION = 'POS_COMMISSION',
+  SETUP_FEE = 'SETUP_FEE',
+  CONCESSIONAIRE_FEE = 'CONCESSIONAIRE_FEE'
+}
+
+export enum BlockingReason {
+  OVERDUE_INVOICE = 'OVERDUE_INVOICE',
+  MANUAL_SUSPENSION = 'MANUAL_SUSPENSION',
+  POLICY_VIOLATION = 'POLICY_VIOLATION'
+}
+
+export interface BillingLineItem {
+  description: string;
+  quantity?: number;
+  unitPrice: number;
+  amount: number;
+  category?: string;  // INFRASTRUCTURE | COMMISSION | SERVICES | CARD | OTHER
+}
+
+export interface SchoolBillingConfig {
+  id: string;
+  schoolId: string;
+
+  // Setup & One-time Fees
+  setupFee: number;
+  setupFeePaidBy: 'SCHOOL' | 'CONCESSIONAIRE';
+
+  // Monthly/Annual Infrastructure
+  monthlyRent: number;
+  annualLicense: number;
+
+  // Credential/Card Costs
+  yearlyCardCost: number;
+  cardDesignFee: number;
+
+  // Deposit Fees (Parents)
+  depositFeeCard: number;        // 0.035 = 3.5%
+  depositFeeSPEI: number;        // 8.00 = $8
+  depositFeeCash: number;        // 0.00 = FREE
+
+  // POS Commissions
+  posMarkupPercentage: number;       // 0.03 = 3%
+  posCommissionPercentage: number;   // 0.03 = 3%
+
+  // Concessionaire Fees
+  concessMonthlySystemFee: number;
+  concessTechSupportFee: number;
+  concessCardProcessingFee: number;
+
+  // Early Withdrawal Fee
+  earlyWithdrawalFeePercentage: number;  // 0.02 = 2%
+
+  // Security Limits
+  maxDepositPerTx: number;       // $50,000
+  studentDailyLimit: number;     // $500
+  studentWeeklyLimit: number;    // $2,000
+
+  // Payment Terms & Suspension
+  invoiceDueDate: number;        // 10 days
+  overdueDaysBeforeSuspension: number;  // 30 days
+
+  billingCycle: 'MONTHLY' | 'WEEKLY';
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Invoice {
+  id: string;
+  schoolId: string;
+  invoiceNumber: string;        // INV-2026-02-00001
+
+  issueDate: string;            // DATE
+  dueDate: string;              // DATE
+
+  subtotal: number;
+  taxes: number;
+  total: number;
+
+  status: InvoiceStatus;
+  paymentMethod?: string;       // SPEI | BANK_TRANSFER
+  paidAt?: string;
+
+  lineItems: BillingLineItem[];
+  notes?: string;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SchoolBlockingRule {
+  id: string;
+  schoolId: string;
+  blockedReason: BlockingReason;
+  blockedAt: string;
+  blockedUntilPayment: boolean;
+  overdueDays: number;
+
+  // Escalation
+  notificationSent: boolean;
+  legalEscalationEligible: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RevenueTrackingRecord {
+  id: string;
+  schoolId: string;
+  period: string;           // YYYY-MM-01
+
+  revenueCategory: RevenueCategoryType;
+  amount: number;
+  transactionCount: number;
+
+  createdAt: string;
+}
+
+export interface DepositWithFeeCalculation {
+  amountRequested: number;
+  depositMethod: DepositMethod;
+
+  // Automatic calculation from SchoolBillingConfig
+  feePercentage?: number;    // 0.035 for card
+  feeFlatAmount?: number;    // 8.00 for SPEI
+  totalFee: number;
+  netAmount: number;
+
+  description: string;       // "3.5% Platform Fee" or "$8 SPEI Fee"
+}
+
+// ============================================
+// 24. TYPE GUARDS
 // ============================================
 
 export function isStudent(user: User | StudentProfile): user is StudentProfile {
