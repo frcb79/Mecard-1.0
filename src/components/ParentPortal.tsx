@@ -26,12 +26,24 @@ interface ParentPortalProps {
   onDeposit?: (amount: number, method: string) => void;
 }
 
-export const ParentPortal: React.FC<ParentPortalProps> = ({ 
+export const ParentPortal: React.FC<ParentPortalProps> = ({
   view, onNavigate, students, activeStudentIndex, onSwitchStudent, onLinkStudent,
-  transactions, onUpdateStudent, onDeposit 
+  transactions, onUpdateStudent, onDeposit
 }) => {
   const student = students[activeStudentIndex];
-  
+
+  // Guard: If no student, return empty state
+  if (!student) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg">No hay estudiante seleccionado</p>
+          <p className="text-gray-400 text-sm mt-2">Por favor, vincula un estudiante para continuar</p>
+        </div>
+      </div>
+    );
+  }
+
   const [dailyLimit, setDailyLimit] = useState<number | string>(student.dailyLimit);
   const [restrictions, setRestrictions] = useState<Category[]>(student.restrictedCategories);
   const [restrictedProducts, setRestrictedProducts] = useState<string[]>(student.restrictedProducts || []);
