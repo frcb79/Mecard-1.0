@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Edit2, Trash2, Eye, MoreVertical, Users } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Eye, MoreVertical, Users, X } from 'lucide-react';
 
 export default function StudentManagementView() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,6 +13,16 @@ export default function StudentManagementView() {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    curp: '',
+    phone: '',
+    balance: 0,
+    clabe: '',
+  });
 
   // MOCK: Lista de estudiantes
   const [students, setStudents] = useState([
@@ -67,15 +77,52 @@ export default function StudentManagementView() {
   }, [searchTerm, filterStatus, students]);
 
   const handleAddStudent = () => {
+    setFormData({ name: '', email: '', curp: '', phone: '', balance: 0, clabe: '' });
     setModalMode('add');
     setSelectedStudent(null);
     setShowModal(true);
   };
 
   const handleEditStudent = (id: string) => {
-    setModalMode('edit');
-    setSelectedStudent(id);
-    setShowModal(true);
+    const student = students.find(s => s.id === id);
+    if (student) {
+      setFormData({
+        name: student.name,
+        email: student.email,
+        curp: student.curp,
+        phone: student.phone,
+        balance: student.balance,
+        clabe: student.clabe,
+      });
+      setSelectedStudent(id);
+      setModalMode('edit');
+      setShowModal(true);
+    }
+  };
+
+  const handleSaveStudent = () => {
+    if (!formData.name || !formData.email || !formData.curp) {
+      alert('Por favor completa los campos requeridos');
+      return;
+    }
+
+    if (modalMode === 'add') {
+      const newStudent = {
+        id: Date.now().toString(),
+        ...formData,
+        status: 'active' as const,
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+      setStudents([...students, newStudent]);
+    } else if (modalMode === 'edit' && selectedStudent) {
+      setStudents(
+        students.map(s =>
+          s.id === selectedStudent ? { ...s, ...formData } : s
+        )
+      );
+    }
+
+    setShowModal(false);
   };
 
   const handleDeleteStudent = (id: string) => {
@@ -290,22 +337,126 @@ export default function StudentManagementView() {
           </p>
         </div>
 
-        {/* TODO: MODAL PARA AGREGAR/EDITAR - Implementar después */}
+        {/* MODAL PARA AGREGAR/EDITAR ESTUDIANTE */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-[32px] shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-black text-slate-900 mb-6">
-                {modalMode === 'add' ? 'Agregar Estudiante' : 'Editar Estudiante'}
-              </h2>
-              <p className="text-slate-600 font-medium">
-                [Modal form implementation - TODO]
-              </p>
-              <button
-                onClick={() => setShowModal(false)}
-                className="mt-6 w-full bg-slate-200 hover:bg-slate-300 text-slate-900 font-black px-4 py-2 rounded-[16px] transition-all"
-              >
-                Cerrar
-              </button>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-black text-slate-900">
+                  {modalMode === 'add' ? 'Agregar Estudiante' : 'Editar Estudiante'}
+                </h2>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-all"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Nombre */}
+                <div>
+                  <label className="block text-sm font-black text-slate-700 mb-1">
+                    Nombre *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Juan Carlos López"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-black text-slate-700 mb-1">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="estudiante@escuela.mx"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* CURP */}
+                <div>
+                  <label className="block text-sm font-black text-slate-700 mb-1">
+                    CURP *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.curp}
+                    onChange={(e) => setFormData({ ...formData, curp: e.target.value.toUpperCase() })}
+                    placeholder="LOJC980415HDFRNN09"
+                    maxLength={18}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                  />
+                </div>
+
+                {/* Teléfono */}
+                <div>
+                  <label className="block text-sm font-black text-slate-700 mb-1">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="5551234567"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* CLABE */}
+                <div>
+                  <label className="block text-sm font-black text-slate-700 mb-1">
+                    CLABE (18 dígitos)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.clabe}
+                    onChange={(e) => setFormData({ ...formData, clabe: e.target.value })}
+                    placeholder="002341234567890123"
+                    maxLength={18}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                  />
+                </div>
+
+                {/* Saldo Inicial */}
+                <div>
+                  <label className="block text-sm font-black text-slate-700 mb-1">
+                    Saldo Inicial
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.balance}
+                    onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 font-black rounded-[16px] transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveStudent}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[16px] transition-all"
+                >
+                  {modalMode === 'add' ? 'Agregar' : 'Guardar'}
+                </button>
+              </div>
             </div>
           </div>
         )}

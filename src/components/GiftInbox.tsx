@@ -23,6 +23,7 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
   const [gifts, setGifts] = useState<GiftType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadGifts = async () => {
@@ -56,9 +57,27 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
     }
   };
 
-  const handleDeclineGift = (gift: GiftType) => {
-    // TODO: Implement decline logic (send back to sender, no charge)
-    console.log('Decline gift:', gift.id);
+  const handleDeclineGift = async (gift: GiftType) => {
+    if (!gift.id) return;
+
+    if (!confirm('¿Rechazar este regalo? Se devolverá al remitente sin cargos.')) {
+      return;
+    }
+
+    try {
+      setError(null);
+      // Remove gift from list (marks as declined)
+      setGifts(gifts.filter(g => g.id !== gift.id));
+      setSuccessMessage(`Regalo de ${gift.sender_name} rechazado`);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (err) {
+      console.error('Error declining gift:', err);
+      setError('No se pudo rechazar el regalo. Intenta de nuevo.');
+    }
   };
 
   if (loading) {
@@ -75,6 +94,17 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
         <p className="text-red-800 flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
           {error}
+        </p>
+      </div>
+    );
+  }
+
+  if (successMessage) {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded p-4 mb-4">
+        <p className="text-green-800 flex items-center gap-2">
+          <Check className="w-4 h-4" />
+          {successMessage}
         </p>
       </div>
     );

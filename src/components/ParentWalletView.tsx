@@ -69,8 +69,9 @@ export default function ParentWalletView() {
 
   const loadBillingConfig = async () => {
     try {
-      // TODO: Pass actual schoolId from context/props
-      const config = await getBillingConfig('school-001');
+      // Use schoolId from authenticated user context
+      const schoolId = user?.schoolId || 'school-001';
+      const config = await getBillingConfig(schoolId);
       setBillingConfig(config);
     } catch (error) {
       console.error('Failed to load billing config:', error);
