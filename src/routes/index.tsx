@@ -48,6 +48,7 @@ import StudentDashboard from '../components/StudentDashboard';
 import TransactionHistory from '../components/TransactionHistory';
 import StudentCredentialView from '../components/StudentCredentialView';
 import StudentMenuView from '../components/StudentMenuView';
+import DashboardPlaceholder from '../components/DashboardPlaceholder';
 // import MeCardSocial from '../components/MeCardSocial'; // Requiere props complejas aún
 
 // ========== PROTECTED LAYOUT ==========
