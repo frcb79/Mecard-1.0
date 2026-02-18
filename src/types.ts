@@ -358,6 +358,103 @@ export interface ParentPreferences {
 }
 
 // ============================================
+// 6.1 PARENT LIMITS & NOTIFICATIONS
+// ============================================
+
+export interface ParentLimitSettings {
+  id: string;
+  parentId: string;
+  studentId: string;
+  
+  // Límites de presupuesto
+  dailyLimit: number;
+  weeklyLimit?: number;
+  monthlyLimit?: number;
+  
+  // Alertas económicas
+  alertWhenBalanceLow: boolean;
+  lowBalanceThreshold: number;  // Ej: 50 (MXN)
+  
+  alertWhenDailySpendExceeds: boolean;
+  dailySpendAlertThreshold: number;  // Ej: 200 (MXN) o 80% del límite diario
+  
+  // Alertas por categoría
+  categoryLimits?: Record<Category, number>;  // Límite por categoría
+  
+  // Control parental
+  restrictCategories: Category[];
+  restrictProducts: string[];
+  
+  // Notificaciones
+  notifyOnPurchase: boolean;
+  notifyOnGift: boolean;
+  notifyOnTransfer: boolean;
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ParentNotificationSettings {
+  id: string;
+  parentId: string;
+  
+  // Canales
+  emailEnabled: boolean;
+  pushEnabled: boolean;
+  smsEnabled: boolean;
+  
+  // Frecuencia de alertas
+  alertOnEachPurchase: boolean;
+  alertOnLowBalance: boolean;
+  alertOnSpendThreshold: boolean;
+  
+  // Configuración de horarios
+  quietHoursEnabled: boolean;
+  quietHoursStart?: string;  // "22:00"
+  quietHoursEnd?: string;    // "08:00"
+  
+  // Resumen
+  sendDailySummary: boolean;
+  sendWeeklySummary: boolean;
+  
+  // Preferencias
+  language: 'es' | 'en';
+  timezone?: string;
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConsumptionReport {
+  id: string;
+  parentId: string;
+  studentId: string;
+  
+  // Período
+  startDate: string;
+  endDate: string;
+  reportType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
+  
+  // Datos agregados
+  totalSpent: number;
+  transactionCount: number;
+  averageTransaction: number;
+  
+  // Por categoría
+  spentByCategory: Record<Category, number>;
+  
+  // Por merchant
+  spentByMerchant: Record<string, number>;
+  
+  // Tendencias
+  dailyBreakdown: Record<string, number>;  // "2026-02-17": 45.50
+  
+  // Generado
+  generatedAt: string;
+  generatedBy?: string;  // "PARENT" | "ADMIN" | "SYSTEM"
+}
+
+// ============================================
 // 7. SCHOOL & CAMPUS
 // ============================================
 
@@ -1171,6 +1268,9 @@ export enum AppView {
   PARENT_SETTINGS = 'PARENT_SETTINGS',
   PARENT_MENU = 'PARENT_MENU',
   PARENT_CHILDREN = 'PARENT_CHILDREN',
+  PARENT_LIMITS = 'PARENT_LIMITS',
+  PARENT_REPORTS = 'PARENT_REPORTS',
+  PARENT_NOTIFICATIONS = 'PARENT_NOTIFICATIONS',
   
   // Student
   STUDENT_DASHBOARD = 'STUDENT_DASHBOARD',
