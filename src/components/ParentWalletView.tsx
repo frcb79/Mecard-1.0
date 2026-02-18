@@ -270,43 +270,43 @@ export default function ParentWalletView() {
 
           {/* COLUMNA DERECHA: TABS */}
           <div className="lg:col-span-2">
-            {/* TABS */}
-            <div className="flex gap-3 mb-6">
+            {/* TABS - Verde/Azul Theme */}
+            <div className="flex gap-2 md:gap-3 mb-6 bg-slate-100 p-2 rounded-2xl">
               <button
                 onClick={() => setActiveTab('deposit')}
-                className={`flex-1 px-6 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-[2px] transition-all ${
+                className={`flex-1 px-4 md:px-6 py-3 rounded-lg md:rounded-[16px] font-black text-[9px] md:text-[10px] uppercase tracking-[1px] md:tracking-[2px] transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'deposit'
-                    ? 'bg-emerald-600 text-white shadow-lg'
-                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                    ? 'bg-gradient-to-r from-emerald-600 to-sky-600 text-white shadow-lg'
+                    : 'bg-transparent text-slate-600 hover:text-slate-800'
                 }`}
               >
-                <Plus className="w-4 h-4 inline mr-2" /> Hacer Depósito
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Depósito</span>
               </button>
               <button
                 onClick={() => setActiveTab('manage')}
-                className={`flex-1 px-6 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-[2px] transition-all ${
+                className={`flex-1 px-4 md:px-6 py-3 rounded-lg md:rounded-[16px] font-black text-[9px] md:text-[10px] uppercase tracking-[1px] md:tracking-[2px] transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'manage'
-                    ? 'bg-emerald-600 text-white shadow-lg'
-                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                    ? 'bg-gradient-to-r from-emerald-600 to-sky-600 text-white shadow-lg'
+                    : 'bg-transparent text-slate-600 hover:text-slate-800'
                 }`}
               >
-                <Send className="w-4 h-4 inline mr-2" /> Asignar Dinero
+                <Send className="w-4 h-4" /> <span className="hidden sm:inline">Asignar</span>
               </button>
               <button
                 onClick={() => setActiveTab('insights')}
-                className={`flex-1 px-6 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-[2px] transition-all ${
+                className={`flex-1 px-4 md:px-6 py-3 rounded-lg md:rounded-[16px] font-black text-[9px] md:text-[10px] uppercase tracking-[1px] md:tracking-[2px] transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'insights'
-                    ? 'bg-indigo-600 text-white shadow-lg'
-                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                    ? 'bg-gradient-to-r from-emerald-600 to-sky-600 text-white shadow-lg'
+                    : 'bg-transparent text-slate-600 hover:text-slate-800'
                 }`}
               >
-                <Sparkles className="w-4 h-4 inline mr-2" /> IA Insights
+                <Sparkles className="w-4 h-4" /> <span className="hidden sm:inline">Análisis</span>
               </button>
             </div>
 
             {/* TAB: DEPOSIT */}
             {activeTab === 'deposit' && (
-              <div className="bg-white rounded-[32px] shadow-xl p-8 space-y-6">
+              <div className="bg-white rounded-[32px] shadow-xl p-6 md:p-8 space-y-6">
                 <h3 className="text-2xl font-black text-slate-900 mb-4">Hacer Depósito</h3>
 
                 {/* MONTO */}
