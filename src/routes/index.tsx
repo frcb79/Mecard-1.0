@@ -42,6 +42,9 @@ import CashierView from '../components/CashierView';
 // ========== PARENT VIEWS ==========
 import ParentPortalContainer from '../components/ParentPortalContainer';
 import ParentWalletView from '../components/ParentWalletView';
+import ParentLimitsView from '../components/ParentLimitsView';
+import ParentReportsView from '../components/ParentReportsView';
+import ParentNotificationsView from '../components/ParentNotificationsView';
 
 // ========== STUDENT VIEWS ==========
 import StudentDashboard from '../components/StudentDashboard';
@@ -261,6 +264,36 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>
               <ParentWalletView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/limits"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentLimitsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/reports"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentReportsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/notifications"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentNotificationsView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
