@@ -158,7 +158,8 @@ const ClabeSegment = ({ digits, color, label }: { digits: string, color: string,
   </div>
 );
 
-const SaaSInputField = ({ label, value, onChange, prefix, suffix }: any) => (
+interface SaaSInputFieldProps { label: string; value: string | number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; prefix?: string; suffix?: string; }
+const SaaSInputField = ({ label, value, onChange, prefix, suffix }: SaaSInputFieldProps) => (
   <div className="space-y-2">
     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{label}</label>
     <div className="relative">
@@ -330,8 +331,8 @@ const PlatformUI = ({ onLogout }: { onLogout?: () => void }) => {
     try {
         const audit = await getPlatformStrategicAudit(schools, MOCK_UNITS as any);
         setAiAudit(audit);
-    } catch (e: any) {
-        if (e.message === "KEY_NOT_FOUND") {
+    } catch (e: unknown) {
+        if (e instanceof Error && e.message === "KEY_NOT_FOUND") {
             setKeyMissing(true);
         } else {
             setAiAudit("Error al conectar con Gemini Pro.");

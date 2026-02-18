@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabaseClient";
 import SchoolTabs from "../components/SchoolTabs";
 import { Loader2, School as SchoolIcon } from "lucide-react";
 

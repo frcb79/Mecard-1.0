@@ -58,7 +58,7 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
     }
   };
 
-  const handleFieldChange = (field: string, value: any) => {
+  const handleFieldChange = (field: string, value: string | number | boolean) => {
     if (!config) return;
 
     let updatedConfig = { ...config };
@@ -194,7 +194,7 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
           <div className="space-y-5">
             {/* Markup Percentage */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
+              <label htmlFor="rewards-markup" className="block text-sm font-bold text-slate-700 mb-2">
                 Porcentaje de Markup (%)<span className="text-red-500">*</span>
               </label>
               <p className="text-xs text-slate-500 mb-2">
@@ -202,6 +202,7 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
               </p>
               <div className="flex items-center gap-2">
                 <input
+                  id="rewards-markup"
                   type="number"
                   min="1"
                   max="30"
@@ -216,7 +217,7 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
 
             {/* Points Per Peso */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
+              <label htmlFor="rewards-points-per-peso" className="block text-sm font-bold text-slate-700 mb-2">
                 Puntos por Peso<span className="text-red-500">*</span>
               </label>
               <p className="text-xs text-slate-500 mb-2">
@@ -224,6 +225,7 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
               </p>
               <div className="flex items-center gap-2">
                 <input
+                  id="rewards-points-per-peso"
                   type="number"
                   min="1"
                   max="50"
@@ -244,6 +246,8 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
                   checked={config.enabled}
                   onChange={(e) => handleFieldChange('enabled', e.target.checked)}
                   className="w-5 h-5 rounded border-slate-300"
+                  role="switch"
+                  aria-checked={config.enabled}
                 />
                 <span className="text-sm font-bold text-slate-700">Sistema Habilitado</span>
               </label>
@@ -269,10 +273,11 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
           <div className="space-y-5">
             {/* Cycle Start */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
+              <label htmlFor="rewards-cycle-start" className="block text-sm font-bold text-slate-700 mb-2">
                 Inicio de Ciclo<span className="text-red-500">*</span>
               </label>
               <input
+                id="rewards-cycle-start"
                 type="date"
                 value={config.cycleStartDate}
                 onChange={(e) => handleFieldChange('cycleStartDate', e.target.value)}
@@ -282,10 +287,11 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
 
             {/* Cycle End */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
+              <label htmlFor="rewards-cycle-end" className="block text-sm font-bold text-slate-700 mb-2">
                 Fin de Ciclo<span className="text-red-500">*</span>
               </label>
               <input
+                id="rewards-cycle-end"
                 type="date"
                 value={config.cycleEndDate}
                 onChange={(e) => handleFieldChange('cycleEndDate', e.target.value)}
@@ -314,12 +320,13 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Silver */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">
+            <label htmlFor="tier-silver" className="block text-sm font-bold text-slate-700 mb-2">
               🥈 Nivel Silver<span className="text-red-500">*</span>
             </label>
             <p className="text-xs text-slate-500 mb-2">Puntos para alcanzar Silver</p>
             <div className="flex items-center gap-2">
               <input
+                id="tier-silver"
                 type="number"
                 min="100"
                 step="100"
@@ -333,12 +340,13 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
 
           {/* Gold */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">
+            <label htmlFor="tier-gold" className="block text-sm font-bold text-slate-700 mb-2">
               🥇 Nivel Gold<span className="text-red-500">*</span>
             </label>
             <p className="text-xs text-slate-500 mb-2">Puntos para alcanzar Gold</p>
             <div className="flex items-center gap-2">
               <input
+                id="tier-gold"
                 type="number"
                 min="100"
                 step="100"
@@ -352,12 +360,13 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
 
           {/* Platinum */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">
+            <label htmlFor="tier-platinum" className="block text-sm font-bold text-slate-700 mb-2">
               💎 Nivel Platinum<span className="text-red-500">*</span>
             </label>
             <p className="text-xs text-slate-500 mb-2">Puntos para alcanzar Platinum</p>
             <div className="flex items-center gap-2">
               <input
+                id="tier-platinum"
                 type="number"
                 min="100"
                 step="100"

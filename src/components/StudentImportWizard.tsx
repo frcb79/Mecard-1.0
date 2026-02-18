@@ -4,6 +4,7 @@ import { Upload, CheckCircle, AlertCircle, Download, FileText, Users, X, ArrowRi
 import { StudentImportService, ValidationResult, ImportResult } from '../services/studentImportService';
 import { Button } from './Button';
 import { StudentProfile } from '../types';
+import { useToast } from './ui/Toast';
 
 interface StudentImportWizardProps {
   schoolId: string;
@@ -24,6 +25,7 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const handleFileUpload = async (file: File) => {
     setLoading(true);
@@ -32,8 +34,8 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
       const results = await StudentImportService.validateRows(rows, existingStudents);
       setValidationResults(results);
       setStep('validate');
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      toast.error('Error de formato', error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
@@ -47,8 +49,8 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
       const result = await StudentImportService.importStudents(validRows, schoolId, stpCostCenter);
       setImportResult(result);
       setStep('complete');
-    } catch (error: any) {
-      alert(`Error en importación: ${error.message}`);
+    } catch (error: unknown) {
+      toast.error('Error de importación', error instanceof Error ? error.message : String(error));
       setStep('validate');
     } finally {
       setLoading(false);
@@ -71,8 +73,8 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
 
   return (
     <div className="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6">
-      <div className="bg-white rounded-[64px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
-        <button onClick={onCancel} className="absolute top-10 right-10 text-slate-300 hover:text-slate-800 z-10">
+      <div role="dialog" aria-modal="true" aria-label="Importar base estudiantil" className="bg-white rounded-[64px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+        <button onClick={onCancel} className="absolute top-10 right-10 text-slate-300 hover:text-slate-800 z-10" aria-label="Cerrar importación">
           <X size={32} />
         </button>
 
@@ -231,8 +233,9 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
   );
 };
 
-const ValidationCard = ({ title, value, icon, color }: any) => {
-  const themes: any = {
+interface ValidationCardProps { title: string; value: number; icon: React.ReactNode; color: string; }
+const ValidationCard = ({ title, value, icon, color }: ValidationCardProps) => {
+  const themes: Record<string, string> = {
     slate: 'bg-slate-50 border-slate-100 text-slate-800',
     emerald: 'bg-emerald-50 border-emerald-100 text-emerald-700',
     rose: 'bg-rose-50 border-rose-100 text-rose-700'

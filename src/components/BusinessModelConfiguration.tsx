@@ -7,6 +7,7 @@ import {
   Landmark
 } from 'lucide-react';
 import { Button } from './Button';
+import { useToast } from './ui/Toast';
 
 // ============================================
 // TYPES (Scoped to component for this specific flow)
@@ -101,6 +102,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
   const [model, setModel] = useState<BusinessModel>(initialModel || DEFAULT_MODEL);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const toast = useToast();
 
   // Validar que los márgenes sumen 100%
   useEffect(() => {
@@ -162,11 +164,11 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
 
   const handleSave = () => {
     if (Object.keys(errors).length > 0) {
-      alert('Por favor corrige los errores antes de guardar');
+      toast.warning('Errores detectados', 'Por favor corrige los errores antes de guardar');
       return;
     }
     onSave(model);
-    alert('✅ Configuración guardada correctamente.');
+    toast.success('Guardado', 'Configuración guardada correctamente.');
   };
 
   const marginsTotal = model.margins.concessionaireMargin + 
@@ -188,7 +190,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
           </p>
         </div>
         {onCancel && (
-          <button onClick={onCancel} className="p-5 bg-white border border-slate-100 rounded-3xl text-slate-400 hover:text-rose-500 transition-all shadow-sm">
+          <button onClick={onCancel} className="p-5 bg-white border border-slate-100 rounded-3xl text-slate-400 hover:text-rose-500 transition-all shadow-sm" aria-label="Cancelar configuración">
             <X size={28}/>
           </button>
         )}
@@ -337,8 +339,9 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                 <div className="space-y-8">
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Frecuencia de Dispersión</label>
+                        <label htmlFor="bmc-settlement-freq" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Frecuencia de Dispersión</label>
                         <select
+                            id="bmc-settlement-freq"
                             value={model.settlement.frequency}
                             onChange={(e) => setModel({...model, settlement: {...model.settlement, frequency: e.target.value as SettlementFrequency}})}
                             className="w-full px-8 py-6 bg-slate-50 border-none rounded-[32px] font-black text-lg text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-inner appearance-none"
@@ -350,8 +353,9 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                         </select>
                     </div>
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Método de Liquidación</label>
+                        <label htmlFor="bmc-settlement-method" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Método de Liquidación</label>
                         <select
+                            id="bmc-settlement-method"
                             value={model.settlement.method}
                             onChange={(e) => setModel({...model, settlement: {...model.settlement, method: e.target.value as SettlementMethod}})}
                             className="w-full px-8 py-6 bg-slate-50 border-none rounded-[32px] font-black text-lg text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-inner appearance-none"
@@ -367,13 +371,15 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                     <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-3"><Landmark size={18}/> Datos del Beneficiario</h4>
                     <div className="space-y-6">
                         <select
+                            id="bmc-bank-select"
+                            aria-label="Seleccionar banco destino"
                             className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-bold text-indigo-900 outline-none"
                         >
                             <option>Seleccionar Banco Destino</option>
                             {BANKS.map(b => <option key={b}>{b}</option>)}
                         </select>
-                        <input placeholder="CLABE Interbancaria (18 dígitos)" className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-mono text-indigo-900 outline-none" />
-                        <input placeholder="Nombre de la Institución / Empresa" className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-bold text-indigo-900 outline-none" />
+                        <input placeholder="CLABE Interbancaria (18 dígitos)" aria-label="CLABE interbancaria" className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-mono text-indigo-900 outline-none" />
+                        <input placeholder="Nombre de la Institución / Empresa" aria-label="Nombre del beneficiario" className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-bold text-indigo-900 outline-none" />
                     </div>
                 </div>
             </div>
@@ -407,17 +413,20 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
 };
 
 // Subcomponentes Internos
-const MarginSlider = ({ label, value, onChange, color }: any) => {
+interface MarginSliderProps { label: string; value: number; onChange: (v: number) => void; color: string; }
+const MarginSlider = ({ label, value, onChange, color }: MarginSliderProps) => {
     const accentColor = color === 'emerald' ? 'accent-emerald-500' : color === 'purple' ? 'accent-purple-500' : 'accent-indigo-600';
     const textColor = color === 'emerald' ? 'text-emerald-600' : color === 'purple' ? 'text-purple-600' : 'text-indigo-600';
+    const sliderId = `margin-${color}`;
     
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-end">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">{label}</label>
+                <label htmlFor={sliderId} className="text-xs font-black text-slate-400 uppercase tracking-widest">{label}</label>
                 <span className={`text-4xl font-black tracking-tighter ${textColor}`}>{value}%</span>
             </div>
             <input
+                id={sliderId}
                 type="range"
                 min="0"
                 max="100"
@@ -429,19 +438,24 @@ const MarginSlider = ({ label, value, onChange, color }: any) => {
     );
 };
 
-const SplitItem = ({ label, val, color }: any) => (
+interface SplitItemProps { label: string; val: string; color: string; }
+const SplitItem = ({ label, val, color }: SplitItemProps) => (
     <div className="flex justify-between items-center">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</span>
         <span className={`font-black text-xl ${color}`}>${val.toFixed(2)}</span>
     </div>
 );
 
-const InputField = ({ label, value, onChange, prefix }: any) => (
+interface InputFieldProps { label: string; value: string | number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; prefix?: string; }
+const InputField = ({ label, value, onChange, prefix }: InputFieldProps) => {
+    const fieldId = `bmc-${label.toLowerCase().replace(/\s+/g, '-')}`;
+    return (
     <div className="space-y-2">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{label}</label>
+        <label htmlFor={fieldId} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{label}</label>
         <div className="relative">
             {prefix && <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-black text-xl">{prefix}</span>}
             <input 
+                id={fieldId}
                 type="number"
                 value={value}
                 onChange={(e) => onChange(parseFloat(e.target.value))}
@@ -449,5 +463,6 @@ const InputField = ({ label, value, onChange, prefix }: any) => (
             />
         </div>
     </div>
-);
+    );
+};
 export default BusinessModelConfiguration;

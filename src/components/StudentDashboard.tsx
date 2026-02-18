@@ -81,212 +81,124 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-surface-50 p-4 sm:p-6">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2">
+        <div className="mb-6">
+          <h1 className="text-3xl font-extrabold text-surface-800 tracking-tight mb-1">
             ¡Hola, {profile.firstName}! 👋
           </h1>
-          <p className="text-slate-500 font-medium">
-            Bienvenido a tu panel de control del estudiante
+          <p className="text-surface-400 text-sm">
+            Bienvenido a tu panel de control
           </p>
         </div>
 
         {/* Balance Card */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-[32px] p-8 text-white mb-8 shadow-xl">
-          <p className="text-blue-100 text-sm font-bold uppercase mb-2">Tu Saldo Disponible</p>
+        <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl p-6 sm:p-8 text-white mb-6 shadow-md">
+          <p className="text-brand-100 text-xs font-semibold uppercase tracking-wider mb-1">Tu Saldo Disponible</p>
           <div className="flex items-baseline justify-between">
-            <h2 className="text-5xl font-black">${profile.balance.toFixed(2)}</h2>
+            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">${profile.balance.toFixed(2)}</h2>
             <div className="text-right">
-              <p className="text-blue-100 text-sm">Gastado hoy</p>
-              <p className="text-2xl font-bold">${profile.spentToday}</p>
+              <p className="text-brand-100 text-xs">Gastado hoy</p>
+              <p className="text-xl font-bold">${profile.spentToday}</p>
             </div>
           </div>
         </div>
 
-        {/* Tabs Grid - 2 rows x 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {/* Wallet Tab */}
-          <div
-            onClick={() => setActiveTab('wallet')}
-            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
-              activeTab === 'wallet'
-                ? 'bg-blue-600 text-white shadow-lg scale-105'
-                : 'bg-white text-slate-700 hover:shadow-lg'
-            }`}
-          >
-            <Wallet className="w-8 h-8 mb-4" />
-            <h3 className="font-black text-lg mb-2">Mi Billetera</h3>
-            <p className={`text-sm ${activeTab === 'wallet' ? 'text-blue-100' : 'text-slate-500'}`}>
-              Gestiona tu saldo
-            </p>
-          </div>
-
-          {/* Shop Tab */}
-          <div
-            onClick={() => setActiveTab('shop')}
-            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
-              activeTab === 'shop'
-                ? 'bg-green-600 text-white shadow-lg scale-105'
-                : 'bg-white text-slate-700 hover:shadow-lg'
-            }`}
-          >
-            <ShoppingBag className="w-8 h-8 mb-4" />
-            <h3 className="font-black text-lg mb-2">Tienda</h3>
-            <p className={`text-sm ${activeTab === 'shop' ? 'text-green-100' : 'text-slate-500'}`}>
-              Compra productos
-            </p>
-          </div>
-
-          {/* History Tab */}
-          <div
-            onClick={() => setActiveTab('history')}
-            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
-              activeTab === 'history'
-                ? 'bg-purple-600 text-white shadow-lg scale-105'
-                : 'bg-white text-slate-700 hover:shadow-lg'
-            }`}
-          >
-            <History className="w-8 h-8 mb-4" />
-            <h3 className="font-black text-lg mb-2">Historial</h3>
-            <p className={`text-sm ${activeTab === 'history' ? 'text-purple-100' : 'text-slate-500'}`}>
-              Tus transacciones
-            </p>
-          </div>
-
-          {/* Learning Tab */}
-          <div
-            onClick={() => setActiveTab('learning')}
-            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
-              activeTab === 'learning'
-                ? 'bg-indigo-600 text-white shadow-lg scale-105'
-                : 'bg-white text-slate-700 hover:shadow-lg'
-            }`}
-          >
-            <Sparkles className="w-8 h-8 mb-4" />
-            <h3 className="font-black text-lg mb-2">Aprender</h3>
-            <p className={`text-sm ${activeTab === 'learning' ? 'text-indigo-100' : 'text-slate-500'}`}>
-              Retos & Educación
-            </p>
-          </div>
-
-          {/* Rewards Tab */}
-          <div
-            onClick={() => setActiveTab('rewards')}
-            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
-              activeTab === 'rewards'
-                ? 'bg-yellow-500 text-white shadow-lg scale-105'
-                : 'bg-white text-slate-700 hover:shadow-lg'
-            }`}
-          >
-            <Award className="w-8 h-8 mb-4" />
-            <h3 className="font-black text-lg mb-2">Mis Puntos</h3>
-            <p className={`text-sm ${activeTab === 'rewards' ? 'text-yellow-100' : 'text-slate-500'}`}>
-              MeCard Rewards
-            </p>
-          </div>
-
-          {/* Marketplace Tab */}
-          <div
-            onClick={() => setActiveTab('marketplace')}
-            className={`p-6 rounded-[24px] cursor-pointer transition-all ${
-              activeTab === 'marketplace'
-                ? 'bg-rose-600 text-white shadow-lg scale-105'
-                : 'bg-white text-slate-700 hover:shadow-lg'
-            }`}
-          >
-            <Gift className="w-8 h-8 mb-4" />
-            <h3 className="font-black text-lg mb-2">Canjear</h3>
-            <p className={`text-sm ${activeTab === 'marketplace' ? 'text-rose-100' : 'text-slate-500'}`}>
-              Premios & Regalos
-            </p>
-          </div>
+        {/* Tab Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6" role="tablist" aria-label="Secciones del estudiante">
+          {([
+            { key: 'wallet', icon: <Wallet size={22} />, label: 'Billetera', desc: 'Gestiona tu saldo', activeColor: 'bg-brand-500' },
+            { key: 'shop', icon: <ShoppingBag size={22} />, label: 'Tienda', desc: 'Compra productos', activeColor: 'bg-trust-500' },
+            { key: 'history', icon: <History size={22} />, label: 'Historial', desc: 'Transacciones', activeColor: 'bg-purple-600' },
+            { key: 'learning', icon: <Sparkles size={22} />, label: 'Aprender', desc: 'Retos & Educación', activeColor: 'bg-brand-600' },
+            { key: 'rewards', icon: <Award size={22} />, label: 'Mis Puntos', desc: 'MeCard Rewards', activeColor: 'bg-warm-500' },
+            { key: 'marketplace', icon: <Gift size={22} />, label: 'Canjear', desc: 'Premios & Regalos', activeColor: 'bg-rose-600' },
+          ] as const).map((tab) => (
+            <button
+              key={tab.key}
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              onClick={() => setActiveTab(tab.key as typeof activeTab)}
+              className={`p-4 sm:p-5 rounded-xl text-left transition-all ${
+                activeTab === tab.key
+                  ? `${tab.activeColor} text-white shadow-md scale-[1.02]`
+                  : 'bg-white text-surface-700 hover:shadow-sm border border-surface-100'
+              }`}
+            >
+              <span className="mb-2 block">{tab.icon}</span>
+              <h3 className="font-bold text-sm mb-0.5">{tab.label}</h3>
+              <p className={`text-xs ${activeTab === tab.key ? 'text-white/70' : 'text-surface-400'}`}>{tab.desc}</p>
+            </button>
+          ))}
         </div>
 
-        {/* Content Area */}
-        <div className="mt-8">
+        {/* Content */}
+        <div className="mt-4">
           {activeTab === 'wallet' && (
-            <div className="bg-white rounded-[32px] p-8 shadow-lg">
-              <h2 className="text-2xl font-black mb-6">Mi Billetera</h2>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-[20px]">
-                  <span className="font-bold text-slate-700">Saldo Actual</span>
-                  <span className="text-2xl font-black text-blue-600">${profile.balance}</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-[20px]">
-                  <span className="font-bold text-slate-700">Límite Diario</span>
-                  <span className="text-lg font-bold text-slate-900">${profile.dailyLimit}</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-[20px]">
-                  <span className="font-bold text-slate-700">Disponible Hoy</span>
-                  <span className="text-lg font-bold text-green-600">
-                    ${(profile.dailyLimit - profile.spentToday).toFixed(2)}
-                  </span>
-                </div>
+            <div className="bg-white rounded-2xl p-6 shadow-xs border border-surface-100">
+              <h2 className="text-xl font-bold mb-4 text-surface-800">Mi Billetera</h2>
+              <div className="space-y-2">
+                {[
+                  { label: 'Saldo Actual', value: `$${profile.balance}`, color: 'text-brand-600' },
+                  { label: 'Límite Diario', value: `$${profile.dailyLimit}`, color: 'text-surface-800' },
+                  { label: 'Disponible Hoy', value: `$${(profile.dailyLimit - profile.spentToday).toFixed(2)}`, color: 'text-trust-600' },
+                ].map((row) => (
+                  <div key={row.label} className="flex justify-between items-center p-3.5 bg-surface-50 rounded-xl">
+                    <span className="font-medium text-sm text-surface-600">{row.label}</span>
+                    <span className={`text-lg font-bold ${row.color}`}>{row.value}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {activeTab === 'shop' && (
-            <div className="bg-white rounded-[32px] p-8 shadow-lg">
-              <h2 className="text-2xl font-black mb-6">Tienda</h2>
-              <p className="text-slate-500 text-lg">
-                🎯 La tienda estará disponible pronto en el modo completo.
-              </p>
-              <p className="text-slate-400 text-sm mt-2">
-                Puedes comprar productos de la cafetería, papelería y más.
-              </p>
+            <div className="bg-white rounded-2xl p-6 shadow-xs border border-surface-100">
+              <h2 className="text-xl font-bold mb-3 text-surface-800">Tienda</h2>
+              <p className="text-surface-500 text-sm">La tienda estará disponible pronto en el modo completo.</p>
+              <p className="text-surface-400 text-xs mt-1">Podrás comprar productos de la cafetería, papelería y más.</p>
             </div>
           )}
 
           {activeTab === 'history' && (
-            <div className="bg-white rounded-[32px] p-8 shadow-lg">
-              <h2 className="text-2xl font-black mb-6">Historial de Transacciones</h2>
-              <p className="text-slate-500 text-lg">
-                📊 No hay transacciones aún.
-              </p>
-              <p className="text-slate-400 text-sm mt-2">
-                Tus compras aparecerán aquí.
-              </p>
+            <div className="bg-white rounded-2xl p-6 shadow-xs border border-surface-100">
+              <h2 className="text-xl font-bold mb-3 text-surface-800">Historial de Transacciones</h2>
+              <p className="text-surface-500 text-sm">No hay transacciones aún.</p>
+              <p className="text-surface-400 text-xs mt-1">Tus compras aparecerán aquí.</p>
             </div>
           )}
 
           {activeTab === 'learning' && (
-            <div className="space-y-6">
-              {/* DAILY LESSON */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[24px] p-6 border-2 border-blue-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="w-6 h-6 text-indigo-600" />
-                  <h3 className="text-xl font-black text-slate-900">Lección del Día 📚</h3>
+            <div className="space-y-4">
+              <div className="bg-brand-50 rounded-xl p-5 border border-brand-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles size={18} className="text-brand-600" />
+                  <h3 className="text-base font-bold text-surface-800">Lección del Día</h3>
                 </div>
                 {aiLoading ? (
-                  <p className="text-slate-600 font-medium">Gemini está preparando tu lección...</p>
+                  <p className="text-surface-500 text-sm">Preparando tu lección…</p>
                 ) : (
-                  <p className="text-slate-800 leading-relaxed">{dailyLesson}</p>
+                  <p className="text-surface-700 text-sm leading-relaxed">{dailyLesson}</p>
                 )}
               </div>
-
-              {/* DAILY CHALLENGE */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-[24px] p-6 border-2 border-green-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Award className="w-6 h-6 text-green-600" />
-                  <h3 className="text-xl font-black text-slate-900">Reto de Hoy 🎮</h3>
+              <div className="bg-trust-50 rounded-xl p-5 border border-trust-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Award size={18} className="text-trust-600" />
+                  <h3 className="text-base font-bold text-surface-800">Reto de Hoy</h3>
                 </div>
                 {aiLoading ? (
-                  <p className="text-slate-600 font-medium">Gemini está creando tu reto...</p>
+                  <p className="text-surface-500 text-sm">Creando tu reto…</p>
                 ) : (
-                  <p className="text-slate-800 leading-relaxed">{dailyChallenge}</p>
+                  <p className="text-surface-700 text-sm leading-relaxed">{dailyChallenge}</p>
                 )}
-                <button className="mt-4 bg-green-600 hover:bg-green-700 text-white font-black px-6 py-3 rounded-[20px] text-[10px] uppercase tracking-[2px] transition-all">
-                  ✓ Completar Reto
+                <button className="mt-3 bg-trust-500 hover:bg-trust-600 text-white font-semibold px-4 py-2 rounded-lg text-xs transition-colors">
+                  Completar Reto
                 </button>
               </div>
-
-              {/* INFO */}
-              <div className="bg-indigo-50 rounded-[24px] p-6 border-2 border-indigo-200">
-                <p className="text-indigo-900 font-bold">
-                  💡 <strong>Gemini AI Coach:</strong> Completa los retos y aprende lecciones diarias para desbloquear logros especiales.
+              <div className="bg-brand-50/50 rounded-xl p-4 border border-brand-100">
+                <p className="text-brand-800 text-xs font-medium">
+                  <strong>Gemini AI Coach:</strong> Completa retos y lecciones para desbloquear logros.
                 </p>
               </div>
             </div>
@@ -309,16 +221,12 @@ export default function StudentDashboard() {
           )}
         </div>
 
-        {/* Info Box */}
-        <div className="mt-8 bg-blue-50 border-2 border-blue-200 rounded-[24px] p-6">
-          <div className="flex gap-4">
-            <Zap className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div>
-              <p className="font-black text-blue-900 mb-1">Modo Demo Activado</p>
-              <p className="text-blue-700 text-sm">
-                Estás viendo datos de demostración. Los datos reales se cargarán cuando se conecte Supabase.
-              </p>
-            </div>
+        {/* Demo info */}
+        <div className="mt-6 bg-brand-50 border border-brand-200 rounded-xl p-4 flex gap-3">
+          <Zap size={18} className="text-brand-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-brand-900 text-sm mb-0.5">Modo Demo Activado</p>
+            <p className="text-brand-700 text-xs">Los datos reales se cargarán cuando se conecte Supabase.</p>
           </div>
         </div>
       </div>

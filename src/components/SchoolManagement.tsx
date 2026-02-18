@@ -16,22 +16,28 @@ import { checkTrialExpiry, getTrialWarningMessage } from '../services/trialServi
 // UI SUB-COMPONENTS
 // ============================================
 
-const InputField = ({ label, value, onChange, type = "text", prefix = "", suffix = "" }: any) => (
+interface InputFieldProps { label: string; value: string | number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; type?: string; prefix?: string; suffix?: string; }
+const InputField = ({ label, value, onChange, type = "text", prefix = "", suffix = "" }: InputFieldProps) => {
+  const fieldId = `school-field-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  return (
   <div className="flex flex-col gap-1.5">
-    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <label htmlFor={fieldId} className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
     <div className="relative">
       {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">{prefix}</span>}
       <input 
+        id={fieldId}
         type={type} value={value} onChange={(e) => onChange(e.target.value)}
         className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 ${prefix ? 'pl-9' : 'px-5'} font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 transition-all text-sm`}
       />
       {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">{suffix}</span>}
     </div>
   </div>
-);
+  );
+};
 
-const ToggleSwitch = ({ label, active, onChange, description }: any) => (
-  <button onClick={() => onChange(!active)} className="flex items-center justify-between w-full p-5 bg-white border border-slate-100 rounded-3xl hover:bg-slate-50 transition-all text-left">
+interface ToggleSwitchProps { label: string; active: boolean; onChange: (v: boolean) => void; description?: string; }
+const ToggleSwitch = ({ label, active, onChange, description }: ToggleSwitchProps) => (
+  <button onClick={() => onChange(!active)} role="switch" aria-checked={active} className="flex items-center justify-between w-full p-5 bg-white border border-slate-100 rounded-3xl hover:bg-slate-50 transition-all text-left">
     <div className="max-w-[80%]">
       <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest block">{label}</span>
       {description && <span className="text-[9px] text-slate-400 font-bold leading-tight block mt-1">{description}</span>}
@@ -72,7 +78,7 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
     } as BusinessModel
   });
 
-  const updateBusiness = (field: string, value: any) => {
+  const updateBusiness = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({ 
         ...prev, 
         businessModel: { ...prev.businessModel!, [field]: value } as BusinessModel
@@ -81,7 +87,7 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
 
   return (
     <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-md flex items-center justify-center z-[100] p-6">
-      <div className="bg-white rounded-[56px] shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in duration-300">
+      <div role="dialog" aria-modal="true" aria-label="Configuración de campus" className="bg-white rounded-[56px] shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in duration-300">
         
         {/* Header */}
         <div className="bg-slate-900 text-white p-12 shrink-0 relative overflow-hidden">
@@ -312,8 +318,8 @@ export const SchoolManagement: React.FC = () => {
                    </td>
                    <td className="px-10 py-8 text-right">
                       <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button onClick={() => { setEditingSchool(s); setShowWizard(true); }} className="p-4 bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 rounded-2xl shadow-sm transition-all"><Edit size={18}/></button>
-                         <button onClick={() => setSchools(prev => prev.filter(x => x.id !== s.id))} className="p-4 bg-white border border-slate-100 text-slate-400 hover:text-rose-600 rounded-2xl shadow-sm transition-all"><Trash2 size={18}/></button>
+                         <button onClick={() => { setEditingSchool(s); setShowWizard(true); }} className="p-4 bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 rounded-2xl shadow-sm transition-all" aria-label={`Editar ${s.name}`}><Edit size={18}/></button>
+                         <button onClick={() => setSchools(prev => prev.filter(x => x.id !== s.id))} className="p-4 bg-white border border-slate-100 text-slate-400 hover:text-rose-600 rounded-2xl shadow-sm transition-all" aria-label={`Eliminar ${s.name}`}><Trash2 size={18}/></button>
                       </div>
                    </td>
                 </tr>

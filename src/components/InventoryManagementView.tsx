@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Product, Category, EntityOwner } from '../types';
 import { Button } from './Button';
+import { useToast } from './ui/Toast';
 
 interface InventoryManagementViewProps {
   products: Product[];
@@ -26,6 +27,7 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkStep, setBulkStep] = useState<'upload' | 'mapping' | 'processing'>('upload');
   const [isProcessing, setIsProcessing] = useState(false);
+  const toast = useToast();
 
   const filtered = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
@@ -60,7 +62,7 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
         setIsProcessing(false);
         setShowBulkModal(false);
         setBulkStep('upload');
-        alert("✅ Inventario actualizado masivamente.");
+        toast.success('Actualizado', 'Inventario actualizado masivamente.');
     }, 2000);
   };
 
@@ -105,7 +107,7 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
       <div className="p-10 flex-1 overflow-y-auto pb-40">
         <div className="mb-10 relative max-w-xl">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20}/>
-          <input placeholder="Busca por nombre o categoría..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-16 pr-8 py-5 rounded-[28px] bg-slate-50 border-none outline-none font-bold text-slate-600 shadow-inner focus:ring-4 focus:ring-indigo-100 transition-all" />
+          <input placeholder="Busca por nombre o categoría..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} aria-label="Buscar productos en inventario" className="w-full pl-16 pr-8 py-5 rounded-[28px] bg-slate-50 border-none outline-none font-bold text-slate-600 shadow-inner focus:ring-4 focus:ring-indigo-100 transition-all" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -117,7 +119,7 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
                  </div>
               </div>
               <div className="w-full aspect-[4/3] rounded-[32px] overflow-hidden mb-6 bg-slate-50 border border-slate-100">
-                <img src={product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
               <div className="flex-1 space-y-1">
                 <h4 className="font-black text-slate-800 text-lg leading-tight truncate">{product.name}</h4>
@@ -125,8 +127,8 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
                 <div className="flex items-center justify-between pt-4">
                     <p className="text-3xl font-black text-slate-700 tracking-tighter">${product.price.toFixed(2)}</p>
                     <div className="flex gap-1">
-                        <button onClick={() => setShowModal({ show: true, mode: 'edit', product })} className="p-3 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-xl transition-all"><Edit2 size={16}/></button>
-                        <button onClick={() => onUpdateProducts(products.filter(p => p.id !== product.id))} className="p-3 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl transition-all"><Trash2 size={16}/></button>
+                        <button onClick={() => setShowModal({ show: true, mode: 'edit', product })} className="p-3 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-xl transition-all" aria-label={`Editar ${product.name}`}><Edit2 size={16}/></button>
+                        <button onClick={() => onUpdateProducts(products.filter(p => p.id !== product.id))} className="p-3 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl transition-all" aria-label={`Eliminar ${product.name}`}><Trash2 size={16}/></button>
                     </div>
                 </div>
               </div>
@@ -145,8 +147,8 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
       {/* MODAL ALTA MANUAL DETALLADA */}
       {showModal.show && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-6">
-          <div className="bg-white rounded-[64px] shadow-2xl w-full max-w-3xl p-16 relative animate-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
-            <button onClick={() => setShowModal({show: false, mode: 'create'})} className="absolute top-12 right-12 text-slate-300 hover:text-slate-800 transition-colors"><X size={32}/></button>
+          <div role="dialog" aria-modal="true" aria-label={showModal.mode === 'create' ? 'Nuevo Artículo' : 'Editar Artículo'} className="bg-white rounded-[64px] shadow-2xl w-full max-w-3xl p-16 relative animate-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
+            <button onClick={() => setShowModal({show: false, mode: 'create'})} className="absolute top-12 right-12 text-slate-300 hover:text-slate-800 transition-colors" aria-label="Cerrar formulario"><X size={32}/></button>
             <div className="mb-10">
                 <h3 className="text-4xl font-black text-slate-800 tracking-tighter leading-none">{showModal.mode === 'create' ? 'Nuevo Artículo' : 'Editar Artículo'}</h3>
                 <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[4px] mt-2">Detalles técnicos del producto</p>
@@ -155,22 +157,22 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
             <form onSubmit={handleSave} className="space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Tag size={14}/> Nombre del Producto</label>
-                    <input name="name" defaultValue={showModal.product?.name} required placeholder="Ej. Hamburguesa con Queso" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-lg shadow-inner focus:ring-4 focus:ring-indigo-100 transition-all" />
+                    <label htmlFor="inv-product-name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Tag size={14}/> Nombre del Producto</label>
+                    <input id="inv-product-name" name="name" defaultValue={showModal.product?.name} required placeholder="Ej. Hamburguesa con Queso" className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-lg shadow-inner focus:ring-4 focus:ring-indigo-100 transition-all" />
                 </div>
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon size={14}/> URL Imagen</label>
-                    <input name="image" defaultValue={showModal.product?.image} placeholder="https://..." className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-sm shadow-inner" />
+                    <label htmlFor="inv-product-image" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon size={14}/> URL Imagen</label>
+                    <input id="inv-product-image" name="image" defaultValue={showModal.product?.image} placeholder="https://..." className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-sm shadow-inner" />
                 </div>
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Filter size={14}/> Categoría</label>
-                    <select name="category" defaultValue={showModal.product?.category} className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-sm shadow-inner appearance-none">
+                    <label htmlFor="inv-product-category" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Filter size={14}/> Categoría</label>
+                    <select id="inv-product-category" name="category" defaultValue={showModal.product?.category} className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-sm shadow-inner appearance-none">
                         {allowedCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                 </div>
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><DollarSign size={14}/> Precio Público ($)</label>
-                    <input name="price" type="number" step="0.5" defaultValue={showModal.product?.price} required className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-3xl shadow-inner" />
+                    <label htmlFor="inv-product-price" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><DollarSign size={14}/> Precio Público ($)</label>
+                    <input id="inv-product-price" name="price" type="number" step="0.5" defaultValue={showModal.product?.price} required className="w-full p-6 rounded-[28px] bg-slate-50 border-none outline-none font-black text-slate-700 text-3xl shadow-inner" />
                 </div>
               </div>
 
@@ -178,12 +180,12 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
                   <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-3"><ChefHat size={18}/> Información Nutricional (Opcional)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1 flex items-center gap-2"><Flame size={14}/> Calorías (kcal)</label>
-                        <input name="calories" type="number" defaultValue={showModal.product?.calories} placeholder="0" className="w-full p-5 rounded-[22px] bg-white border border-indigo-100 outline-none font-black text-indigo-700 text-xl" />
+                        <label htmlFor="inv-calories" className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1 flex items-center gap-2"><Flame size={14}/> Calorías (kcal)</label>
+                        <input id="inv-calories" name="calories" type="number" defaultValue={showModal.product?.calories} placeholder="0" className="w-full p-5 rounded-[22px] bg-white border border-indigo-100 outline-none font-black text-indigo-700 text-xl" />
                       </div>
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1 flex items-center gap-2"><Scale size={14}/> Ingredientes (Separa con comas)</label>
-                        <textarea name="ingredients" defaultValue={showModal.product?.ingredients?.join(', ')} placeholder="Ej. Pollo, Arroz, Tortilla" className="w-full p-5 rounded-[22px] bg-white border border-indigo-100 outline-none font-black text-indigo-700 text-sm h-24 resize-none" />
+                        <label htmlFor="inv-ingredients" className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1 flex items-center gap-2"><Scale size={14}/> Ingredientes (Separa con comas)</label>
+                        <textarea id="inv-ingredients" name="ingredients" defaultValue={showModal.product?.ingredients?.join(', ')} placeholder="Ej. Pollo, Arroz, Tortilla" className="w-full p-5 rounded-[22px] bg-white border border-indigo-100 outline-none font-black text-indigo-700 text-sm h-24 resize-none" />
                       </div>
                   </div>
               </div>
@@ -200,8 +202,8 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
       {/* MODAL CARGA MASIVA */}
       {showBulkModal && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-6">
-            <div className="bg-white rounded-[64px] shadow-2xl w-full max-w-2xl p-16 text-center relative animate-in zoom-in duration-300">
-                <button onClick={() => setShowBulkModal(false)} className="absolute top-12 right-12 text-slate-300 hover:text-slate-800 transition-colors"><X size={32}/></button>
+            <div role="dialog" aria-modal="true" aria-label="Carga masiva de productos" className="bg-white rounded-[64px] shadow-2xl w-full max-w-2xl p-16 text-center relative animate-in zoom-in duration-300">
+                <button onClick={() => setShowBulkModal(false)} className="absolute top-12 right-12 text-slate-300 hover:text-slate-800 transition-colors" aria-label="Cerrar carga masiva"><X size={32}/></button>
                 <div className="bg-indigo-50 w-24 h-24 rounded-[40px] flex items-center justify-center mx-auto mb-10 text-indigo-600"><Upload size={48}/></div>
                 <h3 className="text-3xl font-black text-slate-800 tracking-tighter mb-4">Carga Masiva de Productos</h3>
                 <p className="text-slate-400 font-medium mb-12 px-10 leading-relaxed">Sube tu inventario completo usando nuestro formato estándar para evitar errores de sincronización.</p>

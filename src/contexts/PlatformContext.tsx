@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { School, OperatingUnit, Settlement, User, UserRole } from '../types';
 import { MOCK_SCHOOLS, MOCK_UNITS } from '../constants';
@@ -38,7 +38,6 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsLoading(true);
 
       if (!isSupabaseConfigured) {
-        console.info("MeCard Hub: Entering Offline/Demo Mode (No API keys detected)");
         useMockData();
         return;
       }
@@ -60,18 +59,20 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (settlementsRes.data) setSettlements(settlementsRes.data as any);
 
         setIsDemoMode(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // CRITICAL FIX: Detect NetworkError or fetch failures and silently switch to Demo Mode
         // This avoids the noisy [object Object] errors in the console and UI
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const errName = err instanceof Error ? err.name : '';
         const isNetworkError = 
-          err.name === 'TypeError' || 
-          err.message?.toLowerCase().includes('fetch') || 
-          err.message?.toLowerCase().includes('network');
+          errName === 'TypeError' || 
+          errMsg.toLowerCase().includes('fetch') || 
+          errMsg.toLowerCase().includes('network');
 
         if (isNetworkError) {
           console.warn("MeCard Hub: Network unreachable. Defaulting to Demo Mode.");
         } else {
-          console.error("MeCard Hub: Database configuration error:", err.message || err);
+          console.error("MeCard Hub: Database configuration error:", errMsg);
         }
         useMockData();
       } finally {
@@ -140,7 +141,7 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const runSettlement = async (school: School) => {
     if (isDemoMode) {
-      alert("✅ Corte Generado (Modo Demo)");
+      // TODO: Replace with toast notification when called from component
       return;
     }
     // Remote logic would go here
@@ -162,11 +163,13 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActiveSchool(null);
   };
 
+  const contextValue = useMemo(() => ({
+    schools, units, settlements, activeSchool, currentUser, isLoading, isDemoMode,
+    addSchool, updateSchoolModel, impersonateSchool: setActiveSchool, runSettlement, login, logout
+  }), [schools, units, settlements, activeSchool, currentUser, isLoading, isDemoMode]);
+
   return (
-    <PlatformContext.Provider value={{ 
-      schools, units, settlements, activeSchool, currentUser, isLoading, isDemoMode,
-      addSchool, updateSchoolModel, impersonateSchool: setActiveSchool, runSettlement, login, logout
-    }}>
+    <PlatformContext.Provider value={contextValue}>
       {children}
     </PlatformContext.Provider>
   );

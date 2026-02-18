@@ -54,10 +54,10 @@ export const GiftRedemptionView: React.FC<GiftRedemptionViewProps> = ({
         setStatus('idle');
         setRedeemedGift(null);
       }, 8000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error redeeming gift:', err);
       setStatus('error');
-      setMessage(err.message || 'Código inválido o ya expirado.');
+      setMessage(err instanceof Error ? err.message : 'Código inválido o ya expirado.');
       setCode('');
       
       setTimeout(() => {

@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Variables de entorno (Vite las inyecta en build)
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || "";
+// Variables de entorno (Vite usa import.meta.env)
+const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL ?? "";
+const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? "";
 
 /**
  * Verifica si Supabase está configurado correctamente

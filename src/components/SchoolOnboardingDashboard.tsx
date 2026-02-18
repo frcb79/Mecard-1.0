@@ -28,7 +28,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
   const [showImportWizard, setShowImportWizard] = useState(false);
   
   // Progress Logic
-  const steps: { id: OnboardingStep; label: string; description: string; icon: any }[] = [
+  const steps: { id: OnboardingStep; label: string; description: string; icon: React.ReactElement }[] = [
     { id: 'welcome', label: 'Bienvenida', description: 'Introducción al sistema', icon: <Rocket size={20}/> },
     { id: 'profile', label: 'Perfil Institucional', description: 'Datos legales y branding', icon: <Building2 size={20}/> },
     { id: 'banking', label: 'Cuentas y SPEI', description: 'Configuración de liquidaciones', icon: <Landmark size={20}/> },
@@ -81,7 +81,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
            ))}
         </div>
 
-        <button onClick={() => window.location.reload()} className="p-4 bg-slate-50 rounded-2xl text-slate-300 hover:text-rose-500 transition-colors"><X size={24}/></button>
+        <button onClick={() => window.location.reload()} className="p-4 bg-slate-50 rounded-2xl text-slate-300 hover:text-rose-500 transition-colors" aria-label="Cerrar onboarding"><X size={24}/></button>
       </header>
 
       <main className="flex-1 overflow-y-auto p-12 flex justify-center">
@@ -147,8 +147,9 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                                 <h4 className="text-2xl font-black text-indigo-400 mb-8 flex items-center gap-3"><ShieldCheck/> MeCard Institutional Node</h4>
                                 <p className="text-slate-400 font-medium text-lg leading-relaxed mb-10">Para que tu colegio reciba sus liquidaciones automáticas (Rentas, Comisiones, Cobros Directos), necesitamos una CLABE Interbancaria de la cuenta escolar.</p>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-300 uppercase tracking-[4px] px-2">CLABE para Liquidaciones (18 dígitos)</label>
+                                    <label htmlFor="onboarding-clabe" className="text-[10px] font-black text-indigo-300 uppercase tracking-[4px] px-2">CLABE para Liquidaciones (18 dígitos)</label>
                                     <input 
+                                        id="onboarding-clabe"
                                         type="text" 
                                         maxLength={18}
                                         value={formData.settlementCLABE}
@@ -295,7 +296,8 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
 };
 
 // Subcomponentes
-const FeatureCard = ({ icon, title, desc }: any) => (
+interface FeatureCardProps { icon: React.ReactNode; title: string; desc: string; }
+const FeatureCard = ({ icon, title, desc }: FeatureCardProps) => (
     <div className="text-center">
         <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-sm">{icon}</div>
         <p className="font-black text-slate-800 text-xs uppercase tracking-widest mb-1">{title}</p>
@@ -303,10 +305,14 @@ const FeatureCard = ({ icon, title, desc }: any) => (
     </div>
 );
 
-const InputField = ({ label, value, onChange, placeholder }: any) => (
+interface OnboardingInputFieldProps { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; }
+const InputField = ({ label, value, onChange, placeholder }: OnboardingInputFieldProps) => {
+    const fieldId = `onboarding-${label.toLowerCase().replace(/\s+/g, '-')}`;
+    return (
     <div className="space-y-3 text-left">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{label}</label>
+        <label htmlFor={fieldId} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{label}</label>
         <input 
+            id={fieldId}
             type="text" 
             value={value} 
             onChange={e => onChange(e.target.value)} 
@@ -314,9 +320,11 @@ const InputField = ({ label, value, onChange, placeholder }: any) => (
             className="w-full p-6 bg-slate-50 border-none rounded-[28px] font-black text-lg text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-inner" 
         />
     </div>
-);
+    );
+};
 
-const CheckListItem = ({ label }: any) => (
+interface CheckListItemProps { label: string; }
+const CheckListItem = ({ label }: CheckListItemProps) => (
     <li className="flex items-center gap-4">
         <div className="w-8 h-8 bg-emerald-500/20 text-emerald-400 rounded-lg flex items-center justify-center border border-emerald-500/30"><CheckCircle2 size={18}/></div>
         <span className="font-bold text-slate-200 text-sm">{label}</span>

@@ -3,7 +3,6 @@ import {
   ChevronLeft, ChevronRight, Home, CreditCard, AlertCircle, 
   BarChart3, Bell, Settings, LogOut, Menu, X
 } from 'lucide-react';
-import '../styles/parentTheme.css';
 
 interface ParentSidebarProps {
   onNavigate: (view: string) => void;

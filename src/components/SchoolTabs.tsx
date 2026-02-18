@@ -47,7 +47,6 @@ export default function SchoolTabs({ schoolId }: { schoolId: string }) {
         <BusinessModelConfiguration
           schoolId={schoolId}
           onSave={(model) => {
-            console.log("Guardar modelo de negocio", model);
           }}
         />
       )}

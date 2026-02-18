@@ -150,7 +150,6 @@ export const SuperAdminView: React.FC = () => {
                     schoolName={selectedSchool?.name}
                     onSave={(config) => {
                       // Here you would save to backend
-                      console.log('Config saved:', config);
                     }}
                   />
                 )}

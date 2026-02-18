@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { BarChart3, Download, Filter, Calendar } from 'lucide-react';
-import '../styles/parentTheme.css';
 
 export default function ParentReportsView() {
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('weekly');

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabaseClient";
 import { Plus, School as SchoolIcon, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

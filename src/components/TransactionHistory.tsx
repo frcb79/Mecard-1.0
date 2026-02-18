@@ -245,7 +245,7 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
             let itemsText = '';
             if (tx.metadata?.items && Array.isArray(tx.metadata.items)) {
               itemsText = tx.metadata.items
-                .map((item: any) => `${item.quantity}x ${item.name}`)
+                .map((item: { quantity: number; name: string }) => `${item.quantity}x ${item.name}`)
                 .join(', ');
             }
 

@@ -2,9 +2,9 @@
 // ARCHIVO 1: hooks/useTransactions.ts
 // ============================================
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { WalletTransaction, TransactionType } from '../../types';
+import { WalletTransaction, TransactionType } from '../types';
 
 interface UseTransactionsProps {
   studentId: string;
@@ -22,6 +22,7 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [filters, setFilters] = useState<TransactionFilters>({
     dateRange: 'month',
     types: []
@@ -58,18 +59,21 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
 
           const currentBalance = studentData?.balance || 0;
 
-          setTransactions(data.map((tx: any, index: number) => {
-            // Calcular balance después de esta transacción
-            // (sumando hacia atrás desde el balance actual)
-            let balanceAfter = currentBalance;
-            for (let i = 0; i < index; i++) {
-              const prevTx = data[i];
-              if (prevTx.type === 'DEPOSIT') {
-                balanceAfter -= prevTx.amount;
-              } else if (prevTx.type === 'SALE' || prevTx.type === 'PURCHASE') {
-                balanceAfter += prevTx.amount;
-              }
+          // Single-pass O(n) balance calculation
+          const balances: number[] = new Array(data.length);
+          let runningBalance = currentBalance;
+          for (let i = 0; i < data.length; i++) {
+            balances[i] = runningBalance;
+            const tx = data[i];
+            if (tx.type === 'DEPOSIT') {
+              runningBalance -= tx.amount;
+            } else if (tx.type === 'SALE' || tx.type === 'PURCHASE') {
+              runningBalance += tx.amount;
             }
+          }
+
+          setTransactions(data.map((tx: any, index: number) => {
+            const balanceAfter = balances[index];
 
             const balanceBefore = tx.type === 'DEPOSIT' 
               ? balanceAfter - tx.amount 
@@ -97,16 +101,16 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
             };
           }));
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading transactions:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
       }
     };
 
     loadTransactions();
-  }, [studentId, limit]);
+  }, [studentId, limit, refreshKey]);
 
   // Filtrar transacciones
   const filteredTransactions = useMemo(() => {
@@ -166,6 +170,8 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
     filters,
     setFilters,
     stats,
-    refresh: () => setLoading(true) // Trigger reload
+    refresh: () => {
+      setRefreshKey(k => k + 1);
+    }
   };
 }

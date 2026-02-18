@@ -52,7 +52,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
     }
   }
 
-  const updateField = (field: keyof SchoolBillingConfig, value: any) => {
+  const updateField = (field: keyof SchoolBillingConfig, value: string | number | boolean) => {
     if (!config) return
     setConfig({ ...config, [field]: value })
   }

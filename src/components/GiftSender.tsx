@@ -55,8 +55,8 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
       setSelectedFriend(data);
       // Once friend is found, load their public favorites
       await loadFriendFavorites(data.id);
-    } catch (err: any) {
-      setError(err.message || 'Error buscando amigo');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error buscando amigo');
       setSelectedFriend(null);
     } finally {
       setLoading(false);
@@ -121,8 +121,8 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Error enviando regalo');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error enviando regalo');
     } finally {
       setLoading(false);
     }

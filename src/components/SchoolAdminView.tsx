@@ -9,8 +9,10 @@ import {
 import { StudentProfile, OperatingUnit, EntityOwner } from '../types';
 import { Button } from './Button';
 import { SchoolAdminStudentsView } from './SchoolAdminStudentsView';
+import { useToast } from './ui/Toast';
 
-const StatCard = ({ title, value, icon: Icon, color, trend, subtitle }: any) => (
+interface StatCardProps { title: string; value: string | number; icon: React.ComponentType<{ size?: number; className?: string }>; color: string; trend?: string; subtitle?: string; }
+const StatCard = ({ title, value, icon: Icon, color, trend, subtitle }: StatCardProps) => (
   <div className="bg-white p-10 rounded-[48px] shadow-sm border border-slate-100 flex items-center space-x-8 hover:shadow-xl hover:-translate-y-2 transition-all duration-500 group">
     <div className={`p-6 rounded-[32px] ${color} bg-opacity-10 text-white flex items-center justify-center transition-transform group-hover:scale-110`}>
       <Icon className={`w-8 h-8 ${color.replace('bg-', 'text-')}`} />
@@ -37,11 +39,12 @@ export const SchoolAdminView: React.FC<{
   onUpdateUnit: (id: string, updates: Partial<OperatingUnit>) => void;
   onDeleteUnit: (id: string) => void;
 }> = ({ onUpdateStudent, allStudents, onBulkAddStudents, operatingUnits, onAddUnit, onUpdateUnit, onDeleteUnit }) => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'units'>('dashboard');
 
   const handleDeleteStudent = (id: string) => {
       // Logic handled via parent state usually, simulation here
-      alert(`Eliminando alumno ${id}`);
+      toast.info('Procesando', `Eliminando alumno ${id}`);
   };
 
   const handleToggleStudent = (id: string) => {
@@ -59,7 +62,7 @@ export const SchoolAdminView: React.FC<{
                 <h1 className="text-6xl font-black text-slate-800 tracking-tighter leading-none">Gestión Institucional</h1>
             </div>
             
-            <div className="flex bg-white p-2.5 rounded-[32px] shadow-sm border border-slate-100 relative z-10 animate-in slide-in-from-right-4 duration-500">
+            <div className="flex bg-white p-2.5 rounded-[32px] shadow-sm border border-slate-100 relative z-10 animate-in slide-in-from-right-4 duration-500" role="tablist" aria-label="Secciones de administración">
                 <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={18}/>} label="Dashboard" />
                 <TabButton active={activeTab === 'students'} onClick={() => setActiveTab('students')} icon={<Users size={18}/>} label="Directorio" />
                 <TabButton active={activeTab === 'units'} onClick={() => setActiveTab('units')} icon={<Store size={18}/>} label="Unidades POS" />
@@ -159,9 +162,12 @@ export const SchoolAdminView: React.FC<{
   );
 };
 
-const TabButton = ({ active, onClick, icon, label }: any) => (
+interface TabButtonProps { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; }
+const TabButton = ({ active, onClick, icon, label }: TabButtonProps) => (
   <button 
     onClick={onClick} 
+    role="tab"
+    aria-selected={active}
     className={`px-10 py-4 rounded-[22px] flex items-center gap-3 transition-all font-black text-[11px] uppercase tracking-[3px] ${active ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
   >
     {icon} <span>{label}</span>

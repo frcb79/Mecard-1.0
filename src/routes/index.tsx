@@ -1,71 +1,90 @@
 /**
  * RUTAS UNIFICADAS MECARD
  * Sistema de routing centralizado por rol
- * Usa React Router v7 + ProtectedRoute
+ * Usa React Router v7 + ProtectedRoute + React.lazy code splitting
  * 
- * @version 1.0.0
- * @date 2026-02-07
+ * @version 2.0.0
+ * @date 2026-02-18
  */
 
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { UserRole } from '../types';
 
-// ========== LAYOUTS ==========
+// ========== LAYOUTS (eager — always needed) ==========
 import { Sidebar } from '../components/Sidebar';
 
-// ========== AUTH PAGES ==========
+// ========== AUTH PAGES (eager — first paint) ==========
 import LoginView from '../components/LoginView';
 import UnauthorizedView from '../../pages/Unauthorized';
+import NotFoundPage from '../components/NotFoundPage';
 
-// ========== SUPER ADMIN VIEWS ==========
-import SuperAdminDashboard from '../components/SuperAdminDashboard';
-import SchoolManagement from '../components/SchoolManagement';
-import BusinessModelConfiguration from '../components/BusinessModelConfiguration';
-import SettlementsView from '../components/SettlementsView';
-import ReportsView from '../components/ReportsView';
+// ========== LAZY IMPORTS (code-split per role) ==========
 
-// ========== SCHOOL ADMIN VIEWS ==========
-import SchoolAdminContainer from '../components/SchoolAdminContainer';
-import StudentManagementView from '../components/StudentManagementView';
-import SmartStaffManager from '../components/SmartStaffManager';
-import StudentImportWizard from '../components/StudentImportWizard';
+// Super Admin
+const SuperAdminDashboard = React.lazy(() => import('../components/SuperAdminDashboard'));
+const SchoolManagement = React.lazy(() => import('../components/SchoolManagement'));
+const BusinessModelConfiguration = React.lazy(() => import('../components/BusinessModelConfiguration'));
+const SettlementsView = React.lazy(() => import('../components/SettlementsView'));
+const ReportsView = React.lazy(() => import('../components/ReportsView'));
 
-// ========== UNIT MANAGER VIEWS ==========
-import ConcessionaireDashboard from '../components/ConcessionaireDashboard';
-import InventoryManagementView from '../components/InventoryManagementView';
+// School Admin
+const SchoolAdminContainer = React.lazy(() => import('../components/SchoolAdminContainer'));
+const StudentManagementView = React.lazy(() => import('../components/StudentManagementView'));
+const SmartStaffManager = React.lazy(() => import('../components/SmartStaffManager'));
+const StudentImportWizard = React.lazy(() => import('../components/StudentImportWizard'));
 
-// ========== POS VIEWS ==========
-import PosView from '../components/PosView';
-import CashierView from '../components/CashierView';
+// Unit Manager
+const ConcessionaireDashboard = React.lazy(() => import('../components/ConcessionaireDashboard'));
+const InventoryManagementView = React.lazy(() => import('../components/InventoryManagementView'));
 
-// ========== PARENT VIEWS ==========
-import ParentPortalContainer from '../components/ParentPortalContainer';
-import ParentWalletView from '../components/ParentWalletView';
-import ParentLimitsView from '../components/ParentLimitsView';
-import ParentReportsView from '../components/ParentReportsView';
-import ParentNotificationsView from '../components/ParentNotificationsView';
+// POS
+const PosView = React.lazy(() => import('../components/PosView'));
+const CashierView = React.lazy(() => import('../components/CashierView'));
 
-// ========== STUDENT VIEWS ==========
-import StudentDashboard from '../components/StudentDashboard';
-import TransactionHistory from '../components/TransactionHistory';
-import StudentCredentialView from '../components/StudentCredentialView';
-import StudentMenuView from '../components/StudentMenuView';
-import DashboardPlaceholder from '../components/DashboardPlaceholder';
-import StudentSocialHub from '../components/StudentSocialHub';
-// import MeCardSocial from '../components/MeCardSocial'; // Requiere props complejas aún
+// Parent
+const ParentPortalContainer = React.lazy(() => import('../components/ParentPortalContainer'));
+const ParentWalletView = React.lazy(() => import('../components/ParentWalletView'));
+const ParentLimitsView = React.lazy(() => import('../components/ParentLimitsView'));
+const ParentReportsView = React.lazy(() => import('../components/ParentReportsView'));
+const ParentNotificationsView = React.lazy(() => import('../components/ParentNotificationsView'));
+
+// Student
+const StudentDashboard = React.lazy(() => import('../components/StudentDashboard'));
+const TransactionHistory = React.lazy(() => import('../components/TransactionHistory'));
+const StudentCredentialView = React.lazy(() => import('../components/StudentCredentialView'));
+const StudentMenuView = React.lazy(() => import('../components/StudentMenuView'));
+const StudentSocialHub = React.lazy(() => import('../components/StudentSocialHub'));
+const DashboardPlaceholder = React.lazy(() => import('../components/DashboardPlaceholder'));
+
+// ========== SUSPENSE FALLBACK ==========
+function RouteLoader() {
+  return (
+    <div className="flex-1 flex items-center justify-center h-screen bg-surface-50">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-3 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
+        <p className="text-xs font-medium text-surface-400">Cargando módulo...</p>
+      </div>
+    </div>
+  );
+}
 
 // ========== PROTECTED LAYOUT ==========
+import { ErrorBoundary } from '../components/ErrorBoundary';
+
 /**
  * Layout principal que incluye Sidebar
  * El Sidebar se adapta según el rol del usuario
  */
 function RoleBasedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-surface-50">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
     </div>
   );
@@ -74,6 +93,7 @@ function RoleBasedLayout({ children }: { children: React.ReactNode }) {
 // ========== ROUTER STRUCTURE ==========
 export default function AppRoutes() {
   return (
+    <Suspense fallback={<RouteLoader />}>
     <Routes>
       {/* ====== LOGIN / SIN AUTENTICACIÓN ====== */}
       <Route path="/login" element={<LoginView />} />
@@ -353,7 +373,8 @@ export default function AppRoutes() {
 
       {/* ====== FALLBACKS ====== */}
       <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
   );
 }

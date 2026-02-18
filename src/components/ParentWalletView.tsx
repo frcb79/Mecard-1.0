@@ -271,9 +271,11 @@ export default function ParentWalletView() {
           {/* COLUMNA DERECHA: TABS */}
           <div className="lg:col-span-2">
             {/* TABS - Verde/Azul Theme */}
-            <div className="flex gap-2 md:gap-3 mb-6 bg-slate-100 p-2 rounded-2xl">
+            <div className="flex gap-2 md:gap-3 mb-6 bg-slate-100 p-2 rounded-2xl" role="tablist" aria-label="Secciones de billetera">
               <button
                 onClick={() => setActiveTab('deposit')}
+                role="tab"
+                aria-selected={activeTab === 'deposit'}
                 className={`flex-1 px-4 md:px-6 py-3 rounded-lg md:rounded-[16px] font-black text-[9px] md:text-[10px] uppercase tracking-[1px] md:tracking-[2px] transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'deposit'
                     ? 'bg-gradient-to-r from-emerald-600 to-sky-600 text-white shadow-lg'
@@ -284,6 +286,8 @@ export default function ParentWalletView() {
               </button>
               <button
                 onClick={() => setActiveTab('manage')}
+                role="tab"
+                aria-selected={activeTab === 'manage'}
                 className={`flex-1 px-4 md:px-6 py-3 rounded-lg md:rounded-[16px] font-black text-[9px] md:text-[10px] uppercase tracking-[1px] md:tracking-[2px] transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'manage'
                     ? 'bg-gradient-to-r from-emerald-600 to-sky-600 text-white shadow-lg'
@@ -294,6 +298,8 @@ export default function ParentWalletView() {
               </button>
               <button
                 onClick={() => setActiveTab('insights')}
+                role="tab"
+                aria-selected={activeTab === 'insights'}
                 className={`flex-1 px-4 md:px-6 py-3 rounded-lg md:rounded-[16px] font-black text-[9px] md:text-[10px] uppercase tracking-[1px] md:tracking-[2px] transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'insights'
                     ? 'bg-gradient-to-r from-emerald-600 to-sky-600 text-white shadow-lg'
@@ -311,7 +317,7 @@ export default function ParentWalletView() {
 
                 {/* MONTO */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-3">
+                  <label htmlFor="wallet-deposit-amount" className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-3">
                     Monto a Depositar
                   </label>
                   <div className="relative">
@@ -319,6 +325,7 @@ export default function ParentWalletView() {
                       $
                     </span>
                     <input
+                      id="wallet-deposit-amount"
                       type="number"
                       value={depositAmount}
                       onChange={(e) => handleDepositAmountChange(e.target.value)}

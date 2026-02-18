@@ -6,8 +6,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { Search, Plus, Edit2, Trash2, Eye, MoreVertical, Users, X } from 'lucide-react';
+import { useToast } from './ui/Toast';
 
 export default function StudentManagementView() {
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export default function StudentManagementView() {
 
   const handleSaveStudent = () => {
     if (!formData.name || !formData.email || !formData.curp) {
-      alert('Por favor completa los campos requeridos');
+      toast.warning('Campos requeridos', 'Por favor completa los campos requeridos');
       return;
     }
 
@@ -172,10 +174,12 @@ export default function StudentManagementView() {
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <input
+                  id="student-search"
                   type="text"
                   placeholder="Buscar por nombre, email o CURP..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Buscar por nombre, email o CURP"
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-[16px] outline-none focus:border-blue-600 transition-all font-medium"
                 />
               </div>
@@ -184,6 +188,8 @@ export default function StudentManagementView() {
             {/* FILTRO DE ESTADO */}
             <div>
               <select
+                id="student-filter-status"
+                aria-label="Filtrar por estado"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
                 className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-[16px] outline-none focus:border-blue-600 transition-all font-medium"
@@ -290,6 +296,7 @@ export default function StudentManagementView() {
                             onClick={() => handleEditStudent(student.id)}
                             className="p-2 hover:bg-blue-100 rounded-[12px] transition-all text-blue-600"
                             title="Editar"
+                            aria-label={`Editar ${student.name}`}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
@@ -297,6 +304,7 @@ export default function StudentManagementView() {
                             onClick={() => handleDeleteStudent(student.id)}
                             className="p-2 hover:bg-rose-100 rounded-[12px] transition-all text-rose-600"
                             title="Eliminar"
+                            aria-label={`Eliminar ${student.name}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -340,7 +348,7 @@ export default function StudentManagementView() {
         {/* MODAL PARA AGREGAR/EDITAR ESTUDIANTE */}
         {showModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-[32px] shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div role="dialog" aria-modal="true" aria-label={modalMode === 'add' ? 'Agregar Estudiante' : 'Editar Estudiante'} className="bg-white rounded-[32px] shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-black text-slate-900">
                   {modalMode === 'add' ? 'Agregar Estudiante' : 'Editar Estudiante'}
@@ -348,6 +356,7 @@ export default function StudentManagementView() {
                 <button
                   onClick={() => setShowModal(false)}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-all"
+                  aria-label="Cerrar formulario"
                 >
                   <X className="w-5 h-5 text-slate-400" />
                 </button>
@@ -356,10 +365,11 @@ export default function StudentManagementView() {
               <div className="space-y-4">
                 {/* Nombre */}
                 <div>
-                  <label className="block text-sm font-black text-slate-700 mb-1">
+                  <label htmlFor="student-name" className="block text-sm font-black text-slate-700 mb-1">
                     Nombre *
                   </label>
                   <input
+                    id="student-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -370,10 +380,11 @@ export default function StudentManagementView() {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-black text-slate-700 mb-1">
+                  <label htmlFor="student-email" className="block text-sm font-black text-slate-700 mb-1">
                     Email *
                   </label>
                   <input
+                    id="student-email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -384,10 +395,11 @@ export default function StudentManagementView() {
 
                 {/* CURP */}
                 <div>
-                  <label className="block text-sm font-black text-slate-700 mb-1">
+                  <label htmlFor="student-curp" className="block text-sm font-black text-slate-700 mb-1">
                     CURP *
                   </label>
                   <input
+                    id="student-curp"
                     type="text"
                     value={formData.curp}
                     onChange={(e) => setFormData({ ...formData, curp: e.target.value.toUpperCase() })}
@@ -399,10 +411,11 @@ export default function StudentManagementView() {
 
                 {/* Teléfono */}
                 <div>
-                  <label className="block text-sm font-black text-slate-700 mb-1">
+                  <label htmlFor="student-phone" className="block text-sm font-black text-slate-700 mb-1">
                     Teléfono
                   </label>
                   <input
+                    id="student-phone"
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -413,10 +426,11 @@ export default function StudentManagementView() {
 
                 {/* CLABE */}
                 <div>
-                  <label className="block text-sm font-black text-slate-700 mb-1">
+                  <label htmlFor="student-clabe" className="block text-sm font-black text-slate-700 mb-1">
                     CLABE (18 dígitos)
                   </label>
                   <input
+                    id="student-clabe"
                     type="text"
                     value={formData.clabe}
                     onChange={(e) => setFormData({ ...formData, clabe: e.target.value })}
@@ -428,10 +442,11 @@ export default function StudentManagementView() {
 
                 {/* Saldo Inicial */}
                 <div>
-                  <label className="block text-sm font-black text-slate-700 mb-1">
+                  <label htmlFor="student-balance" className="block text-sm font-black text-slate-700 mb-1">
                     Saldo Inicial
                   </label>
                   <input
+                    id="student-balance"
                     type="number"
                     value={formData.balance}
                     onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}

@@ -6,9 +6,11 @@
 
 import React, { useState } from 'react';
 import { BarChart3, Download, Calendar, Filter, TrendingUp } from 'lucide-react';
+import { useToast } from './ui/Toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 export default function ReportsView() {
+  const toast = useToast();
   const [reportType, setReportType] = useState<'sales' | 'transactions' | 'inventory'>('sales');
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,9 +45,9 @@ export default function ReportsView() {
     try {
       // TODO: Conectar con API para generar PDF
       await new Promise(resolve => setTimeout(resolve, 2000));
-      alert('Reporte generado exitosamente');
+      toast.success('Reporte listo', 'Reporte generado exitosamente');
     } catch (error) {
-      alert('Error generando reporte');
+      toast.error('Error', 'Error generando reporte');
     } finally {
       setIsGenerating(false);
     }
@@ -53,7 +55,6 @@ export default function ReportsView() {
 
   const handleExportCSV = () => {
     // TODO: Exportar datos a CSV
-    console.log('Exportando CSV...');
   };
 
   return (

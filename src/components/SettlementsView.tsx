@@ -9,10 +9,12 @@ import { Banknote, TrendingUp, Calendar, CheckCircle, Clock, AlertCircle, Refres
 import { useSettlementService, usePaymentService } from '../contexts/ServiceContext';
 import { Settlement, Disbursement } from '../services/types';
 import { Button } from './Button';
+import { useToast } from './ui/Toast';
 
 export default function SettlementsView() {
   const settlementService = useSettlementService();
   const paymentService = usePaymentService();
+  const toast = useToast();
   
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,14 +53,14 @@ export default function SettlementsView() {
       const settlement = await settlementService.generateSettlement({
         period: { start: periodStart, end: periodEnd },
         transactions: allTransactions.filter(
-          (t: any) => t.type === 'sale' && new Date(t.timestamp) >= periodStart &&  new Date(t.timestamp) <= periodEnd
+          (t: { type: string; timestamp: string }) => t.type === 'sale' && new Date(t.timestamp) >= periodStart &&  new Date(t.timestamp) <= periodEnd
         ),
       });
 
       setSettlements((prev) => [settlement, ...prev]);
     } catch (error) {
       console.error('Error generating settlement:', error);
-      alert('Error al generar liquidación: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error', 'Error al generar liquidación: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsGenerating(false);
     }
@@ -84,7 +86,7 @@ export default function SettlementsView() {
       await settlementService.recordDisbursement(result);
     } catch (error) {
       console.error('Error processing disbursement:', error);
-      alert('Error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('Error', (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setProcessingDisbursement(null);
     }

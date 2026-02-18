@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Search, Banknote, History, ArrowUpCircle, User, CheckCircle2, XCircle, CreditCard } from 'lucide-react';
 import { StudentProfile, Transaction } from '../types';
 import { Button } from './Button';
+import { useToast } from './ui/Toast';
 
 interface CashierViewProps {
   student: StudentProfile;
@@ -14,20 +15,21 @@ export const CashierView: React.FC<CashierViewProps> = ({ student, onDeposit }) 
   const [amount, setAmount] = useState<string>('');
   const [step, setStep] = useState<'search' | 'deposit' | 'success'>('search');
   const [lastAmount, setLastAmount] = useState(0);
+  const toast = useToast();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchId === student.id || student.name.toLowerCase().includes(searchId.toLowerCase())) {
       setStep('deposit');
     } else {
-      alert("Alumno no encontrado. Intenta con ID: 2024001");
+      toast.warning('No encontrado', 'Alumno no encontrado. Intenta con ID: 2024001');
     }
   };
 
   const confirmDeposit = () => {
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      alert("Ingresa un monto válido");
+      toast.warning('Monto inválido', 'Ingresa un monto válido');
       return;
     }
     setLastAmount(numAmount);
@@ -60,10 +62,12 @@ export const CashierView: React.FC<CashierViewProps> = ({ student, onDeposit }) 
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={24} />
                     <input 
                       autoFocus
+                      id="cashier-search"
                       type="text" 
                       value={searchId}
                       onChange={(e) => setSearchId(e.target.value)}
                       placeholder="ID o Nombre del Alumno..." 
+                      aria-label="Buscar alumno por ID o nombre"
                       className="w-full pl-16 pr-8 py-6 rounded-3xl bg-slate-50 border-none outline-none font-black text-xl text-slate-700 focus:ring-4 focus:ring-indigo-100 transition-all"
                     />
                   </div>
@@ -77,22 +81,23 @@ export const CashierView: React.FC<CashierViewProps> = ({ student, onDeposit }) 
             {step === 'deposit' && (
               <div className="bg-white p-12 rounded-[56px] shadow-sm border border-slate-100 animate-in slide-in-from-right-4 duration-300">
                 <div className="flex items-center gap-6 mb-12">
-                  <img src={student.photo} className="w-20 h-20 rounded-3xl object-cover shadow-lg" />
+                  <img src={student.photo} alt={`Foto de ${student.name}`} className="w-20 h-20 rounded-3xl object-cover shadow-lg" />
                   <div>
                     <h3 className="text-2xl font-black text-slate-800">{student.name}</h3>
                     <p className="text-indigo-600 font-black text-xs uppercase tracking-widest">{student.grade}</p>
                   </div>
-                  <button onClick={() => setStep('search')} className="ml-auto p-4 text-slate-300 hover:text-slate-800 transition-colors">
+                  <button onClick={() => setStep('search')} className="ml-auto p-4 text-slate-300 hover:text-slate-800 transition-colors" aria-label="Volver a búsqueda">
                     <XCircle size={24} />
                   </button>
                 </div>
 
                 <div className="bg-slate-50 p-10 rounded-[40px] border border-slate-100 mb-10">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 block">Monto a Recargar (MXN)</label>
+                  <label htmlFor="cashier-amount" className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 block">Monto a Recargar (MXN)</label>
                   <div className="flex items-center gap-4">
                     <span className="text-5xl font-black text-slate-300">$</span>
                     <input 
                       autoFocus
+                      id="cashier-amount"
                       type="number" 
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}

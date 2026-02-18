@@ -1,354 +1,219 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, ShoppingCart, UtensilsCrossed, Settings, LogOut, 
-  Wallet, Ban, Building2, PenTool, UserCircle, QrCode, CalendarDays, 
+import {
+  LayoutDashboard, ShoppingCart, Settings, LogOut,
+  Wallet, Building2, PenTool, UserCircle, QrCode,
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
-  ShieldCheck, Globe, Rocket, HelpCircle, Gift, Layers, Terminal, PieChart
+  ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
+  ChevronRight
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { NotificationCenter } from './NotificationCenter';
 
-/**
- * Sidebar Component - Navegación dinámica por rol
- * Usa React Router v7 para navegación
- * Se adapta automáticamente según UserRole en AuthContext
- */
+// =============================================
+// NAV CONFIGURATION — data-driven navigation
+// =============================================
+
+interface NavItem {
+  path: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+interface NavSection {
+  label: string;
+  icon?: React.ReactNode;
+  items: NavItem[];
+}
+
+function getNavSections(role: UserRole): NavSection[] {
+  if (role === UserRole.SUPER_ADMIN) {
+    return [
+      {
+        label: 'Gestión Global',
+        icon: <ShieldCheck size={10} />,
+        items: [
+          { path: '/admin', label: 'Dashboard', icon: <Globe size={18} /> },
+          { path: '/admin/schools', label: 'Escuelas', icon: <Building2 size={18} /> },
+          { path: '/admin/settlement', label: 'Settlement', icon: <Banknote size={18} /> },
+          { path: '/admin/reports', label: 'Reportes', icon: <PieChart size={18} /> },
+          { path: '/admin/config', label: 'Configuración', icon: <Settings size={18} /> },
+        ],
+      },
+      {
+        label: 'Demo — Módulos',
+        items: [
+          { path: '/school', label: 'Admin Escuela', icon: <GraduationCap size={18} /> },
+          { path: '/unit', label: 'Gerente Unidad', icon: <ChefHat size={18} /> },
+        ],
+      },
+      {
+        label: 'Operación POS',
+        items: [
+          { path: '/pos', label: 'Cafetería', icon: <Terminal size={18} /> },
+          { path: '/pos/stationery', label: 'Papelería', icon: <PenTool size={18} /> },
+          { path: '/cashier', label: 'Caja Recargas', icon: <Wallet size={18} /> },
+        ],
+      },
+      {
+        label: 'Portales',
+        items: [
+          { path: '/parent', label: 'Portal Padres', icon: <UserCircle size={18} /> },
+          { path: '/student', label: 'Portal Estudiante', icon: <Users size={18} /> },
+        ],
+      },
+    ];
+  }
+
+  if (role === UserRole.SCHOOL_ADMIN) {
+    return [{
+      label: 'Mi Escuela',
+      icon: <ShieldCheck size={10} />,
+      items: [
+        { path: '/school', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+        { path: '/school/students', label: 'Estudiantes', icon: <Users size={18} /> },
+        { path: '/school/staff', label: 'Personal', icon: <UserCircle size={18} /> },
+        { path: '/school/import', label: 'Importar', icon: <Layers size={18} /> },
+        { path: '/school/config', label: 'Configuración', icon: <Settings size={18} /> },
+      ],
+    }];
+  }
+
+  if (role === UserRole.UNIT_MANAGER) {
+    return [{
+      label: 'Mi Unidad',
+      items: [
+        { path: '/unit', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+        { path: '/unit/inventory', label: 'Inventario', icon: <ShoppingCart size={18} /> },
+        { path: '/unit/staff', label: 'Personal', icon: <Users size={18} /> },
+      ],
+    }];
+  }
+
+  if ([UserRole.POS_OPERATOR, UserRole.CAFETERIA_STAFF, UserRole.CASHIER].includes(role)) {
+    return [{
+      label: 'Operación',
+      items: [
+        { path: '/pos', label: 'Punto de Venta', icon: <Terminal size={18} /> },
+        { path: '/cashier', label: 'Caja', icon: <Banknote size={18} /> },
+      ],
+    }];
+  }
+
+  if (role === UserRole.PARENT) {
+    return [{
+      label: 'Portal Familiar',
+      items: [
+        { path: '/parent', label: 'Mi Familia', icon: <UserCircle size={18} /> },
+        { path: '/parent/wallet', label: 'Billetera', icon: <Wallet size={18} /> },
+      ],
+    }];
+  }
+
+  // STUDENT default
+  return [{
+    label: 'Mi Cuenta',
+    items: [
+      { path: '/student', label: 'Inicio', icon: <LayoutDashboard size={18} /> },
+      { path: '/student/id', label: 'Mi Credencial', icon: <QrCode size={18} /> },
+      { path: '/student/history', label: 'Historial', icon: <History size={18} /> },
+      { path: '/student/menu', label: 'Menú', icon: <UtensilsCrossed size={18} /> },
+      { path: '/student/social', label: 'Social', icon: <MessageSquare size={18} /> },
+    ],
+  }];
+}
+
+// =============================================
+// SIDEBAR COMPONENT
+// =============================================
+
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  
+
   const userRole = user?.role || UserRole.STUDENT;
-  const isSuperAdmin = userRole === UserRole.SUPER_ADMIN;
+  const sections = getNavSections(userRole);
 
-  /**
-   * Ruta activa basada en pathname
-   */
-  const isActive = (path: string): boolean => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
+  const isActive = (path: string): boolean =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
 
-  /**
-   * Clases dinámicas para items de navegación
-   */
-  const navItemClass = (path: string) => `
-    flex items-center w-full px-5 py-3.5 mb-2 rounded-[20px] transition-all duration-300 group
-    ${isActive(path)
-      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 font-black scale-[1.02]' 
-      : 'text-slate-400 hover:bg-slate-50 hover:text-indigo-600'}
-  `;
-
-  /**
-   * Manejar logout
-   */
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-100 flex flex-col h-screen fixed left-0 top-0 z-[100] shadow-sm font-sans overflow-hidden">
-      {/* HEADER */}
-      <div className="p-8 border-b border-slate-50 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2.5 rounded-[14px] shadow-lg shadow-indigo-200 rotate-3 group">
-            <Zap className="w-6 h-6 text-white group-hover:animate-pulse" />
+    <aside className="w-60 bg-white border-r border-surface-100 flex flex-col h-screen fixed left-0 top-0 z-[100] shadow-xs">
+      {/* ─── Header ─── */}
+      <div className="px-5 py-5 border-b border-surface-100 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-brand-500 p-2 rounded-xl shadow-sm">
+            <Zap className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <span className="text-2xl font-black text-slate-900 tracking-tighter block leading-none">
-              MeCard<span className="text-indigo-600">.</span>
+          <div className="leading-none">
+            <span className="text-lg font-extrabold text-surface-800 tracking-tight block">
+              MeCard<span className="text-brand-500">.</span>
             </span>
-            <span className="text-[8px] uppercase font-black text-slate-300 tracking-[3px] mt-1 block">
+            <span className="text-[9px] font-semibold text-surface-300 uppercase tracking-widest">
               Network Hub
             </span>
           </div>
         </div>
       </div>
 
-      {/* NAVIGATION */}
-      <nav className="flex-1 px-4 py-6 overflow-y-auto scrollbar-hide">
-        {/* ========== SUPER ADMIN SECTION ========== */}
-        {isSuperAdmin && (
-          <div className="space-y-6">
-            {/* Gestión Global */}
-            <div>
-              <div className="mb-4 px-5 text-[8px] font-black text-indigo-400 uppercase tracking-[4px] flex items-center gap-2">
-                <ShieldCheck size={10}/> Gestión Global
-              </div>
-              <button 
-                onClick={() => navigate('/admin')} 
-                className={navItemClass('/admin')}
-              >
-                <Globe className="w-5 h-5 mr-3" /> Dashboard
-              </button>
-              <button 
-                onClick={() => navigate('/admin/schools')} 
-                className={navItemClass('/admin/schools')}
-              >
-                <Building2 className="w-5 h-5 mr-3" /> Escuelas
-              </button>
-              <button 
-                onClick={() => navigate('/admin/settlement')} 
-                className={navItemClass('/admin/settlement')}
-              >
-                <Banknote className="w-5 h-5 mr-3" /> Settlement
-              </button>
-              <button 
-                onClick={() => navigate('/admin/reports')} 
-                className={navItemClass('/admin/reports')}
-              >
-                <PieChart className="w-5 h-5 mr-3" /> Reportes
-              </button>
-              <button 
-                onClick={() => navigate('/admin/config')} 
-                className={navItemClass('/admin/config')}
-              >
-                <Settings className="w-5 h-5 mr-3" /> Configuración
-              </button>
-            </div>
-
-            {/* Módulos de Escuela */}
-            <div>
-              <div className="mb-4 px-5 text-[8px] font-black text-slate-400 uppercase tracking-[4px]">
-                Demostración de Módulos
-              </div>
-              <button 
-                onClick={() => navigate('/school')} 
-                className={navItemClass('/school')}
-              >
-                <GraduationCap className="w-5 h-5 mr-3" /> Admin Escuela
-              </button>
-              <button 
-                onClick={() => navigate('/unit')} 
-                className={navItemClass('/unit')}
-              >
-                <ChefHat className="w-5 h-5 mr-3" /> Gerente Unidad
-              </button>
-            </div>
-
-            {/* Operación POS */}
-            <div>
-              <div className="mb-4 px-5 text-[8px] font-black text-slate-400 uppercase tracking-[4px]">
-                Operación POS
-              </div>
-              <button 
-                onClick={() => navigate('/pos')} 
-                className={navItemClass('/pos')}
-              >
-                <Terminal className="w-5 h-5 mr-3" /> Venta Cafetería
-              </button>
-              <button 
-                onClick={() => navigate('/pos/stationery')} 
-                className={navItemClass('/pos/stationery')}
-              >
-                <PenTool className="w-5 h-5 mr-3" /> Venta Papelería
-              </button>
-              <button 
-                onClick={() => navigate('/cashier')} 
-                className={navItemClass('/cashier')}
-              >
-                <Wallet className="w-5 h-5 mr-3" /> Caja Recargas
-              </button>
-            </div>
-
-            {/* Portales de Usuario */}
-            <div>
-              <div className="mb-4 px-5 text-[8px] font-black text-slate-400 uppercase tracking-[4px]">
-                Portales de Usuario
-              </div>
-              <button 
-                onClick={() => navigate('/parent')} 
-                className={navItemClass('/parent')}
-              >
-                <UserCircle className="w-5 h-5 mr-3" /> Portal Padres
-              </button>
-              <button 
-                onClick={() => navigate('/student')} 
-                className={navItemClass('/student')}
-              >
-                <Users className="w-5 h-5 mr-3" /> Portal Estudiante
-              </button>
+      {/* ─── Navigation ─── */}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide space-y-5" role="navigation" aria-label="Menú principal">
+        {sections.map((section) => (
+          <div key={section.label}>
+            <p className="px-3 mb-1.5 text-[10px] font-semibold text-surface-300 uppercase tracking-wider flex items-center gap-1.5">
+              {section.icon} {section.label}
+            </p>
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex items-center w-full px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 group
+                      ${active
+                        ? 'bg-brand-50 text-brand-600 font-semibold shadow-xs'
+                        : 'text-surface-500 hover:bg-surface-50 hover:text-surface-700'
+                      }`}
+                  >
+                    <span className={`mr-2.5 transition-colors ${active ? 'text-brand-500' : 'text-surface-300 group-hover:text-surface-500'}`}>
+                      {item.icon}
+                    </span>
+                    {item.label}
+                    {active && <ChevronRight size={14} className="ml-auto text-brand-400" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
-
-        {/* ========== SCHOOL ADMIN SECTION ========== */}
-        {userRole === UserRole.SCHOOL_ADMIN && (
-          <div className="space-y-6">
-            <div>
-              <div className="mb-4 px-5 text-[8px] font-black text-indigo-400 uppercase tracking-[4px]">
-                <ShieldCheck size={10} className="inline mr-2"/> Mi Escuela
-              </div>
-              <button 
-                onClick={() => navigate('/school')} 
-                className={navItemClass('/school')}
-              >
-                <LayoutDashboard className="w-5 h-5 mr-3" /> Dashboard
-              </button>
-              <button 
-                onClick={() => navigate('/school/students')} 
-                className={navItemClass('/school/students')}
-              >
-                <Users className="w-5 h-5 mr-3" /> Estudiantes
-              </button>
-              <button 
-                onClick={() => navigate('/school/staff')} 
-                className={navItemClass('/school/staff')}
-              >
-                <UserCircle className="w-5 h-5 mr-3" /> Personal
-              </button>
-              <button 
-                onClick={() => navigate('/school/import')} 
-                className={navItemClass('/school/import')}
-              >
-                <Layers className="w-5 h-5 mr-3" /> Importar
-              </button>
-              <button 
-                onClick={() => navigate('/school/config')} 
-                className={navItemClass('/school/config')}
-              >
-                <Settings className="w-5 h-5 mr-3" /> Configuración
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ========== UNIT MANAGER SECTION ========== */}
-        {userRole === UserRole.UNIT_MANAGER && (
-          <div className="space-y-6">
-            <div>
-              <div className="mb-4 px-5 text-[8px] font-black text-indigo-400 uppercase tracking-[4px]">
-                Mi Unidad
-              </div>
-              <button 
-                onClick={() => navigate('/unit')} 
-                className={navItemClass('/unit')}
-              >
-                <LayoutDashboard className="w-5 h-5 mr-3" /> Dashboard
-              </button>
-              <button 
-                onClick={() => navigate('/unit/inventory')} 
-                className={navItemClass('/unit/inventory')}
-              >
-                <ShoppingCart className="w-5 h-5 mr-3" /> Inventario
-              </button>
-              <button 
-                onClick={() => navigate('/unit/staff')} 
-                className={navItemClass('/unit/staff')}
-              >
-                <Users className="w-5 h-5 mr-3" /> Personal
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ========== POS OPERATOR SECTION ========== */}
-        {[UserRole.POS_OPERATOR, UserRole.CAFETERIA_STAFF, UserRole.CASHIER].includes(userRole) && (
-          <div className="space-y-6">
-            <div>
-              <div className="mb-4 px-5 text-[8px] font-black text-indigo-400 uppercase tracking-[4px]">
-                Operación
-              </div>
-              <button 
-                onClick={() => navigate('/pos')} 
-                className={navItemClass('/pos')}
-              >
-                <Terminal className="w-5 h-5 mr-3" /> Punto de Venta
-              </button>
-              <button 
-                onClick={() => navigate('/cashier')} 
-                className={navItemClass('/cashier')}
-              >
-                <Banknote className="w-5 h-5 mr-3" /> Caja
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ========== PARENT SECTION ========== */}
-        {userRole === UserRole.PARENT && (
-          <div className="space-y-6">
-            <div>
-              <div className="mb-4 px-5 text-[9px] font-black text-slate-400 uppercase tracking-[4px]">
-                Portal Familiar
-              </div>
-              <button 
-                onClick={() => navigate('/parent')} 
-                className={navItemClass('/parent')}
-              >
-                <UserCircle className="w-5 h-5 mr-3" /> Mi Familia
-              </button>
-              <button 
-                onClick={() => navigate('/parent/wallet')} 
-                className={navItemClass('/parent/wallet')}
-              >
-                <Wallet className="w-5 h-5 mr-3" /> Billetera
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ========== STUDENT SECTION ========== */}
-        {userRole === UserRole.STUDENT && (
-          <div className="space-y-6">
-            <div>
-              <div className="mb-4 px-5 text-[9px] font-black text-slate-400 uppercase tracking-[4px]">
-                Mi Cuenta
-              </div>
-              <button 
-                onClick={() => navigate('/student')} 
-                className={navItemClass('/student')}
-              >
-                <LayoutDashboard className="w-5 h-5 mr-3" /> Inicio
-              </button>
-              <button 
-                onClick={() => navigate('/student/id')} 
-                className={navItemClass('/student/id')}
-              >
-                <QrCode className="w-5 h-5 mr-3" /> Mi Credencial
-              </button>
-              <button 
-                onClick={() => navigate('/student/history')} 
-                className={navItemClass('/student/history')}
-              >
-                <History className="w-5 h-5 mr-3" /> Historial
-              </button>
-              <button 
-                onClick={() => navigate('/student/menu')} 
-                className={navItemClass('/student/menu')}
-              >
-                <UtensilsCrossed className="w-5 h-5 mr-3" /> Menú
-              </button>
-              <button 
-                onClick={() => navigate('/student/social')} 
-                className={navItemClass('/student/social')}
-              >
-                <MessageSquare className="w-5 h-5 mr-3" /> Social
-              </button>
-            </div>
-          </div>
-        )}
+        ))}
       </nav>
 
-      {/* NOTIFICATIONS & LOGOUT */}
-      <div className="p-4 shrink-0 border-t border-slate-100">
+      {/* ─── Notifications ─── */}
+      <div className="px-3 py-2 shrink-0 border-t border-surface-100">
         <NotificationCenter />
       </div>
-      
-      <div className="p-6 shrink-0 bg-slate-50/50 border-t border-slate-100">
-        <button 
-          onClick={handleLogout} 
-          className="flex items-center w-full px-6 py-4 text-[10px] font-black text-rose-500 hover:bg-rose-50 rounded-[20px] transition-all uppercase tracking-[2px]"
+
+      {/* ─── Logout ─── */}
+      <div className="px-3 py-3 shrink-0 border-t border-surface-100 bg-surface-50/60">
+        <button
+          onClick={handleLogout}
+          className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-danger hover:bg-red-50 rounded-lg transition-colors"
         >
-          <LogOut className="w-4 h-4 mr-3" /> Cerrar Sesión
+          <LogOut className="w-4 h-4 mr-2.5" /> Cerrar sesión
         </button>
       </div>
     </aside>
   );
 };
-
 
 export default Sidebar;

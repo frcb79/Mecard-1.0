@@ -12,7 +12,7 @@ export const socialService = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, student_id, balance, favorites, favorites_public, status, grade')
+        .select('id, full_name, student_id, favorites, favorites_public, status, grade')
         .eq('school_id', schoolId)
         .eq('status', 'Active')
         .or(`student_id.eq.${searchTerm},id.eq.${searchTerm},full_name.ilike.%${searchTerm}%`)
@@ -104,7 +104,7 @@ export const socialService = {
       .from('friendships')
       .select(`
         friend:profiles!friendships_friend_id_fkey (
-          id, full_name, student_id, balance, favorites, favorites_public, status, grade, allergies
+          id, full_name, student_id, favorites, favorites_public, status, grade, allergies
         )
       `)
       .eq('user_id', userId)

@@ -28,62 +28,62 @@ export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = (
   const netProfit = totalSales - schoolCommission;
 
   return (
-    <div className="h-screen flex flex-col bg-[#f8fafc] font-sans">
-      {/* HEADER DINÁMICO */}
-      <header className="p-10 bg-white border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 shrink-0">
-        <div className="flex items-center gap-6">
-           <div className="w-20 h-20 bg-orange-600 rounded-[28px] flex items-center justify-center text-white shadow-2xl shadow-orange-100 rotate-3">
-              <ChefHat size={40}/>
+    <div className="h-screen flex flex-col bg-surface-50">
+      {/* Header */}
+      <header className="px-6 py-5 bg-white border-b border-surface-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+        <div className="flex items-center gap-4">
+           <div className="w-12 h-12 bg-warm-500 rounded-xl flex items-center justify-center text-white shadow-sm">
+              <ChefHat size={24}/>
            </div>
            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-3xl font-black text-slate-800 tracking-tighter">{unit.name}</h1>
-                <span className="bg-orange-50 text-orange-600 px-3 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest border border-orange-100">Concesionario</span>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h1 className="text-xl font-bold text-surface-800">{unit.name}</h1>
+                <span className="bg-warm-50 text-warm-600 px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border border-warm-100">Concesionario</span>
               </div>
-              <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[4px]">{school.name} • Manager: ID_MGR_01</p>
+              <p className="text-surface-400 font-medium text-xs">{school.name} · Manager: ID_MGR_01</p>
            </div>
         </div>
 
-        <div className="flex bg-slate-50 p-2 rounded-[28px] border border-slate-100">
-           <TabBtn active={activeTab === 'sales'} onClick={() => setActiveTab('sales')} icon={<LayoutDashboard size={18}/>} label="Ventas" />
-           <TabBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={18}/>} label="Menú" />
-           <TabBtn active={activeTab === 'staff'} onClick={() => setActiveTab('staff')} icon={<Users size={18}/>} label="Staff" />
-           <TabBtn active={activeTab === 'config'} onClick={() => setActiveTab('config')} icon={<Settings size={18}/>} label="Ajustes" />
+        <div className="flex bg-surface-50 p-1 rounded-xl border border-surface-100" role="tablist">
+           <TabBtn active={activeTab === 'sales'} onClick={() => setActiveTab('sales')} icon={<LayoutDashboard size={16}/>} label="Ventas" />
+           <TabBtn active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={16}/>} label="Menú" />
+           <TabBtn active={activeTab === 'staff'} onClick={() => setActiveTab('staff')} icon={<Users size={16}/>} label="Staff" />
+           <TabBtn active={activeTab === 'config'} onClick={() => setActiveTab('config')} icon={<Settings size={16}/>} label="Ajustes" />
         </div>
       </header>
 
-      {/* CONTENIDO SCROLLABLE */}
-      <main className="flex-1 overflow-y-auto p-10 pb-32">
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto p-6 pb-24">
         {activeTab === 'sales' && (
-          <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-500">
+          <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
              {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <KpiCard title="Venta Bruta" value={`$${totalSales.toLocaleString()}`} icon={<ShoppingBag/>} color="bg-indigo-600" />
-              <KpiCard title={`Comisión (${feePercent}%)`} value={`$${schoolCommission.toLocaleString()}`} icon={<Percent/>} color="bg-rose-500" subtitle={school.businessModel.cafeteriaFeeAutoMarkup ? "Incluida en precio" : "Descuento directo"} />
-              <KpiCard title="Utilidad Neta" value={`$${netProfit.toLocaleString()}`} icon={<Wallet/>} color="bg-emerald-500" trend="+12% mensual" />
-              <KpiCard title="Tickets Hoy" value="48" icon={<Receipt/>} color="bg-amber-500" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <KpiCard title="Venta Bruta" value={`$${totalSales.toLocaleString()}`} icon={<ShoppingBag/>} color="bg-brand-500" />
+              <KpiCard title={`Comisión (${feePercent}%)`} value={`$${schoolCommission.toLocaleString()}`} icon={<Percent/>} color="bg-danger-500" subtitle={school.businessModel.cafeteriaFeeAutoMarkup ? "Incluida en precio" : "Descuento directo"} />
+              <KpiCard title="Utilidad Neta" value={`$${netProfit.toLocaleString()}`} icon={<Wallet/>} color="bg-trust-500" trend="+12% mensual" />
+              <KpiCard title="Tickets Hoy" value="48" icon={<Receipt/>} color="bg-warm-500" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-              <div className="lg:col-span-2 bg-white rounded-[48px] p-12 border border-slate-100 shadow-sm">
-                <h3 className="text-xl font-black text-slate-800 mb-10 flex items-center gap-3"><BarChart3 className="text-indigo-600"/> Rendimiento Semanal</h3>
-                <div className="h-80 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-surface-100 shadow-xs">
+                <h3 className="text-base font-bold text-surface-800 mb-6 flex items-center gap-2"><BarChart3 className="text-brand-500" size={18}/> Rendimiento Semanal</h3>
+                <div className="h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={SALES_DATA}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 800}} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 800}} />
-                      <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
-                      <Bar dataKey="revenue" fill="#4f46e5" radius={[12, 12, 0, 0]} barSize={40} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 600}} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 600}} />
+                      <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgb(0 0 0 / 0.08)'}} />
+                      <Bar dataKey="revenue" fill="#3b93ff" radius={[8, 8, 0, 0]} barSize={32} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-              <div className="bg-indigo-900 rounded-[48px] p-10 text-white shadow-xl flex flex-col justify-center">
-                 <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6">Próxima Liquidación</h4>
-                 <p className="text-4xl font-black tracking-tighter mb-4">${netProfit.toLocaleString()}</p>
-                 <p className="text-sm text-indigo-200 leading-relaxed mb-8">Pago programado para el Viernes 27 de Octubre vía transferencia SPEI.</p>
-                 <button className="w-full py-5 bg-white text-indigo-900 rounded-2xl font-black text-[10px] uppercase tracking-widest">Solicitar Adelanto</button>
+              <div className="bg-surface-900 rounded-2xl p-6 text-white shadow-md flex flex-col justify-center">
+                 <h4 className="text-[10px] font-semibold uppercase tracking-widest text-surface-400 mb-4">Próxima Liquidación</h4>
+                 <p className="text-3xl font-extrabold tracking-tight mb-3">${netProfit.toLocaleString()}</p>
+                 <p className="text-sm text-surface-400 leading-relaxed mb-6">Pago programado para el Viernes 27 de Octubre vía transferencia SPEI.</p>
+                 <button className="w-full py-3.5 bg-white text-surface-900 rounded-xl font-semibold text-xs">Solicitar Adelanto</button>
               </div>
             </div>
           </div>
@@ -110,21 +110,21 @@ export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = (
         )}
 
         {activeTab === 'config' && (
-          <div className="max-w-3xl mx-auto bg-white p-12 rounded-[56px] border border-slate-100 shadow-sm animate-in zoom-in duration-500">
-             <h3 className="text-3xl font-black text-slate-800 tracking-tighter mb-10">Configuración del Punto</h3>
-             <div className="space-y-8">
-                <div className="space-y-3">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Horario de Atención</label>
-                   <div className="grid grid-cols-2 gap-4">
-                      <input type="time" defaultValue="07:00" className="p-5 bg-slate-50 rounded-2xl border-none font-black text-slate-700 outline-none" />
-                      <input type="time" defaultValue="16:00" className="p-5 bg-slate-50 rounded-2xl border-none font-black text-slate-700 outline-none" />
+          <div className="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-2xl border border-surface-100 shadow-xs animate-fade-in">
+             <h3 className="text-xl font-bold text-surface-800 mb-6">Configuración del Punto</h3>
+             <div className="space-y-5">
+                <div className="space-y-2">
+                   <label className="text-[10px] font-semibold text-surface-400 uppercase tracking-widest">Horario de Atención</label>
+                   <div className="grid grid-cols-2 gap-3">
+                      <input type="time" defaultValue="07:00" className="p-3.5 bg-surface-50 rounded-xl border border-surface-200 font-medium text-surface-700 focus:ring-2 focus:ring-brand-100 focus:border-brand-300" />
+                      <input type="time" defaultValue="16:00" className="p-3.5 bg-surface-50 rounded-xl border border-surface-200 font-medium text-surface-700 focus:ring-2 focus:ring-brand-100 focus:border-brand-300" />
                    </div>
                 </div>
-                <div className="p-8 bg-amber-50 border border-amber-100 rounded-[32px] flex gap-6">
-                   <AlertCircle className="text-amber-600 shrink-0" size={24}/>
-                   <p className="text-[10px] font-bold text-amber-900 leading-relaxed uppercase">Nota: Los cambios en el porcentaje de comisión deben ser autorizados por el Administrador del Colegio desde el Panel Maestro.</p>
+                <div className="p-4 bg-warning-50 border border-warning-200 rounded-xl flex gap-3">
+                   <AlertCircle className="text-warning-600 shrink-0" size={18}/>
+                   <p className="text-xs font-medium text-warning-800 leading-relaxed">Los cambios en el porcentaje de comisión deben ser autorizados por el Administrador del Colegio desde el Panel Maestro.</p>
                 </div>
-                <button className="w-full py-6 bg-slate-900 text-white rounded-3xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-3"><Save size={18}/> Guardar Preferencias</button>
+                <button className="w-full py-3.5 bg-surface-900 text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-surface-800 transition-colors"><Save size={16}/> Guardar Preferencias</button>
              </div>
           </div>
         )}
@@ -133,21 +133,37 @@ export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = (
   );
 };
 
-const TabBtn = ({ active, onClick, icon, label }: any) => (
-  <button onClick={onClick} className={`px-8 py-4 rounded-2xl flex items-center gap-3 transition-all font-black text-[10px] uppercase tracking-widest ${active ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>
+interface TabBtnProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}
+
+const TabBtn: React.FC<TabBtnProps> = ({ active, onClick, icon, label }) => (
+  <button onClick={onClick} role="tab" aria-selected={active} className={`px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all font-semibold text-xs ${active ? 'bg-brand-500 text-white shadow-sm' : 'text-surface-400 hover:text-surface-600'}`}>
     {icon} <span>{label}</span>
   </button>
 );
 
-const KpiCard = ({ title, value, icon, color, subtitle, trend }: any) => (
-  <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 group">
-    <div className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center text-white mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
-      {React.cloneElement(icon as React.ReactElement<any>, { size: 24 })}
+interface KpiCardProps {
+  title: string;
+  value: string;
+  icon: React.ReactElement;
+  color: string;
+  subtitle?: string;
+  trend?: string;
+}
+
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, color, subtitle, trend }) => (
+  <div className="bg-white p-5 rounded-2xl shadow-xs border border-surface-100 hover:shadow-sm transition-all group">
+    <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center text-white mb-4 shadow-sm group-hover:scale-105 transition-transform`}>
+      {React.cloneElement(icon, { size: 20 })}
     </div>
-    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
-    <h3 className="text-3xl font-black text-slate-800 tracking-tighter">{value}</h3>
-    {subtitle && <p className="text-[10px] font-bold text-slate-400 mt-2">{subtitle}</p>}
-    {trend && <p className="text-[10px] font-black text-emerald-500 mt-2 uppercase tracking-widest">{trend}</p>}
+    <p className="text-[10px] font-semibold text-surface-400 uppercase tracking-widest mb-1">{title}</p>
+    <h3 className="text-2xl font-extrabold text-surface-800 tracking-tight">{value}</h3>
+    {subtitle && <p className="text-xs text-surface-400 mt-1.5">{subtitle}</p>}
+    {trend && <p className="text-xs font-semibold text-trust-500 mt-1.5">{trend}</p>}
   </div>
 );
 export default ConcessionaireDashboard;

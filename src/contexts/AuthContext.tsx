@@ -5,14 +5,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserRole, AuthUser } from '../types';
 
-// Try to import supabase, but gracefully handle if it fails
-let supabase: any = null;
-try {
-  const supabaseModule = require('../lib/supabase');
-  supabase = supabaseModule.supabase;
-} catch (e) {
-  console.warn('⚠️ Supabase not initialized - running in DEMO mode');
-}
+// Import supabase client (consolidated single client)
+import { supabase as supabaseClient, isSupabaseConfigured } from '../lib/supabaseClient';
+const supabase = isSupabaseConfigured ? supabaseClient : null;
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -46,8 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event: string, session: any) => {
-          console.log('Auth event:', event);
-          
           if (event === 'SIGNED_IN' && session) {
             await loadUserProfile(session.user.id);
           } else if (event === 'SIGNED_OUT') {
@@ -119,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         setUser(authUser);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading user profile:', error);
       if (supabase) {
         throw new Error('No se pudo cargar el perfil del usuario');
@@ -157,9 +150,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         await loadUserProfile(data.user.id);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      throw new Error(error.message || 'Error al iniciar sesión');
+      throw new Error(error instanceof Error ? error.message : 'Error al iniciar sesión');
     }
   }
 
@@ -171,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
       }
       setUser(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Logout error:', error);
       throw new Error('Error al cerrar sesión');
     }

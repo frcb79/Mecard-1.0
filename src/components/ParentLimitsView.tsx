@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Sliders, Save, AlertCircle } from 'lucide-react';
-import '../styles/parentTheme.css';
 import { Button } from './Button';
+import { useToast } from './ui/Toast';
 
 export default function ParentLimitsView() {
+  const toast = useToast();
   const [dailyLimit, setDailyLimit] = useState(500);
   const [lowBalanceAlert, setLowBalanceAlert] = useState(true);
   const [alertThreshold, setAlertThreshold] = useState(50);
@@ -11,8 +12,7 @@ export default function ParentLimitsView() {
   const [spendThreshold, setSpendThreshold] = useState(200);
 
   const handleSave = () => {
-    console.log('Límites guardados:', { dailyLimit, lowBalanceAlert, alertThreshold, spendAlert, spendThreshold });
-    alert('✅ Límites guardados correctamente');
+    toast.success('Guardado', 'Límites guardados correctamente');
   };
 
   return (
@@ -43,8 +43,9 @@ export default function ParentLimitsView() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Cantidad máxima diaria: $<span className="text-emerald-600 text-lg">{dailyLimit}</span></label>
+              <label htmlFor="daily-limit-range" className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Cantidad máxima diaria: $<span className="text-emerald-600 text-lg">{dailyLimit}</span></label>
               <input
+                id="daily-limit-range"
                 type="range"
                 min="100"
                 max="2000"
@@ -75,6 +76,9 @@ export default function ParentLimitsView() {
                 checked={lowBalanceAlert}
                 onChange={(e) => setLowBalanceAlert(e.target.checked)}
                 className="sr-only peer"
+                role="switch"
+                aria-checked={lowBalanceAlert}
+                aria-label="Activar alerta de saldo bajo"
               />
               <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
             </label>
@@ -82,8 +86,9 @@ export default function ParentLimitsView() {
           {lowBalanceAlert && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Alertar cuando el saldo sea menor a: $<span className="text-rose-600 text-lg">{alertThreshold}</span></label>
+                <label htmlFor="alert-threshold-range" className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Alertar cuando el saldo sea menor a: $<span className="text-rose-600 text-lg">{alertThreshold}</span></label>
                 <input
+                  id="alert-threshold-range"
                   type="range"
                   min="10"
                   max="500"
@@ -110,6 +115,9 @@ export default function ParentLimitsView() {
                 checked={spendAlert}
                 onChange={(e) => setSpendAlert(e.target.checked)}
                 className="sr-only peer"
+                role="switch"
+                aria-checked={spendAlert}
+                aria-label="Activar alerta de gasto"
               />
               <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
             </label>
@@ -117,8 +125,9 @@ export default function ParentLimitsView() {
           {spendAlert && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Alertar cuando el gasto diario sea mayor a: $<span className="text-sky-600 text-lg">{spendThreshold}</span></label>
+                <label htmlFor="spend-threshold-range" className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Alertar cuando el gasto diario sea mayor a: $<span className="text-sky-600 text-lg">{spendThreshold}</span></label>
                 <input
+                  id="spend-threshold-range"
                   type="range"
                   min="50"
                   max="1000"

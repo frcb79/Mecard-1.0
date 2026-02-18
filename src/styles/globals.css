@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================
+   MECARD GLOBAL STYLES
+   ============================================= */
+
+@layer base {
+  :root {
+    --brand-primary: #3b93ff;
+    --brand-trust: #10b981;
+    --brand-warm: #f59e0b;
+    --surface-bg: #f8fafc;
+  }
+
+  body {
+    @apply font-sans bg-surface-50 text-surface-800 antialiased;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-thumb { @apply bg-surface-300 rounded-pill; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer components {
+  /* Glass morphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Bento card hover effect */
+  .bento-card {
+    @apply transition-all duration-500 ease-bounce-in border border-black/[0.04];
+  }
+
+  .bento-card:hover {
+    @apply shadow-float -translate-y-1.5 scale-[1.01];
+    border-color: rgba(59, 147, 255, 0.2);
+  }
+
+  /* Gradient text utility */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+  }
+
+  /* Skeleton loading shimmer */
+  .skeleton {
+    @apply bg-gradient-to-r from-surface-200 via-surface-100 to-surface-200 bg-[length:200%_100%] animate-shimmer rounded-md;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area padding for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}

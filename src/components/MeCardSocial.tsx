@@ -67,8 +67,8 @@ export const MeCardSocial: React.FC<{
       loadFriends();
       setGiftStatus({ type: 'success', message: `¡${friend.full_name} agregado!` });
       setTimeout(() => setGiftStatus({ type: null, message: '' }), 3000);
-    } catch (err: any) {
-      setGiftStatus({ type: 'error', message: err.message });
+    } catch (err: unknown) {
+      setGiftStatus({ type: 'error', message: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -85,9 +85,8 @@ export const MeCardSocial: React.FC<{
       );
       setGiftStatus({ type: 'success', message: `¡Regalo enviado!`, code });
       onSendGift(selectedFriend.id, product.id);
-    } catch (err: any) {
-      setGiftStatus({ type: 'error', message: err.message });
-    } finally {
+    } catch (err: unknown) {
+      setGiftStatus({ type: 'error', message: err instanceof Error ? err.message : String(err) });
       setSendingGift(false);
     }
   };

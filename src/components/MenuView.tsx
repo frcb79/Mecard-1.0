@@ -4,8 +4,10 @@ import { PRODUCTS } from '../constants';
 import { ProductCard } from './ProductCard';
 import { Product, Category } from '../types';
 import { getNutritionalInsights } from '../services/geminiService';
+import { useToast } from './ui/Toast';
 
 export const MenuView: React.FC = () => {
+  const toast = useToast();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState<Category | 'All'>('All');
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
@@ -75,7 +77,7 @@ export const MenuView: React.FC = () => {
                             <ProductCard 
                                 key={product.id} 
                                 product={product} 
-                                onAdd={() => alert("Added to pre-order list!")} 
+                                onAdd={() => toast.success('Añadido', 'Producto agregado a la lista de pre-orden')} 
                                 onInfo={handleInfoClick}
                             />
                         ))}

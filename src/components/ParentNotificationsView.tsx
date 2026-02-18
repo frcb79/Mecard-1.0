@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Bell, Mail, Smartphone, Clock, Save } from 'lucide-react';
-import '../styles/parentTheme.css';
 import { Button } from './Button';
+import { useToast } from './ui/Toast';
 
 export default function ParentNotificationsView() {
+  const toast = useToast();
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [smsEnabled, setSmsEnabled] = useState(false);
@@ -20,8 +21,7 @@ export default function ParentNotificationsView() {
   const [weeklySummary, setWeeklySummary] = useState(false);
 
   const handleSave = () => {
-    console.log('Notificaciones guardadas');
-    alert('✅ Preferencias de notificaciones actualizadas');
+    toast.success('Actualizado', 'Preferencias de notificaciones actualizadas');
   };
 
   const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
