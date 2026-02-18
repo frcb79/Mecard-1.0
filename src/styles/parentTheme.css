@@ -1,0 +1,449 @@
+/**
+ * Parent Portal Theme - Verde + Azul (Seguridad & Tecnología)
+ * Mobile-First Design System
+ * 
+ * Colores:
+ * - Verde Primario: #10b981 (emerald-600) - Confianza, Seguridad
+ * - Azul Secundario: #0ea5e9 (sky-600) - Tecnología, Profesionalismo
+ * - Neutrales: grises sofisticados (slate palette)
+ */
+
+:root {
+  /* Colores Primarios */
+  --color-primary-green: #10b981;
+  --color-primary-blue: #0ea5e9;
+  --color-primary-dark-green: #059669;
+  --color-primary-dark-blue: #0284c7;
+  
+  /* Colores de Fondo */
+  --color-bg-light-green: #ecfdf5;
+  --color-bg-light-blue: #f0f9ff;
+  --color-bg-white: #ffffff;
+  --color-bg-gray: #f8fafc;
+  
+  /* Colores del Texto */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-light: #cbd5e1;
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  
+  /* Espaciado */
+  --spacing-unit: 4px;
+}
+
+/* ========================================
+   PARENT PORTAL CONTAINER LAYOUT
+   ======================================== */
+
+.parent-portal-layout {
+  display: flex;
+  height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #ecfdf5 100%);
+}
+
+.parent-portal-layout__sidebar {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.parent-portal-layout__content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ========================================
+   SIDEBAR - COLLAPSIBLE
+   ======================================== */
+
+.parent-sidebar {
+  width: 250px;
+  background: var(--color-bg-white);
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 50;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.parent-sidebar.collapsed {
+  width: 80px;
+}
+
+.parent-sidebar__header {
+  padding: 20px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.parent-sidebar__header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+.parent-sidebar.collapsed .parent-sidebar__header-logo {
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+}
+
+.parent-sidebar__logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.parent-sidebar__logo-text {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.parent-sidebar__logo-text span {
+  color: var(--color-primary-green);
+}
+
+.parent-sidebar__toggle-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.parent-sidebar__toggle-btn:hover {
+  background: #e2e8f0;
+  color: var(--color-primary-green);
+}
+
+/* Navegación */
+.parent-sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 8px;
+  scrollbar-width: none;
+}
+
+.parent-sidebar__nav::-webkit-scrollbar {
+  display: none;
+}
+
+.parent-sidebar__nav-group {
+  margin-bottom: 24px;
+}
+
+.parent-sidebar__nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #94a3b8;
+  padding: 0 12px;
+  margin-bottom: 8px;
+  transition: opacity 0.3s ease;
+}
+
+.parent-sidebar.collapsed .parent-sidebar__nav-label {
+  opacity: 0;
+  visibility: hidden;
+  height: 0;
+  margin: 0;
+}
+
+.parent-sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 12px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  gap: 12px;
+}
+
+.parent-sidebar__nav-item:hover {
+  background: #f1f5f9;
+  color: var(--color-primary-green);
+}
+
+.parent-sidebar__nav-item.active {
+  background: linear-gradient(135deg, #ecfdf5 0%, #dbeafe 100%);
+  color: var(--color-primary-green);
+  font-weight: 700;
+}
+
+.parent-sidebar__nav-item-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.parent-sidebar__nav-item-label {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.parent-sidebar.collapsed .parent-sidebar__nav-item-label {
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+}
+
+/* Footer */
+.parent-sidebar__footer {
+  padding: 16px 8px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ========================================
+   CONTENT AREA - MOBILE RESPONSIVE
+   ======================================== */
+
+.parent-content {
+  margin-left: 80px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 24px;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .parent-sidebar {
+    width: 60px;
+  }
+
+  .parent-sidebar__toggle-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .parent-content {
+    margin-left: 60px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .parent-sidebar {
+    width: 60px;
+  }
+
+  .parent-content {
+    margin-left: 60px;
+    padding: 12px;
+  }
+
+  .parent-sidebar__header {
+    padding: 16px 8px;
+  }
+
+  .parent-sidebar__nav-item {
+    padding: 10px 8px;
+  }
+}
+
+/* ========================================
+   BUTTON STYLES
+   ======================================== */
+
+.parent-btn-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+}
+
+.parent-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+}
+
+.parent-btn-primary:active {
+  transform: translateY(0);
+}
+
+.parent-btn-secondary {
+  background: var(--color-bg-light-blue);
+  color: var(--color-primary-blue);
+  padding: 12px 24px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.parent-btn-secondary:hover {
+  background: #dbeafe;
+  border-color: #7dd3fc;
+}
+
+/* ========================================
+   CARD STYLES - MOBILE-FIRST
+   ======================================== */
+
+.parent-card {
+  background: var(--color-bg-white);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.parent-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #cbd5e1;
+}
+
+.parent-card--featured {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
+  border: 1px solid #d1fae5;
+}
+
+/* ========================================
+   GRID RESPONSIVE - MOBILE FIRST
+   ======================================== */
+
+.parent-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .parent-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .parent-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1440px) {
+  .parent-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.parent-grid--wide {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .parent-grid--wide {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========================================
+   ALERT & STATUS STYLES
+   ======================================== */
+
+.parent-alert {
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid;
+  display: flex;
+  gap: 12px;
+}
+
+.parent-alert--success {
+  background: var(--color-bg-light-green);
+  border-color: var(--color-primary-green);
+  color: var(--color-primary-dark-green);
+}
+
+.parent-alert--warning {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.parent-alert--danger {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #7f1d1d;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.parent-text-muted {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.parent-text-primary {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.parent-accent-green {
+  color: var(--color-primary-green);
+}
+
+.parent-accent-blue {
+  color: var(--color-primary-blue);
+}
+
+.parent-bg-green-light {
+  background: var(--color-bg-light-green);
+}
+
+.parent-bg-blue-light {
+  background: var(--color-bg-light-blue);
+}
