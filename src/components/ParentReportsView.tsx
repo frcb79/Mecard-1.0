@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart3, Download, Filter, Calendar } from 'lucide-react';
+import { useToast } from './ui/Toast';
 
 export default function ParentReportsView() {
+  const navigate = useNavigate();
+  const toast = useToast();
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [selectedStudent, setSelectedStudent] = useState('all');
 
   const mockTransactions = [
-    { date: '2026-02-16', description: 'Comida en cafetería', category: 'Meals', amount: 45.50 },
-    { date: '2026-02-16', description: 'Bebida', category: 'Drinks', amount: 15.00 },
-    { date: '2026-02-15', description: 'Snacks', category: 'Snacks', amount: 25.00 },
-    { date: '2026-02-15', description: 'Comida en cafetería', category: 'Meals', amount: 50.00 },
-    { date: '2026-02-14', description: 'Papelería', category: 'Supplies', amount: 120.00 },
+    { date: '2026-02-16', description: 'Comida en cafetería', category: 'Meals', amount: 45.50, pos: 'Cafetería Central' },
+    { date: '2026-02-16', description: 'Bebida', category: 'Drinks', amount: 15.00, pos: 'Cafetería Central' },
+    { date: '2026-02-15', description: 'Snacks', category: 'Snacks', amount: 25.00, pos: 'Tiendita Norte' },
+    { date: '2026-02-15', description: 'Comida en cafetería', category: 'Meals', amount: 50.00, pos: 'Cafetería Central' },
+    { date: '2026-02-14', description: 'Papelería', category: 'Supplies', amount: 120.00, pos: 'Papelería Escolar' },
   ];
 
   const mockStats = {
@@ -76,7 +80,7 @@ export default function ParentReportsView() {
             {/* Export Button */}
             <div className="space-y-2">
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest invisible">Export</label>
-              <button className="w-full p-3 bg-gradient-to-r from-emerald-600 to-sky-600 text-white font-black text-xs uppercase tracking-widest rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2">
+              <button onClick={() => toast.info('CSV', 'Descargando CSV... (demo)')} className="w-full p-3 bg-gradient-to-r from-emerald-600 to-sky-600 text-white font-black text-xs uppercase tracking-widest rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2">
                 <Download size={16} /> Exportar CSV
               </button>
             </div>
@@ -146,6 +150,7 @@ export default function ParentReportsView() {
                   <th className="text-left py-3 px-3 font-black text-slate-400 text-[10px] uppercase tracking-widest">Fecha</th>
                   <th className="text-left py-3 px-3 font-black text-slate-400 text-[10px] uppercase tracking-widest">Descripción</th>
                   <th className="text-left py-3 px-3 font-black text-slate-400 text-[10px] uppercase tracking-widest">Categoría</th>
+                  <th className="text-left py-3 px-3 font-black text-slate-400 text-[10px] uppercase tracking-widest">Punto de Venta</th>
                   <th className="text-right py-3 px-3 font-black text-slate-400 text-[10px] uppercase tracking-widest">Monto</th>
                 </tr>
               </thead>
@@ -160,6 +165,9 @@ export default function ParentReportsView() {
                     </td>
                     <td className="py-4 px-3">
                       <span className="inline-block px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-black">{tx.category}</span>
+                    </td>
+                    <td className="py-4 px-3">
+                      <span className="inline-block px-2 py-1 rounded-lg bg-sky-50 text-sky-600 text-xs font-black">{tx.pos}</span>
                     </td>
                     <td className="py-4 px-3 text-right">
                       <span className="font-black text-slate-900">${tx.amount.toFixed(2)}</span>
@@ -178,8 +186,8 @@ export default function ParentReportsView() {
             <p className="text-[10px] md:text-xs text-slate-500 mt-1">Descarga un PDF o CSV con todos los detalles</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button className="flex-1 sm:flex-none px-6 py-3 bg-white border border-emerald-200 rounded-lg font-black text-xs uppercase tracking-widest text-emerald-600 hover:bg-emerald-50 transition-all">PDF</button>
-            <button className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-emerald-600 to-sky-600 rounded-lg font-black text-xs uppercase tracking-widest text-white hover:shadow-lg transition-all">CSV</button>
+            <button onClick={() => toast.info('PDF', 'Generando reporte PDF... (demo)')} className="flex-1 sm:flex-none px-6 py-3 bg-white border border-emerald-200 rounded-lg font-black text-xs uppercase tracking-widest text-emerald-600 hover:bg-emerald-50 transition-all">PDF</button>
+            <button onClick={() => toast.info('CSV', 'Descargando CSV... (demo)')} className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-emerald-600 to-sky-600 rounded-lg font-black text-xs uppercase tracking-widest text-white hover:shadow-lg transition-all">CSV</button>
           </div>
         </div>
       </div>

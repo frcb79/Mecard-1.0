@@ -60,19 +60,27 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         setIsDemoMode(false);
       } catch (err: unknown) {
-        // CRITICAL FIX: Detect NetworkError or fetch failures and silently switch to Demo Mode
-        // This avoids the noisy [object Object] errors in the console and UI
-        const errMsg = err instanceof Error ? err.message : String(err);
+        // Robustly extract error message even from Supabase error objects
+        let errMsg: string;
+        if (err instanceof Error) {
+          errMsg = err.message;
+        } else if (typeof err === 'object' && err !== null) {
+          errMsg = (err as any).message || (err as any).error_description || JSON.stringify(err);
+        } else {
+          errMsg = String(err);
+        }
+
         const errName = err instanceof Error ? err.name : '';
         const isNetworkError = 
           errName === 'TypeError' || 
           errMsg.toLowerCase().includes('fetch') || 
-          errMsg.toLowerCase().includes('network');
+          errMsg.toLowerCase().includes('network') ||
+          errMsg.toLowerCase().includes('err_name_not_resolved');
 
         if (isNetworkError) {
           console.warn("MeCard Hub: Network unreachable. Defaulting to Demo Mode.");
         } else {
-          console.error("MeCard Hub: Database configuration error:", errMsg);
+          console.warn("MeCard Hub: Database error — switching to Demo Mode.", errMsg);
         }
         useMockData();
       } finally {

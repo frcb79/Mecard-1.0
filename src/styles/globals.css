@@ -52,6 +52,32 @@
     border-color: rgba(59, 147, 255, 0.2);
   }
 
+  /* Parent Portal card styles */
+  .parent-card {
+    @apply bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-sm;
+  }
+
+  .parent-card--featured {
+    @apply bg-gradient-to-br from-white to-slate-50;
+  }
+
+  /* Parent alert/info box */
+  .parent-alert {
+    @apply p-4 md:p-6 rounded-xl text-sm;
+  }
+
+  .parent-alert--warning {
+    @apply bg-amber-50 border border-amber-200 text-amber-800;
+  }
+
+  .parent-alert--info {
+    @apply bg-sky-50 border border-sky-200 text-sky-800;
+  }
+
+  .parent-alert--success {
+    @apply bg-emerald-50 border border-emerald-200 text-emerald-800;
+  }
+
   /* Gradient text utility */
   .text-gradient {
     @apply bg-clip-text text-transparent;

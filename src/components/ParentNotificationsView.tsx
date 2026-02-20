@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Mail, Smartphone, Clock, Save } from 'lucide-react';
 import { Button } from './Button';
 import { useToast } from './ui/Toast';
 
 export default function ParentNotificationsView() {
+  const navigate = useNavigate();
   const toast = useToast();
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(true);
@@ -222,7 +224,7 @@ export default function ParentNotificationsView() {
 
         {/* Save Button */}
         <div className="flex gap-3">
-          <button className="flex-1 py-4 rounded-lg bg-slate-100 text-slate-600 font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
+          <button onClick={() => navigate('/parent')} className="flex-1 py-4 rounded-lg bg-slate-100 text-slate-600 font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
           <Button 
             onClick={handleSave}
             className="flex-1 py-4 rounded-lg bg-gradient-to-r from-emerald-600 to-sky-600 text-white font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-200/50"

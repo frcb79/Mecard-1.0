@@ -1,12 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingCart, Settings, LogOut,
   Wallet, Building2, PenTool, UserCircle, QrCode,
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
-  ChevronRight
+  ChevronRight, Gift, Star, Menu, X
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -77,6 +77,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school/staff', label: 'Personal', icon: <UserCircle size={18} /> },
         { path: '/school/import', label: 'Importar', icon: <Layers size={18} /> },
         { path: '/school/config', label: 'Configuración', icon: <Settings size={18} /> },
+        { path: '/school/permissions', label: 'Permisos Salida', icon: <ShieldCheck size={18} /> },
       ],
     }];
   }
@@ -108,6 +109,12 @@ function getNavSections(role: UserRole): NavSection[] {
       items: [
         { path: '/parent', label: 'Mi Familia', icon: <UserCircle size={18} /> },
         { path: '/parent/wallet', label: 'Billetera', icon: <Wallet size={18} /> },
+        { path: '/parent/limits', label: 'Límites', icon: <Zap size={18} /> },
+        { path: '/parent/reports', label: 'Reportes', icon: <PieChart size={18} /> },
+        { path: '/parent/notifications', label: 'Notificaciones', icon: <MessageSquare size={18} /> },
+        { path: '/parent/permissions', label: 'Permisos de Salida', icon: <ShieldCheck size={18} /> },
+        { path: '/parent/gifts', label: 'Regalos', icon: <Gift size={18} /> },
+        { path: '/parent/rewards', label: 'Premios', icon: <Star size={18} /> },
       ],
     }];
   }
@@ -133,6 +140,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const userRole = user?.role || UserRole.STUDENT;
   const sections = getNavSections(userRole);
@@ -140,15 +148,25 @@ export const Sidebar: React.FC = () => {
   const isActive = (path: string): boolean =>
     location.pathname === path || location.pathname.startsWith(path + '/');
 
+  // Close mobile nav on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  return (
-    <aside className="w-60 bg-white border-r border-surface-100 flex flex-col h-screen fixed left-0 top-0 z-[100] shadow-xs">
+  const handleNavClick = (path: string) => {
+    navigate(path);
+    setMobileOpen(false);
+  };
+
+  const sidebarContent = (
+    <>
       {/* ─── Header ─── */}
-      <div className="px-5 py-5 border-b border-surface-100 shrink-0">
+      <div className="px-4 md:px-5 py-4 md:py-5 border-b border-surface-100 shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="bg-brand-500 p-2 rounded-xl shadow-sm">
             <Zap className="w-5 h-5 text-white" />
@@ -162,10 +180,18 @@ export const Sidebar: React.FC = () => {
             </span>
           </div>
         </div>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="md:hidden p-2 rounded-lg hover:bg-surface-100 text-surface-400 transition-all"
+          aria-label="Cerrar menú"
+        >
+          <X size={20} />
+        </button>
       </div>
 
       {/* ─── Navigation ─── */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide space-y-5" role="navigation" aria-label="Menú principal">
+      <nav className="flex-1 px-3 py-3 md:py-4 overflow-y-auto scrollbar-hide space-y-4 md:space-y-5" role="navigation" aria-label="Menú principal">
         {sections.map((section) => (
           <div key={section.label}>
             <p className="px-3 mb-1.5 text-[10px] font-semibold text-surface-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -177,7 +203,7 @@ export const Sidebar: React.FC = () => {
                 return (
                   <button
                     key={item.path}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => handleNavClick(item.path)}
                     aria-current={active ? 'page' : undefined}
                     className={`flex items-center w-full px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 group
                       ${active
@@ -212,7 +238,40 @@ export const Sidebar: React.FC = () => {
           <LogOut className="w-4 h-4 mr-2.5" /> Cerrar sesión
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger button — fixed top-left */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden fixed top-3 left-3 z-[110] p-2.5 bg-white border border-surface-200 rounded-xl shadow-lg text-surface-600 hover:bg-surface-50 transition-all"
+        aria-label="Abrir menú"
+      >
+        <Menu size={20} />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-[120] bg-black/40 backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — hidden on mobile, slide-in when open */}
+      <aside
+        className={`
+          w-64 md:w-60 bg-white border-r border-surface-100 flex flex-col h-screen fixed left-0 top-0 z-[130] shadow-xs
+          transition-transform duration-300 ease-in-out
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0 md:relative md:z-[100]
+        `}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 };
 

@@ -34,6 +34,7 @@ const SchoolAdminContainer = React.lazy(() => import('../components/SchoolAdminC
 const StudentManagementView = React.lazy(() => import('../components/StudentManagementView'));
 const SmartStaffManager = React.lazy(() => import('../components/SmartStaffManager'));
 const StudentImportWizard = React.lazy(() => import('../components/StudentImportWizard'));
+const SchoolPermissionsView = React.lazy(() => import('../components/SchoolPermissionsView'));
 
 // Unit Manager
 const ConcessionaireDashboard = React.lazy(() => import('../components/ConcessionaireDashboard'));
@@ -49,6 +50,9 @@ const ParentWalletView = React.lazy(() => import('../components/ParentWalletView
 const ParentLimitsView = React.lazy(() => import('../components/ParentLimitsView'));
 const ParentReportsView = React.lazy(() => import('../components/ParentReportsView'));
 const ParentNotificationsView = React.lazy(() => import('../components/ParentNotificationsView'));
+const ParentPermissionsView = React.lazy(() => import('../components/ParentPermissionsView'));
+const ParentGiftsView = React.lazy(() => import('../components/ParentGiftsView'));
+const ParentRewardsView = React.lazy(() => import('../components/ParentRewardsView'));
 
 // Student
 const StudentDashboard = React.lazy(() => import('../components/StudentDashboard'));
@@ -81,7 +85,7 @@ function RoleBasedLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-surface-50">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pt-14 md:pt-0">
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
@@ -202,6 +206,16 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/school/permissions"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolPermissionsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ====== UNIT MANAGER ROUTES ====== */}
       <Route
@@ -314,6 +328,36 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>
               <ParentNotificationsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/permissions"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentPermissionsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/gifts"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentGiftsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/rewards"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentRewardsView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

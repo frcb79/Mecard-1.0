@@ -5,13 +5,22 @@ const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? "";
 
 /**
- * Verifica si Supabase está configurado correctamente
+ * Verifica si Supabase está configurado con credenciales reales.
+ * Detecta URLs ficticias/placeholder para evitar llamadas DNS inválidas.
  */
+const PLACEHOLDER_PATTERNS = [
+  'your-project', 'placeholder', 'dummy', 'example', 'localhost',
+  'xxx', 'test-project', 'fake',
+];
+
+const looksLikePlaceholder = (url: string): boolean =>
+  PLACEHOLDER_PATTERNS.some((p) => url.toLowerCase().includes(p));
+
 export const isSupabaseConfigured =
   SUPABASE_URL !== "" &&
-  SUPABASE_URL !== "https://your-project-url.supabase.co" &&
   SUPABASE_ANON_KEY !== "" &&
-  SUPABASE_ANON_KEY !== "your-anon-key";
+  SUPABASE_ANON_KEY !== "your-anon-key" &&
+  !looksLikePlaceholder(SUPABASE_URL);
 
 // Fallback seguro para evitar crash en build
 const finalUrl = isSupabaseConfigured
