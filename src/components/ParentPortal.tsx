@@ -163,6 +163,11 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                     <p className="text-slate-400 font-bold uppercase text-[10px] md:text-[11px] tracking-[3px] md:tracking-[4px] mt-1 md:mt-2 flex items-center gap-2">
                       <ShieldCheck size={14} className="text-emerald-500" /> Control Parental MeCard Network
                     </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-lg">👩</span>
+                      <span className="text-xs font-bold text-slate-700">María González</span>
+                      <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-bold uppercase">Madre</span>
+                    </div>
                 </div>
                 <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
                   <button onClick={() => navigate('/parent/notifications')} className="p-3 md:p-4 bg-white border border-slate-100 rounded-2xl md:rounded-3xl text-slate-400 hover:text-indigo-600 transition-all shadow-sm" aria-label="Notificaciones">

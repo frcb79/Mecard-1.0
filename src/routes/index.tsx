@@ -55,6 +55,7 @@ const ParentPermissionsView = React.lazy(() => import('../components/ParentPermi
 const ParentGiftsView = React.lazy(() => import('../components/ParentGiftsView'));
 const ParentRewardsView = React.lazy(() => import('../components/ParentRewardsView'));
 const ParentTripsView = React.lazy(() => import('../components/ParentTripsView'));
+const ParentSettingsView = React.lazy(() => import('../components/ParentSettingsView'));
 
 // Student
 const StudentDashboard = React.lazy(() => import('../components/StudentDashboard'));
@@ -380,6 +381,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>
               <ParentTripsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/settings"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentSettingsView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

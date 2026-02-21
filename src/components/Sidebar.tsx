@@ -117,6 +117,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/parent/gifts', label: 'Regalos', icon: <Gift size={18} /> },
         { path: '/parent/rewards', label: 'Premios', icon: <Star size={18} /> },
         { path: '/parent/trips', label: 'Viajes', icon: <MapPin size={18} /> },
+        { path: '/parent/settings', label: 'Configuración', icon: <Settings size={18} /> },
       ],
     }];
   }
