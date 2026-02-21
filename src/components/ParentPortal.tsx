@@ -8,7 +8,7 @@ import {
   ChevronDown, Landmark, Copy, CheckCircle2, ShieldCheck, Zap, 
   ArrowLeftRight, Info, Building2, UserPlus,
   Fingerprint, Key, GraduationCap, Eye, EyeOff, Lock, Bell, Star,
-  TrendingUp, Clock
+  TrendingUp, Clock, MapPin, Users
 } from 'lucide-react';
 import { Category, AppView, StudentProfile, Transaction, Product, EntityOwner, School } from '../types';
 import { PRODUCTS, MOCK_SCHOOLS, MOCK_STUDENTS_LIST } from '../constants';
@@ -260,7 +260,33 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                 <ActionCard onClick={() => navigate('/parent/wallet')} icon={<Zap size={24}/>} title="Recargar Ya" desc="Abono instantáneo" color="bg-amber-50 text-amber-600" />
                 <ActionCard onClick={() => navigate('/parent/limits')} icon={<HeartPulse size={24}/>} title="Alergias y Límites" desc="Bloqueos y control" color="bg-rose-50 text-rose-600" />
                 <ActionCard onClick={() => navigate('/parent/reports')} icon={<Utensils size={24}/>} title="Reportes" desc="Consumo semanal" color="bg-indigo-50 text-indigo-600" />
-                <ActionCard onClick={() => navigate('/parent/reports')} icon={<History size={24}/>} title="Estados de Cuenta" desc="Reportes PDF" color="bg-slate-50 text-slate-600" />
+                <ActionCard onClick={() => navigate('/parent/trips')} icon={<MapPin size={24}/>} title="Viajes" desc="Excursiones y pagos" color="bg-teal-50 text-teal-600" />
+            </div>
+
+            {/* Co-parent Activity Log */}
+            <div className="bg-white rounded-2xl md:rounded-[40px] border border-slate-100 p-4 md:p-8 mb-6 md:mb-12 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm md:text-lg font-black text-slate-800 flex items-center gap-2">
+                  <Users size={18} className="text-indigo-500" /> Actividad Familiar
+                </h3>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Co-padre: Roberto González</span>
+              </div>
+              <div className="space-y-2">
+                {[
+                  { icon: '💰', action: 'Depositó $500.00 a Santiago', by: 'María G.', time: 'Hace 2h', device: 'iPhone' },
+                  { icon: '🔒', action: 'Cambió límite diario a $200', by: 'Roberto G.', time: 'Hace 5h', device: 'Android' },
+                  { icon: '📋', action: 'Envió permiso de salida', by: 'María G.', time: 'Ayer', device: 'Web' },
+                  { icon: '🎓', action: 'Inscribió a Santiago en Campamento', by: 'Roberto G.', time: 'Hace 2 días', device: 'Android' },
+                ].map((log, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2 md:p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                    <span className="text-lg">{log.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm font-medium text-slate-700 truncate">{log.action}</p>
+                      <p className="text-[9px] md:text-[10px] text-slate-400">{log.by} • {log.time} • {log.device}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-4 md:space-y-8">

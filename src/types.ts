@@ -131,7 +131,20 @@ export enum NotificationType {
   TRIAL_EXPIRY = 'TRIAL_EXPIRY',
   GIFT_RECEIVED = 'GIFT_RECEIVED',
   DAILY_LIMIT_REACHED = 'DAILY_LIMIT_REACHED',
-  RESTRICTED_PURCHASE = 'RESTRICTED_PURCHASE'
+  RESTRICTED_PURCHASE = 'RESTRICTED_PURCHASE',
+  // Permissions
+  PERMISSION_REQUESTED = 'PERMISSION_REQUESTED',
+  PERMISSION_APPROVED = 'PERMISSION_APPROVED',
+  PERMISSION_REJECTED = 'PERMISSION_REJECTED',
+  PERMISSION_CANCELLED = 'PERMISSION_CANCELLED',
+  CHILD_NOT_ATTENDING = 'CHILD_NOT_ATTENDING',
+  // Multi-parent
+  COPARENT_ACTION = 'COPARENT_ACTION',
+  // Trips
+  TRIP_CREATED = 'TRIP_CREATED',
+  TRIP_PAYMENT_DUE = 'TRIP_PAYMENT_DUE',
+  TRIP_PAYMENT_CONFIRMED = 'TRIP_PAYMENT_CONFIRMED',
+  TRIP_REMINDER = 'TRIP_REMINDER'
 }
 
 export enum SettlementStatus {
@@ -241,8 +254,12 @@ export interface StudentProfile {
   
   // Familia
   parentId: string;
+  parentIds?: string[];       // Multi-parent support
   parentName: string;
   parentEmail?: string;
+  
+  // Transporte
+  busRoute?: string;          // Ruta de camión asignada (ej: "Ruta 3 - Satélite")
   
   // Metadata
   photo?: string;
@@ -328,6 +345,14 @@ export interface ParentProfile {
   
   // Hijos asociados
   children: StudentProfile[];
+  
+  // Multi-parent
+  linkedParentId?: string;       // Co-padre vinculado
+  linkedParentName?: string;     // Nombre del co-padre
+  invitationCode?: string;       // Código de 6 dígitos para vincular
+  
+  // Contactos autorizados (hasta 3 permanentes)
+  authorizedContacts?: AuthorizedContact[];
   
   // Preferencias
   preferences: ParentPreferences;
@@ -1705,7 +1730,281 @@ export interface DepositWithFeeCalculation {
 }
 
 // ============================================
-// 24. TYPE GUARDS
+// 25. EXIT PERMISSIONS SYSTEM
+// ============================================
+
+export type PermissionTransportType = 'bus_alterno' | 'auto_particular' | 'a_pie' | 'no_asiste' | 'otro';
+export type PermissionStatus = 'pendiente' | 'aprobado' | 'rechazado' | 'cancelado' | 'expirado';
+
+export interface AuthorizedContact {
+  id: string;
+  familyId: string;           // Compartido entre ambos padres
+  nombre: string;
+  parentesco: string;         // "Abuela", "Tío", "Nana", etc.
+  telefono: string;
+  email?: string;
+  identificacion: string;     // Número de INE/ID
+  foto?: string;
+  isDefault: boolean;
+  createdBy: string;          // parentId que lo creó
+  createdAt: string;
+}
+
+export interface PermissionApproval {
+  parentId: string;
+  parentName: string;
+  status: 'aprobado' | 'rechazado' | 'pendiente';
+  timestamp: string;
+  deviceInfo?: string;
+}
+
+export interface ExitPermission {
+  id: string;
+  schoolId: string;
+  
+  // Alumno
+  childId: string;
+  childName: string;
+  childGrade: string;
+  childGroup: string;
+  childPhoto?: string;
+  
+  // Transporte
+  busOriginal: string;        // Ruta/camión donde normalmente se va
+  busDestino?: string;        // Ruta/camión donde se subirá (si aplica)
+  transporte: PermissionTransportType;
+  transporteDetalle?: string;
+  
+  // Solicitud
+  fecha: string;
+  horaSalida: string;
+  motivo: string;
+  
+  // Persona autorizada (referencia a contacto guardado o inline)
+  authorizedContactId?: string;
+  personaAutorizada?: {
+    nombre: string;
+    parentesco: string;
+    telefono: string;
+    email?: string;
+    identificacion: string;
+  };
+  
+  // Multi-padre: aprobaciones
+  createdBy: string;          // parentId que creó el permiso
+  createdByName: string;
+  approvals: PermissionApproval[];
+  
+  // Escuela
+  status: PermissionStatus;
+  schoolApproval?: {
+    status: 'aprobado' | 'rechazado' | 'pendiente';
+    reviewedBy?: string;
+    reviewedByName?: string;
+    reviewedAt?: string;
+    notes?: string;
+  };
+  
+  // Notificaciones enviadas
+  notificationsSent: {
+    school: boolean;
+    coparent: boolean;
+    receivingFamily: boolean;
+    externalPerson: boolean;
+  };
+  
+  creadoEn: string;
+  actualizadoEn: string;
+}
+
+export interface SchoolPermissionConfig {
+  id: string;
+  schoolId: string;
+  
+  horasAnticipacion: number;           // Default: 6
+  requiereDosAprobaciones: boolean;    // Default: false (uno basta)
+  horaLimiteSolicitud: string;         // Default: "14:00"
+  diasPermitidos: string[];            // Default: ['LUN','MAR','MIE','JUE','VIE']
+  requiereIdentificacion: boolean;     // Default: true
+  permitirNoAsiste: boolean;           // Default: true
+  maxPermisosPorSemana: number;        // Default: 0 (sin límite)
+  notificarDireccion: boolean;         // Default: true
+  requiereMotivo: boolean;             // Default: true
+  mensajePersonalizado: string;        // Default: ""
+  bloqueoEnExamenes: boolean;          // Default: false
+  fechasExamen: string[];              // Fechas bloqueadas
+  rutasCamion: string[];               // Lista de rutas para referencia
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// 26. TRIPS & EXCURSIONS SYSTEM
+// ============================================
+
+export type TripStatus = 'borrador' | 'abierto' | 'cerrado' | 'completado' | 'cancelado';
+export type EnrollmentStatus = 'inscrito' | 'pagado_parcial' | 'pagado' | 'cancelado' | 'lista_espera';
+export type TripPaymentStatus = 'pendiente' | 'confirmado' | 'rechazado';
+
+export interface SchoolTrip {
+  id: string;
+  schoolId: string;
+  
+  nombre: string;
+  destino: string;
+  descripcion: string;
+  
+  fechaSalida: string;
+  fechaRegreso: string;
+  
+  costoTotal: number;
+  costoPorAlumno: number;
+  
+  cupoMaximo: number;
+  cupoDisponible: number;
+  
+  gradosPermitidos: string[];       // ["3° Primaria", "4° Primaria"]
+  
+  status: TripStatus;
+  
+  fechaLimitePago: string;
+  fechaLimiteInscripcion: string;
+  
+  permiteParcialidades: boolean;
+  numeroParcialidades: number;      // Default: 1 (pago único)
+  
+  requiereDocumentos: boolean;
+  documentosRequeridos: string[];   // ["Carta responsiva", "Copia INE padre"]
+  
+  itinerario?: string;
+  contactoEmergencia: string;
+  notas?: string;
+  
+  imageEmoji?: string;              // Para UI: 🏕️, 🏛️, etc.
+  
+  creadoPor: string;
+  creadoEn: string;
+  actualizadoEn: string;
+}
+
+export interface TripEnrollment {
+  id: string;
+  tripId: string;
+  studentId: string;
+  studentName: string;
+  studentGrade: string;
+  parentId: string;
+  parentName: string;
+  
+  status: EnrollmentStatus;
+  
+  totalPagado: number;
+  saldoPendiente: number;
+  
+  documentosEntregados: string[];
+  
+  approvedByParent: boolean;
+  approvalDate?: string;
+  
+  inscritoEn: string;
+  actualizadoEn: string;
+}
+
+export interface TripPayment {
+  id: string;
+  enrollmentId: string;
+  tripId: string;
+  studentId: string;
+  studentName: string;
+  
+  monto: number;
+  parcialidad: number;             // 1, 2, 3...
+  totalParcialidades: number;
+  
+  metodoPago: string;              // "SPEI", "Tarjeta", "Efectivo"
+  comprobante?: string;
+  
+  status: TripPaymentStatus;
+  
+  fechaPago: string;
+  fechaLimite: string;
+  
+  registradoPor?: string;
+  createdAt: string;
+}
+
+export interface TripReminder {
+  id: string;
+  tripId: string;
+  tripName: string;
+  
+  tipo: 'pago' | 'documento' | 'general' | 'inscripcion';
+  mensaje: string;
+  
+  destinatarios: string[];         // parentIds
+  
+  fechaEnvio: string;
+  enviado: boolean;
+  
+  createdAt: string;
+}
+
+// ============================================
+// 27. MULTI-PARENT & ACTIVITY LOG
+// ============================================
+
+export interface ParentStudentLink {
+  id: string;
+  parentId: string;
+  parentName: string;
+  parentEmail: string;
+  studentId: string;
+  studentName: string;
+  
+  role: 'parent';                  // Futuro: 'titular' | 'asociado'
+  
+  linkedAt: string;
+  linkedBy: string;                // parentId que creó el vínculo
+  invitationCode?: string;
+  status: 'active' | 'pending' | 'revoked';
+}
+
+export type ActivityAction = 
+  | 'deposit' 
+  | 'limit_change' 
+  | 'restriction_change'
+  | 'permission_create' 
+  | 'permission_cancel'
+  | 'permission_approve'
+  | 'trip_enroll'
+  | 'trip_payment'
+  | 'contact_add'
+  | 'contact_remove'
+  | 'coparent_invite'
+  | 'coparent_link'
+  | 'login';
+
+export interface ActivityLogEntry {
+  id: string;
+  userId: string;
+  userName: string;
+  
+  action: ActivityAction;
+  entityType: 'student' | 'permission' | 'trip' | 'wallet' | 'contact' | 'parent';
+  entityId: string;
+  
+  details: string;                 // Descripción legible: "Depositó $500 a Santiago"
+  metadata?: Record<string, any>;
+  
+  deviceInfo?: string;             // "iPhone 14 / Safari" 
+  ipAddress?: string;
+  
+  timestamp: string;
+}
+
+// ============================================
+// 28. TYPE GUARDS
 // ============================================
 
 export function isStudent(user: User | StudentProfile): user is StudentProfile {

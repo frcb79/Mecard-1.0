@@ -35,6 +35,7 @@ const StudentManagementView = React.lazy(() => import('../components/StudentMana
 const SmartStaffManager = React.lazy(() => import('../components/SmartStaffManager'));
 const StudentImportWizard = React.lazy(() => import('../components/StudentImportWizard'));
 const SchoolPermissionsView = React.lazy(() => import('../components/SchoolPermissionsView'));
+const SchoolTripsView = React.lazy(() => import('../components/SchoolTripsView'));
 
 // Unit Manager
 const ConcessionaireDashboard = React.lazy(() => import('../components/ConcessionaireDashboard'));
@@ -53,6 +54,7 @@ const ParentNotificationsView = React.lazy(() => import('../components/ParentNot
 const ParentPermissionsView = React.lazy(() => import('../components/ParentPermissionsView'));
 const ParentGiftsView = React.lazy(() => import('../components/ParentGiftsView'));
 const ParentRewardsView = React.lazy(() => import('../components/ParentRewardsView'));
+const ParentTripsView = React.lazy(() => import('../components/ParentTripsView'));
 
 // Student
 const StudentDashboard = React.lazy(() => import('../components/StudentDashboard'));
@@ -216,6 +218,16 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/school/trips"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolTripsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ====== UNIT MANAGER ROUTES ====== */}
       <Route
@@ -358,6 +370,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>
               <ParentRewardsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/trips"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentTripsView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

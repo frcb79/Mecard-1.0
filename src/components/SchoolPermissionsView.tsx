@@ -1,518 +1,468 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  ShieldCheck, CheckCircle2, Clock, X, AlertTriangle,
-  Search, Filter, Calendar, Bus, Car, Users, MapPin,
-  Phone, User, Eye, ChevronDown, ChevronUp, Bell,
-  Download, Check
+  ShieldCheck, Clock, CheckCircle2, X, ChevronDown, ChevronUp,
+  Bus, Car, Users, UserX, MapPin, Settings, Calendar,
+  AlertTriangle, Bell, Filter, Download, Search, Eye,
+  Save, Phone, User
 } from 'lucide-react';
 import { useToast } from './ui/Toast';
+import {
+  MOCK_EXIT_PERMISSIONS, MOCK_SCHOOL_PERMISSION_CONFIG, MOCK_BUS_ROUTES
+} from '../constants';
+import type { ExitPermission, PermissionStatus, SchoolPermissionConfig, PermissionTransportType } from '../types';
 
-// ===== TYPES =====
+type TabView = 'dashboard' | 'config';
 
-type TransportType = 'bus_alterno' | 'auto_particular' | 'a_pie' | 'otro';
-type PermissionStatus = 'activo' | 'pendiente' | 'expirado' | 'cancelado' | 'confirmado';
-
-interface AuthorizedPerson {
-  nombre: string;
-  parentesco: string;
-  telefono: string;
-  identificacion: string;
-}
-
-interface ExitPermission {
-  id: string;
-  childId: string;
-  childName: string;
-  childGrade: string;
-  parentName: string;
-  parentPhone: string;
-  fecha: string;
-  horaSalida: string;
-  motivo: string;
-  transporte: TransportType;
-  transporteDetalle: string;
-  personaAutorizada: AuthorizedPerson;
-  status: PermissionStatus;
-  creadoEn: string;
-  confirmedBy?: string;
-  confirmedAt?: string;
-}
-
-// ===== MOCK DATA =====
-
-const MOCK_PERMISSIONS: ExitPermission[] = [
-  {
-    id: 'perm-001',
-    childId: '2024002',
-    childName: 'Ana García',
-    childGrade: '2° Primaria',
-    parentName: 'María García López',
-    parentPhone: '+52 55 4433 2211',
-    fecha: '2026-02-20',
-    horaSalida: '14:30',
-    motivo: 'Cumpleaños de su amiga Sofía. Irá a su casa después del colegio.',
-    transporte: 'bus_alterno',
-    transporteDetalle: 'Camión Ruta 5 (familia Martínez)',
-    personaAutorizada: {
-      nombre: 'Laura Martínez',
-      parentesco: 'Mamá de Sofía',
-      telefono: '+52 55 1234 5678',
-      identificacion: 'INE: MARL880512',
-    },
-    status: 'pendiente',
-    creadoEn: '2026-02-19T10:00:00',
-  },
-  {
-    id: 'perm-002',
-    childId: '2024001',
-    childName: 'Santiago González',
-    childGrade: '4° Primaria',
-    parentName: 'Roberto González',
-    parentPhone: '+52 55 1122 3344',
-    fecha: '2026-02-20',
-    horaSalida: '13:00',
-    motivo: 'Cita médica con el dentista. Lo recogerá su abuelo.',
-    transporte: 'auto_particular',
-    transporteDetalle: 'Auto gris Honda CRV, placas XYZ-123',
-    personaAutorizada: {
-      nombre: 'Roberto González Sr.',
-      parentesco: 'Abuelo paterno',
-      telefono: '+52 55 9876 5432',
-      identificacion: 'INE: GOSR550815',
-    },
-    status: 'pendiente',
-    creadoEn: '2026-02-19T08:30:00',
-  },
-  {
-    id: 'perm-003',
-    childId: '2024005',
-    childName: 'Valentina Ruiz',
-    childGrade: '3° Primaria',
-    parentName: 'Andrea Ruiz',
-    parentPhone: '+52 55 7788 9900',
-    fecha: '2026-02-21',
-    horaSalida: '14:30',
-    motivo: 'Playdate en casa de su compañera Camila después del colegio.',
-    transporte: 'a_pie',
-    transporteDetalle: 'Se irá caminando con la mamá de Camila',
-    personaAutorizada: {
-      nombre: 'Patricia Hernández',
-      parentesco: 'Mamá de Camila',
-      telefono: '+52 55 5566 7788',
-      identificacion: 'INE: HEPA920318',
-    },
-    status: 'activo',
-    creadoEn: '2026-02-18T15:00:00',
-    confirmedBy: 'Dir. Carmen Vega',
-    confirmedAt: '2026-02-18T16:30:00',
-  },
-  {
-    id: 'perm-004',
-    childId: '2024003',
-    childName: 'Diego Martínez',
-    childGrade: '5° Primaria',
-    parentName: 'Fernando Martínez',
-    parentPhone: '+52 55 3344 5566',
-    fecha: '2026-02-14',
-    horaSalida: '12:00',
-    motivo: 'Evento familiar',
-    transporte: 'auto_particular',
-    transporteDetalle: 'Mamá lo recoge en auto azul Nissan',
-    personaAutorizada: {
-      nombre: 'Lucía Fernández de Martínez',
-      parentesco: 'Madre',
-      telefono: '+52 55 6677 8899',
-      identificacion: 'INE: FEML870210',
-    },
-    status: 'expirado',
-    creadoEn: '2026-02-13T09:00:00',
-    confirmedBy: 'Coord. Juan López',
-    confirmedAt: '2026-02-13T11:00:00',
-  },
+const DAYS = [
+  { key: 'LUN', label: 'Lun' }, { key: 'MAR', label: 'Mar' }, { key: 'MIE', label: 'Mié' },
+  { key: 'JUE', label: 'Jue' }, { key: 'VIE', label: 'Vie' }, { key: 'SAB', label: 'Sáb' },
 ];
 
-const TRANSPORT_ICONS: Record<TransportType, React.ReactNode> = {
-  bus_alterno: <Bus size={16} />,
-  auto_particular: <Car size={16} />,
-  a_pie: <Users size={16} />,
-  otro: <MapPin size={16} />,
-};
+function getStatusConfig(status: PermissionStatus) {
+  switch (status) {
+    case 'pendiente': return { label: 'Pendiente', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-400' };
+    case 'aprobado': return { label: 'Aprobado', color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-400' };
+    case 'rechazado': return { label: 'Rechazado', color: 'bg-red-100 text-red-700', dot: 'bg-red-400' };
+    case 'cancelado': return { label: 'Cancelado', color: 'bg-slate-100 text-slate-500', dot: 'bg-slate-400' };
+    case 'expirado': return { label: 'Expirado', color: 'bg-slate-100 text-slate-400', dot: 'bg-slate-300' };
+  }
+}
 
-const TRANSPORT_LABELS: Record<TransportType, string> = {
-  bus_alterno: 'Camión Alterno',
-  auto_particular: 'Auto Particular',
-  a_pie: 'A Pie / Acompañado',
-  otro: 'Otro',
-};
-
-// ===== COMPONENT =====
+function getTransportLabel(t: PermissionTransportType) {
+  switch (t) {
+    case 'bus_alterno': return { label: 'Camión Alterno', icon: <Bus size={14} className="text-blue-500" /> };
+    case 'auto_particular': return { label: 'Auto Particular', icon: <Car size={14} className="text-indigo-500" /> };
+    case 'a_pie': return { label: 'A Pie', icon: <Users size={14} className="text-emerald-500" /> };
+    case 'no_asiste': return { label: 'No Asiste', icon: <UserX size={14} className="text-red-500" /> };
+    case 'otro': return { label: 'Otro', icon: <MapPin size={14} className="text-slate-500" /> };
+  }
+}
 
 export default function SchoolPermissionsView() {
-  const toast = useToast();
-
-  const [permissions, setPermissions] = useState<ExitPermission[]>(MOCK_PERMISSIONS);
-  const [filterStatus, setFilterStatus] = useState<'all' | PermissionStatus>('all');
-  const [filterDate, setFilterDate] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { showToast } = useToast();
+  const [tabView, setTabView] = useState<TabView>('dashboard');
+  const [permissions, setPermissions] = useState<ExitPermission[]>(MOCK_EXIT_PERMISSIONS);
+  const [config, setConfig] = useState<SchoolPermissionConfig>(MOCK_SCHOOL_PERMISSION_CONFIG);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const handleConfirm = (id: string) => {
-    setPermissions(prev =>
-      prev.map(p =>
-        p.id === id
-          ? { ...p, status: 'confirmado' as PermissionStatus, confirmedBy: 'Dir. Demo', confirmedAt: new Date().toISOString() }
-          : p
-      )
-    );
-    const perm = permissions.find(p => p.id === id);
-    toast.success('Permiso Confirmado', `Permiso de ${perm?.childName} confirmado. Se notificará al padre y al personal de puerta.`);
-  };
-
-  const handleReject = (id: string) => {
-    setPermissions(prev =>
-      prev.map(p => p.id === id ? { ...p, status: 'cancelado' as PermissionStatus } : p)
-    );
-    const perm = permissions.find(p => p.id === id);
-    toast.error('Permiso Rechazado', `Se rechazó el permiso de ${perm?.childName}. El padre será notificado.`);
-  };
-
   // Filters
-  const filteredPermissions = permissions.filter(p => {
-    const matchesStatus = filterStatus === 'all' || p.status === filterStatus;
-    const matchesDate = !filterDate || p.fecha === filterDate;
-    const matchesSearch = !searchTerm ||
-      p.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.personaAutorizada.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesDate && matchesSearch;
-  });
+  const [filterStatus, setFilterStatus] = useState<PermissionStatus | 'todos'>('todos');
+  const [filterGrade, setFilterGrade] = useState('');
+  const [filterTransport, setFilterTransport] = useState<PermissionTransportType | 'todos'>('todos');
+  const [filterDate, setFilterDate] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const todayPermissions = permissions.filter(p => p.fecha === '2026-02-20');
+  // Config editing
+  const [editConfig, setEditConfig] = useState<SchoolPermissionConfig>(config);
+  const [newRoute, setNewRoute] = useState('');
+
+  const filtered = useMemo(() => {
+    return permissions.filter(p => {
+      if (filterStatus !== 'todos' && p.status !== filterStatus) return false;
+      if (filterGrade && !p.childGrade?.toLowerCase().includes(filterGrade.toLowerCase())) return false;
+      if (filterTransport !== 'todos' && p.transporte !== filterTransport) return false;
+      if (filterDate && p.fecha !== filterDate) return false;
+      if (searchQuery && !p.childName.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !p.motivo.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+  }, [permissions, filterStatus, filterGrade, filterTransport, filterDate, searchQuery]);
+
   const pendingCount = permissions.filter(p => p.status === 'pendiente').length;
+  const noAsisteToday = permissions.filter(p => p.transporte === 'no_asiste' && p.status !== 'cancelado' &&
+    p.fecha === new Date().toISOString().split('T')[0]).length;
+  const todayCount = permissions.filter(p => p.fecha === new Date().toISOString().split('T')[0] && p.status !== 'cancelado').length;
 
-  const statusConfig: Record<PermissionStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-    activo: { label: 'Activo', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <CheckCircle2 size={14} /> },
-    pendiente: { label: 'Pendiente', color: 'text-amber-600', bg: 'bg-amber-50', icon: <Clock size={14} /> },
-    confirmado: { label: 'Confirmado', color: 'text-blue-600', bg: 'bg-blue-50', icon: <Check size={14} /> },
-    expirado: { label: 'Expirado', color: 'text-slate-400', bg: 'bg-slate-50', icon: <Clock size={14} /> },
-    cancelado: { label: 'Rechazado', color: 'text-red-500', bg: 'bg-red-50', icon: <X size={14} /> },
-  };
+  const uniqueGrades = useMemo(() => {
+    const grades = new Set(permissions.map(p => p.childGrade).filter(Boolean));
+    return Array.from(grades);
+  }, [permissions]);
+
+  function handleApprove(id: string) {
+    setPermissions(prev => prev.map(p => p.id === id ? {
+      ...p, status: 'aprobado' as PermissionStatus,
+      schoolApproval: { status: 'aprobado', reviewedBy: 'admin_01', reviewedByName: 'Coordinación', reviewedAt: new Date().toISOString() }
+    } : p));
+    showToast('✅ Permiso aprobado', 'success');
+  }
+
+  function handleReject(id: string) {
+    setPermissions(prev => prev.map(p => p.id === id ? {
+      ...p, status: 'rechazado' as PermissionStatus,
+      schoolApproval: { status: 'rechazado', reviewedBy: 'admin_01', reviewedByName: 'Coordinación', reviewedAt: new Date().toISOString(), motivo: 'No cumple con el procedimiento' }
+    } : p));
+    showToast('❌ Permiso rechazado', 'info');
+  }
+
+  function handleSaveConfig() {
+    setConfig(editConfig);
+    showToast('⚙️ Configuración guardada', 'success');
+  }
+
+  function handleExport() {
+    const csv = [
+      ['Alumno', 'Grado', 'Grupo', 'Fecha', 'Transporte', 'Motivo', 'Estado', 'Persona Autorizada'].join(','),
+      ...filtered.map(p => [
+        p.childName, p.childGrade, p.childGroup, p.fecha,
+        getTransportLabel(p.transporte).label, `"${p.motivo}"`, p.status,
+        p.personaAutorizada?.nombre || 'N/A'
+      ].join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `permisos_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+    showToast('📥 CSV exportado', 'success');
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-sky-50 pb-40">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3 md:gap-4">
-              <div className="p-3 md:p-4 bg-gradient-to-br from-purple-50 to-sky-50 rounded-lg md:rounded-2xl">
-                <ShieldCheck size={24} className="text-purple-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter">Permisos de Salida</h1>
-                <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">Gestión de autorizaciones de padres</p>
-              </div>
+      <div className="max-w-6xl mx-auto mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+              <ShieldCheck size={22} />
             </div>
-            {pendingCount > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl">
-                <Bell size={16} className="text-amber-600" />
-                <span className="font-black text-amber-700 text-sm">{pendingCount} pendiente{pendingCount > 1 ? 's' : ''}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            {/* Search */}
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Buscar alumno, padre o persona..."
-                className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm text-slate-700 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
-              />
-            </div>
-            {/* Date Filter */}
             <div>
-              <input
-                type="date"
-                value={filterDate}
-                onChange={e => setFilterDate(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm text-slate-700 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
-              />
+              <h1 className="text-2xl md:text-3xl font-black text-slate-800">Control de Permisos</h1>
+              <p className="text-xs md:text-sm text-slate-500">Gestión escolar de permisos de salida</p>
             </div>
-            {/* Export */}
-            <button
-              onClick={() => toast.info('Exportar', 'Descargando reporte de permisos... (demo)')}
-              className="p-3 bg-gradient-to-r from-purple-600 to-sky-600 text-white font-black text-xs uppercase tracking-widest rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
-            >
-              <Download size={16} /> Exportar
-            </button>
-          </div>
-
-          {/* Status tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {(['all', 'pendiente', 'confirmado', 'activo', 'expirado', 'cancelado'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilterStatus(f)}
-                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
-                  filterStatus === f
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-purple-50'
-                }`}
-              >
-                {f === 'all' ? 'Todos' : statusConfig[f].label}
-                {f !== 'all' && (
-                  <span className="ml-2 text-[10px]">
-                    ({permissions.filter(p => p.status === f).length})
-                  </span>
-                )}
-              </button>
-            ))}
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="parent-card parent-card--featured">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Hoy</p>
-            <p className="text-2xl md:text-3xl font-black text-purple-600">{todayPermissions.length}</p>
-            <p className="text-[10px] text-slate-400 mt-1">permisos para hoy</p>
-          </div>
-          <div className="parent-card parent-card--featured">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Pendientes</p>
-            <p className="text-2xl md:text-3xl font-black text-amber-600">{pendingCount}</p>
-            <p className="text-[10px] text-slate-400 mt-1">por confirmar</p>
-          </div>
-          <div className="parent-card parent-card--featured">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Confirmados</p>
-            <p className="text-2xl md:text-3xl font-black text-emerald-600">{permissions.filter(p => p.status === 'confirmado' || p.status === 'activo').length}</p>
-            <p className="text-[10px] text-slate-400 mt-1">aprobados</p>
-          </div>
-          <div className="parent-card parent-card--featured">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total</p>
-            <p className="text-2xl md:text-3xl font-black text-slate-700">{permissions.length}</p>
-            <p className="text-[10px] text-slate-400 mt-1">registrados</p>
-          </div>
+      {/* Stats Strip */}
+      <div className="max-w-6xl mx-auto mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Pendientes</p>
+          <p className="text-2xl font-black text-amber-600">{pendingCount}</p>
         </div>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Hoy</p>
+          <p className="text-2xl font-black text-indigo-600">{todayCount}</p>
+        </div>
+        <div className={`p-4 rounded-2xl shadow-sm border ${noAsisteToday > 0 ? 'bg-red-50 border-red-200' : 'bg-white border-slate-100'}`}>
+          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">No Asisten Hoy</p>
+          <p className={`text-2xl font-black ${noAsisteToday > 0 ? 'text-red-600' : 'text-slate-400'}`}>{noAsisteToday}</p>
+        </div>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total</p>
+          <p className="text-2xl font-black text-slate-600">{permissions.length}</p>
+        </div>
+      </div>
 
-        {/* Urgent Alert for pending TODAY permissions */}
-        {todayPermissions.filter(p => p.status === 'pendiente').length > 0 && (
-          <div className="parent-alert parent-alert--warning flex items-start gap-3">
-            <AlertTriangle size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-black text-sm text-slate-800">¡Atención! Permisos pendientes para hoy</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Hay {todayPermissions.filter(p => p.status === 'pendiente').length} permiso(s) de salida para el día de hoy que aún no han sido confirmados.
-                Revísalos y confirma o rechaza antes de la hora de salida.
-              </p>
+      {/* Tabs */}
+      <div className="max-w-6xl mx-auto mb-6 flex gap-2">
+        <button onClick={() => setTabView('dashboard')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${tabView === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
+          📋 Permisos
+        </button>
+        <button onClick={() => { setTabView('config'); setEditConfig(config); }}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${tabView === 'config' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
+          <Settings size={12} /> Configuración
+        </button>
+      </div>
+
+      <div className="max-w-6xl mx-auto">
+        {/* ===== DASHBOARD TAB ===== */}
+        {tabView === 'dashboard' && (
+          <div className="space-y-4">
+            {/* No-asiste alert */}
+            {noAsisteToday > 0 && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0"><AlertTriangle size={16} className="text-red-500" /></div>
+                <div>
+                  <p className="font-bold text-sm text-red-700">⚠️ {noAsisteToday} alumno(s) no asistirán hoy</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {permissions.filter(p => p.transporte === 'no_asiste' && p.status !== 'cancelado' && p.fecha === new Date().toISOString().split('T')[0]).map(p => (
+                      <span key={p.id} className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 rounded-lg text-[10px] font-bold text-red-600">
+                        {p.childPhoto} {p.childName} ({p.childGrade})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Filters */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1"><Filter size={12} /> Filtros</p>
+                <button onClick={handleExport} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-emerald-100">
+                  <Download size={12} /> Exportar CSV
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar alumno..."
+                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-300 outline-none" />
+                </div>
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as any)}
+                  className="p-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-300 outline-none">
+                  <option value="todos">Todos los estados</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="aprobado">Aprobados</option>
+                  <option value="rechazado">Rechazados</option>
+                  <option value="cancelado">Cancelados</option>
+                </select>
+                <select value={filterTransport} onChange={e => setFilterTransport(e.target.value as any)}
+                  className="p-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-300 outline-none">
+                  <option value="todos">Todo transporte</option>
+                  <option value="bus_alterno">🚌 Camión Alterno</option>
+                  <option value="auto_particular">🚗 Auto Particular</option>
+                  <option value="a_pie">🚶 A Pie</option>
+                  <option value="no_asiste">❌ No Asiste</option>
+                  <option value="otro">📍 Otro</option>
+                </select>
+                <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)}
+                  className="p-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-300 outline-none">
+                  <option value="">Todos los grados</option>
+                  {uniqueGrades.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                  className="p-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-300 outline-none" />
+              </div>
+            </div>
+
+            {/* Permission Cards */}
+            {filtered.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+                <ShieldCheck size={48} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-slate-500 font-medium">No hay permisos con estos filtros</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filtered.map(perm => {
+                  const sc = getStatusConfig(perm.status);
+                  const tl = getTransportLabel(perm.transporte);
+                  const isExp = expandedId === perm.id;
+                  const isPending = perm.status === 'pendiente';
+
+                  return (
+                    <div key={perm.id} className={`bg-white rounded-2xl shadow-sm border transition-all ${perm.transporte === 'no_asiste' ? 'border-red-200 bg-red-50/30' : isPending ? 'border-amber-200' : 'border-slate-100'}`}>
+                      <div className="p-4 cursor-pointer" onClick={() => setExpandedId(isExp ? null : perm.id)}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-2xl">{perm.childPhoto || '👤'}</span>
+                            <div className="min-w-0">
+                              <p className="font-bold text-slate-800 text-sm">{perm.childName}</p>
+                              <p className="text-xs text-slate-400">{perm.childGrade} - {perm.childGroup}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${sc.color}`}>{sc.label}</span>
+                            {isExp ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                          <span className="flex items-center gap-1">{tl.icon} {tl.label}</span>
+                          <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(perm.fecha).toLocaleDateString('es-MX', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                          {perm.horaSalida && <span className="flex items-center gap-1"><Clock size={12} /> {perm.horaSalida}</span>}
+                          {perm.busOriginal && <span className="flex items-center gap-1"><Bus size={12} /> {perm.busOriginal}</span>}
+                          {perm.busDestino && <span>→ {perm.busDestino}</span>}
+                        </div>
+                      </div>
+
+                      {isExp && (
+                        <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1">Motivo</p>
+                              <p className="text-slate-700">{perm.motivo}</p>
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1">Creado por</p>
+                              <p className="text-slate-700">{perm.createdByName}</p>
+                              <p className="text-slate-400 text-[10px]">{new Date(perm.creadoEn).toLocaleString('es-MX')}</p>
+                            </div>
+                          </div>
+                          {perm.transporteDetalle && (
+                            <div><p className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1">Detalle transporte</p><p className="text-xs text-slate-700">{perm.transporteDetalle}</p></div>
+                          )}
+                          {perm.personaAutorizada && (
+                            <div className="p-3 bg-slate-50 rounded-xl">
+                              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-2">Persona Autorizada</p>
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center"><User size={14} className="text-indigo-600" /></div>
+                                <div>
+                                  <p className="font-bold text-sm text-slate-800">{perm.personaAutorizada.nombre}</p>
+                                  <p className="text-xs text-slate-500">{perm.personaAutorizada.parentesco} • <Phone size={10} className="inline" /> {perm.personaAutorizada.telefono}</p>
+                                  {perm.personaAutorizada.identificacion && <p className="text-[10px] text-slate-400">ID: {perm.personaAutorizada.identificacion}</p>}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {perm.approvals && perm.approvals.length > 0 && (
+                            <div>
+                              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-2">Aprobaciones de padres</p>
+                              <div className="flex flex-wrap gap-2">
+                                {perm.approvals.map((a, i) => (
+                                  <span key={i} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold ${a.status === 'aprobado' ? 'bg-emerald-100 text-emerald-700' : a.status === 'rechazado' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    {a.status === 'aprobado' ? <CheckCircle2 size={10} /> : <Clock size={10} />} {a.parentName} — {a.status}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2 text-[10px]">
+                            <span className={`px-2 py-1 rounded-lg ${perm.notificationsSent.school ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>🏫 Colegio {perm.notificationsSent.school ? '✓' : '—'}</span>
+                            <span className={`px-2 py-1 rounded-lg ${perm.notificationsSent.coparent ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>👥 Co-padre {perm.notificationsSent.coparent ? '✓' : '—'}</span>
+                            {perm.notificationsSent.externalPerson && <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600">📱 Externo ✓</span>}
+                          </div>
+
+                          {isPending && (
+                            <div className="flex gap-2 pt-2">
+                              <button onClick={(e) => { e.stopPropagation(); handleApprove(perm.id); }}
+                                className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors">
+                                <CheckCircle2 size={14} /> Aprobar
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); handleReject(perm.id); }}
+                                className="flex-1 px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors">
+                                <X size={14} /> Rechazar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== CONFIG TAB ===== */}
+        {tabView === 'config' && (
+          <div className="space-y-4">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+              <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><Settings size={16} /> Configuración de Permisos</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Anticipation hours */}
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">Horas de anticipación mínima</label>
+                  <input type="number" value={editConfig.horasAnticipacion} onChange={e => setEditConfig(c => ({ ...c, horasAnticipacion: Number(e.target.value) }))} min={0} max={72}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-300 outline-none" />
+                  <p className="text-[10px] text-slate-400 mt-1">¿Con cuántas horas de anticipación deben solicitar el permiso?</p>
+                </div>
+
+                {/* Time limit */}
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">Hora límite de solicitud</label>
+                  <input type="time" value={editConfig.horaLimiteSolicitud} onChange={e => setEditConfig(c => ({ ...c, horaLimiteSolicitud: e.target.value }))}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-300 outline-none" />
+                </div>
+
+                {/* Max per week */}
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">Máx. permisos por semana (0 = sin límite)</label>
+                  <input type="number" value={editConfig.maxPermisosPorSemana} onChange={e => setEditConfig(c => ({ ...c, maxPermisosPorSemana: Number(e.target.value) }))} min={0} max={10}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-300 outline-none" />
+                </div>
+
+                {/* Custom message */}
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">Mensaje personalizado para padres</label>
+                  <input type="text" value={editConfig.mensajePersonalizado} onChange={e => setEditConfig(c => ({ ...c, mensajePersonalizado: e.target.value }))} placeholder="Ej: Favor de solicitar con anticipación"
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-300 outline-none" />
+                </div>
+              </div>
+
+              {/* Toggles */}
+              <div className="mt-6 space-y-3">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Opciones</p>
+                {[
+                  { key: 'requiereDosAprobaciones' as const, label: 'Requerir aprobación de ambos padres', desc: 'Si está activo, ambos padres deben aprobar el permiso' },
+                  { key: 'requiereIdentificacion' as const, label: 'Requerir identificación de persona autorizada', desc: 'Se pedirá INE o documento oficial' },
+                  { key: 'permitirNoAsiste' as const, label: 'Permitir reportar inasistencias', desc: 'Los padres podrán reportar que su hijo no asistirá' },
+                  { key: 'notificarDireccion' as const, label: 'Notificar a dirección', desc: 'Enviar copia de cada permiso a la dirección escolar' },
+                  { key: 'requiereMotivo' as const, label: 'Requerir motivo obligatorio', desc: 'El padre debe describir el motivo del permiso' },
+                  { key: 'bloqueoEnExamenes' as const, label: 'Bloquear durante exámenes', desc: 'No permitir permisos en fechas de examen' },
+                ].map(opt => (
+                  <div key={opt.key} className="flex items-start justify-between gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">{opt.label}</p>
+                      <p className="text-[10px] text-slate-400">{opt.desc}</p>
+                    </div>
+                    <button onClick={() => setEditConfig(c => ({ ...c, [opt.key]: !c[opt.key] }))}
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${editConfig[opt.key] ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${editConfig[opt.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Days allowed */}
+              <div className="mt-6">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Días permitidos</p>
+                <div className="flex flex-wrap gap-2">
+                  {DAYS.map(d => (
+                    <button key={d.key} onClick={() => setEditConfig(c => ({
+                      ...c,
+                      diasPermitidos: c.diasPermitidos.includes(d.key)
+                        ? c.diasPermitidos.filter(dd => dd !== d.key)
+                        : [...c.diasPermitidos, d.key]
+                    }))}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${editConfig.diasPermitidos.includes(d.key) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bus routes */}
+              <div className="mt-6">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Rutas de Camión</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {editConfig.rutasCamion.map((r, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
+                      <Bus size={12} /> {r}
+                      <button onClick={() => setEditConfig(c => ({ ...c, rutasCamion: c.rutasCamion.filter((_, idx) => idx !== i) }))}
+                        className="ml-1 hover:text-red-500"><X size={12} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input type="text" value={newRoute} onChange={e => setNewRoute(e.target.value)} placeholder="Agregar nueva ruta..."
+                    className="flex-1 p-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-300 outline-none" />
+                  <button onClick={() => {
+                    if (newRoute.trim()) {
+                      setEditConfig(c => ({ ...c, rutasCamion: [...c.rutasCamion, newRoute.trim()] }));
+                      setNewRoute('');
+                    }
+                  }} className="px-3 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-200">+ Agregar</button>
+                </div>
+              </div>
+
+              {/* Exam dates */}
+              {editConfig.bloqueoEnExamenes && (
+                <div className="mt-6">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Fechas de Examen (bloqueadas)</p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {editConfig.fechasExamen.map((f, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-medium">
+                        {f}
+                        <button onClick={() => setEditConfig(c => ({ ...c, fechasExamen: c.fechasExamen.filter((_, idx) => idx !== i) }))}
+                          className="ml-1 hover:text-red-900"><X size={12} /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <input type="date" onChange={e => {
+                    if (e.target.value) setEditConfig(c => ({ ...c, fechasExamen: [...c.fechasExamen, e.target.value] }));
+                  }}
+                    className="p-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-300 outline-none" />
+                </div>
+              )}
+
+              <button onClick={handleSaveConfig}
+                className="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg uppercase text-[10px] tracking-[2px] flex items-center justify-center gap-2">
+                <Save size={16} /> Guardar Configuración
+              </button>
             </div>
           </div>
         )}
-
-        {/* Permissions List */}
-        {filteredPermissions.length === 0 ? (
-          <div className="parent-card text-center py-12">
-            <ShieldCheck size={48} className="mx-auto text-slate-300 mb-4" />
-            <p className="font-black text-slate-400 text-lg">No hay permisos que coincidan con los filtros</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredPermissions.map(perm => {
-              const sConf = statusConfig[perm.status];
-              const isExpanded = expandedId === perm.id;
-              const isToday = perm.fecha === '2026-02-20';
-              const isPending = perm.status === 'pendiente';
-
-              return (
-                <div
-                  key={perm.id}
-                  className={`parent-card transition-all ${
-                    isPending && isToday ? 'border-l-4 border-l-amber-400 ring-2 ring-amber-100' :
-                    isPending ? 'border-l-4 border-l-amber-400' :
-                    perm.status === 'confirmado' || perm.status === 'activo' ? 'border-l-4 border-l-emerald-500' : ''
-                  }`}
-                >
-                  {/* Card Header */}
-                  <div
-                    className="flex items-start justify-between cursor-pointer"
-                    onClick={() => setExpandedId(isExpanded ? null : perm.id)}
-                  >
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="flex-shrink-0 mt-1">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-lg">
-                          👤
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-black text-slate-800">{perm.childName}</p>
-                          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{perm.childGrade}</span>
-                          {isToday && isPending && (
-                            <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded animate-pulse">
-                              ⚡ HOY
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">Padre: {perm.parentName}</p>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                            <Calendar size={12} /> {perm.fecha}
-                          </span>
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                            <Clock size={12} /> {perm.horaSalida}
-                          </span>
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                            {TRANSPORT_ICONS[perm.transporte]} {TRANSPORT_LABELS[perm.transporte]}
-                          </span>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black ${sConf.color} ${sConf.bg}`}>
-                            {sConf.icon} {sConf.label}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      {/* Quick action buttons for pending */}
-                      {isPending && (
-                        <>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleConfirm(perm.id); }}
-                            className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all"
-                            title="Confirmar"
-                          >
-                            <Check size={18} />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleReject(perm.id); }}
-                            className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all"
-                            title="Rechazar"
-                          >
-                            <X size={18} />
-                          </button>
-                        </>
-                      )}
-                      <div className="text-slate-400">
-                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Expanded Details */}
-                  {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
-                      {/* Reason */}
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Motivo</p>
-                        <p className="text-sm font-bold text-slate-700 bg-slate-50 p-3 rounded-lg">{perm.motivo}</p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Transport */}
-                        <div className="space-y-2">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Transporte</p>
-                          <div className="bg-purple-50 p-3 rounded-lg space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-purple-600">{TRANSPORT_ICONS[perm.transporte]}</span>
-                              <span className="text-sm font-black text-slate-800">{TRANSPORT_LABELS[perm.transporte]}</span>
-                            </div>
-                            {perm.transporteDetalle && (
-                              <p className="text-xs text-slate-600">{perm.transporteDetalle}</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Authorized Person */}
-                        <div className="space-y-2">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Persona Autorizada</p>
-                          <div className="bg-sky-50 p-3 rounded-lg space-y-1">
-                            <p className="text-sm font-black text-slate-800 flex items-center gap-2">
-                              <User size={14} className="text-sky-600" /> {perm.personaAutorizada.nombre}
-                            </p>
-                            {perm.personaAutorizada.parentesco && (
-                              <p className="text-xs text-slate-600">{perm.personaAutorizada.parentesco}</p>
-                            )}
-                            <p className="text-xs text-slate-600 flex items-center gap-1">
-                              <Phone size={10} /> {perm.personaAutorizada.telefono}
-                            </p>
-                            {perm.personaAutorizada.identificacion && (
-                              <p className="text-xs text-slate-600 font-mono">{perm.personaAutorizada.identificacion}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Parent Contact */}
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Contacto del padre</p>
-                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg">
-                          <p className="text-sm font-bold text-slate-700">{perm.parentName}</p>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
-                            <Phone size={10} /> {perm.parentPhone}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Confirmation info */}
-                      {perm.confirmedBy && (
-                        <div className="bg-emerald-50 p-3 rounded-lg flex items-center gap-2">
-                          <CheckCircle2 size={14} className="text-emerald-600" />
-                          <span className="text-xs font-bold text-emerald-700">
-                            Confirmado por {perm.confirmedBy} • {perm.confirmedAt ? new Date(perm.confirmedAt).toLocaleString('es-MX') : ''}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Created info */}
-                      <p className="text-[10px] text-slate-400">
-                        Creado: {new Date(perm.creadoEn).toLocaleString('es-MX')}
-                      </p>
-
-                      {/* Actions for pending */}
-                      {isPending && (
-                        <div className="flex gap-3 pt-2">
-                          <button
-                            onClick={() => handleConfirm(perm.id)}
-                            className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                          >
-                            <Check size={16} /> Confirmar Permiso
-                          </button>
-                          <button
-                            onClick={() => handleReject(perm.id)}
-                            className="flex-1 py-3 bg-white border border-red-200 text-red-600 font-black text-xs uppercase tracking-widest rounded-lg hover:bg-red-50 transition-all flex items-center justify-center gap-2"
-                          >
-                            <X size={16} /> Rechazar
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Instructions for staff */}
-        <div className="parent-card bg-gradient-to-br from-purple-50 to-sky-50 border border-purple-100 space-y-3">
-          <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-            <AlertTriangle size={16} className="text-purple-500" /> Protocolo de Salida
-          </h3>
-          <ol className="text-xs text-slate-600 space-y-2 list-decimal list-inside">
-            <li><strong>Verificar identidad</strong> de la persona autorizada con su INE/identificación</li>
-            <li><strong>Confirmar</strong> el nombre del alumno y el padre que autorizó</li>
-            <li><strong>Llamar al padre</strong> si hay cualquier duda o inconsistencia</li>
-            <li><strong>Registrar la hora de salida</strong> en el control de puerta</li>
-            <li>Si el alumno se va en camión alterno, <strong>notificar al chofer</strong> correspondiente</li>
-          </ol>
-        </div>
       </div>
     </div>
   );

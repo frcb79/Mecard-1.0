@@ -595,3 +595,324 @@ PRÓXIMOS PASOS:
    - Backup de puntos remanentes en tabla histórica
 
 */
+
+-- ============================================
+-- 13. MULTI-PARENT: PARENT-STUDENT LINKS
+-- ============================================
+CREATE TABLE IF NOT EXISTS parent_student_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  parent_id UUID NOT NULL,
+  student_id UUID NOT NULL,
+  
+  role TEXT NOT NULL DEFAULT 'parent',  -- Future: 'titular', 'asociado'
+  
+  linked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  linked_by UUID NOT NULL,              -- parent_id who created the link
+  invitation_code TEXT,                 -- 6-char code for co-parent invite
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'pending', 'revoked')),
+  
+  UNIQUE(parent_id, student_id)
+);
+
+CREATE INDEX idx_psl_parent ON parent_student_links(parent_id);
+CREATE INDEX idx_psl_student ON parent_student_links(student_id);
+
+-- ============================================
+-- 14. AUTHORIZED CONTACTS (family level)
+-- ============================================
+CREATE TABLE IF NOT EXISTS authorized_contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  family_id TEXT NOT NULL,               -- Shared between co-parents
+  
+  nombre TEXT NOT NULL,
+  parentesco TEXT NOT NULL,              -- "Abuela", "Tío", etc.
+  telefono TEXT NOT NULL,
+  email TEXT,
+  identificacion TEXT NOT NULL,          -- INE number
+  foto TEXT,
+  is_default BOOLEAN NOT NULL DEFAULT false,
+  
+  created_by UUID NOT NULL,             -- parent_id who added
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_ac_family ON authorized_contacts(family_id);
+
+-- ============================================
+-- 15. EXIT PERMISSIONS
+-- ============================================
+CREATE TABLE IF NOT EXISTS exit_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL,
+  
+  -- Student
+  child_id UUID NOT NULL,
+  child_name TEXT NOT NULL,
+  child_grade TEXT NOT NULL,
+  child_group TEXT,
+  
+  -- Transport
+  bus_original TEXT,                     -- Normal bus route
+  bus_destino TEXT,                      -- Alternate bus/destination
+  transporte TEXT NOT NULL CHECK (transporte IN ('bus_alterno', 'auto_particular', 'a_pie', 'no_asiste', 'otro')),
+  transporte_detalle TEXT,
+  
+  -- Request
+  fecha DATE NOT NULL,
+  hora_salida TIME,
+  motivo TEXT,
+  
+  -- Authorized person (inline or reference)
+  authorized_contact_id UUID REFERENCES authorized_contacts(id),
+  persona_nombre TEXT,
+  persona_parentesco TEXT,
+  persona_telefono TEXT,
+  persona_email TEXT,
+  persona_identificacion TEXT,
+  
+  -- Creator
+  created_by UUID NOT NULL,
+  created_by_name TEXT NOT NULL,
+  
+  -- Status
+  status TEXT NOT NULL DEFAULT 'pendiente' CHECK (status IN ('pendiente', 'aprobado', 'rechazado', 'cancelado', 'expirado')),
+  
+  -- School approval
+  school_status TEXT DEFAULT 'pendiente' CHECK (school_status IN ('pendiente', 'aprobado', 'rechazado')),
+  school_reviewed_by UUID,
+  school_reviewed_by_name TEXT,
+  school_reviewed_at TIMESTAMPTZ,
+  school_notes TEXT,
+  
+  -- Notifications
+  notif_school BOOLEAN NOT NULL DEFAULT false,
+  notif_coparent BOOLEAN NOT NULL DEFAULT false,
+  notif_receiving_family BOOLEAN NOT NULL DEFAULT false,
+  notif_external_person BOOLEAN NOT NULL DEFAULT false,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_ep_school ON exit_permissions(school_id);
+CREATE INDEX idx_ep_child ON exit_permissions(child_id);
+CREATE INDEX idx_ep_date ON exit_permissions(fecha);
+CREATE INDEX idx_ep_status ON exit_permissions(status);
+
+-- ============================================
+-- 16. PERMISSION APPROVALS (multi-parent)
+-- ============================================
+CREATE TABLE IF NOT EXISTS permission_approvals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  permission_id UUID NOT NULL REFERENCES exit_permissions(id) ON DELETE CASCADE,
+  parent_id UUID NOT NULL,
+  parent_name TEXT NOT NULL,
+  
+  status TEXT NOT NULL DEFAULT 'pendiente' CHECK (status IN ('pendiente', 'aprobado', 'rechazado')),
+  
+  device_info TEXT,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_pa_permission ON permission_approvals(permission_id);
+
+-- ============================================
+-- 17. SCHOOL PERMISSION CONFIG
+-- ============================================
+CREATE TABLE IF NOT EXISTS school_permission_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL UNIQUE,
+  
+  horas_anticipacion INT NOT NULL DEFAULT 6,
+  requiere_dos_aprobaciones BOOLEAN NOT NULL DEFAULT false,
+  hora_limite_solicitud TIME NOT NULL DEFAULT '14:00',
+  dias_permitidos TEXT[] NOT NULL DEFAULT ARRAY['LUN','MAR','MIE','JUE','VIE'],
+  requiere_identificacion BOOLEAN NOT NULL DEFAULT true,
+  permitir_no_asiste BOOLEAN NOT NULL DEFAULT true,
+  max_permisos_por_semana INT NOT NULL DEFAULT 0,  -- 0 = sin limite
+  notificar_direccion BOOLEAN NOT NULL DEFAULT true,
+  requiere_motivo BOOLEAN NOT NULL DEFAULT true,
+  mensaje_personalizado TEXT DEFAULT '',
+  bloqueo_en_examenes BOOLEAN NOT NULL DEFAULT false,
+  fechas_examen DATE[] DEFAULT ARRAY[]::DATE[],
+  rutas_camion TEXT[] DEFAULT ARRAY[]::TEXT[],
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- 18. SCHOOL TRIPS
+-- ============================================
+CREATE TABLE IF NOT EXISTS school_trips (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL,
+  
+  nombre TEXT NOT NULL,
+  destino TEXT NOT NULL,
+  descripcion TEXT,
+  
+  fecha_salida DATE NOT NULL,
+  fecha_regreso DATE NOT NULL,
+  
+  costo_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+  costo_por_alumno DECIMAL(10,2) NOT NULL,
+  
+  cupo_maximo INT NOT NULL,
+  cupo_disponible INT NOT NULL,
+  
+  grados_permitidos TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  
+  status TEXT NOT NULL DEFAULT 'borrador' CHECK (status IN ('borrador', 'abierto', 'cerrado', 'completado', 'cancelado')),
+  
+  fecha_limite_pago DATE,
+  fecha_limite_inscripcion DATE,
+  
+  permite_parcialidades BOOLEAN NOT NULL DEFAULT false,
+  numero_parcialidades INT NOT NULL DEFAULT 1,
+  
+  requiere_documentos BOOLEAN NOT NULL DEFAULT false,
+  documentos_requeridos TEXT[] DEFAULT ARRAY[]::TEXT[],
+  
+  itinerario TEXT,
+  contacto_emergencia TEXT,
+  notas TEXT,
+  image_emoji TEXT DEFAULT '🎒',
+  
+  creado_por UUID NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_st_school ON school_trips(school_id);
+CREATE INDEX idx_st_status ON school_trips(status);
+
+-- ============================================
+-- 19. TRIP ENROLLMENTS
+-- ============================================
+CREATE TABLE IF NOT EXISTS trip_enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trip_id UUID NOT NULL REFERENCES school_trips(id) ON DELETE CASCADE,
+  student_id UUID NOT NULL,
+  student_name TEXT NOT NULL,
+  student_grade TEXT NOT NULL,
+  parent_id UUID NOT NULL,
+  parent_name TEXT NOT NULL,
+  
+  status TEXT NOT NULL DEFAULT 'inscrito' CHECK (status IN ('inscrito', 'pagado_parcial', 'pagado', 'cancelado', 'lista_espera')),
+  
+  total_pagado DECIMAL(10,2) NOT NULL DEFAULT 0,
+  saldo_pendiente DECIMAL(10,2) NOT NULL DEFAULT 0,
+  
+  documentos_entregados TEXT[] DEFAULT ARRAY[]::TEXT[],
+  
+  approved_by_parent BOOLEAN NOT NULL DEFAULT false,
+  approval_date TIMESTAMPTZ,
+  
+  inscrito_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  UNIQUE(trip_id, student_id)
+);
+
+CREATE INDEX idx_te_trip ON trip_enrollments(trip_id);
+CREATE INDEX idx_te_student ON trip_enrollments(student_id);
+
+-- ============================================
+-- 20. TRIP PAYMENTS
+-- ============================================
+CREATE TABLE IF NOT EXISTS trip_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  enrollment_id UUID NOT NULL REFERENCES trip_enrollments(id) ON DELETE CASCADE,
+  trip_id UUID NOT NULL,
+  student_id UUID NOT NULL,
+  student_name TEXT,
+  
+  monto DECIMAL(10,2) NOT NULL,
+  parcialidad INT NOT NULL DEFAULT 1,
+  total_parcialidades INT NOT NULL DEFAULT 1,
+  
+  metodo_pago TEXT,              -- SPEI, Tarjeta, Efectivo
+  comprobante TEXT,
+  
+  status TEXT NOT NULL DEFAULT 'pendiente' CHECK (status IN ('pendiente', 'confirmado', 'rechazado')),
+  
+  fecha_pago TIMESTAMPTZ,
+  fecha_limite DATE,
+  
+  registrado_por UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_tp_enrollment ON trip_payments(enrollment_id);
+CREATE INDEX idx_tp_trip ON trip_payments(trip_id);
+
+-- ============================================
+-- 21. TRIP REMINDERS
+-- ============================================
+CREATE TABLE IF NOT EXISTS trip_reminders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trip_id UUID NOT NULL REFERENCES school_trips(id) ON DELETE CASCADE,
+  trip_name TEXT NOT NULL,
+  
+  tipo TEXT NOT NULL CHECK (tipo IN ('pago', 'documento', 'general', 'inscripcion')),
+  mensaje TEXT NOT NULL,
+  
+  destinatarios UUID[] DEFAULT ARRAY[]::UUID[],
+  
+  fecha_envio TIMESTAMPTZ NOT NULL,
+  enviado BOOLEAN NOT NULL DEFAULT false,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- 22. ACTIVITY LOG (multi-parent audit trail)
+-- ============================================
+CREATE TABLE IF NOT EXISTS activity_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  user_name TEXT NOT NULL,
+  
+  action TEXT NOT NULL,           -- deposit, limit_change, permission_create, etc.
+  entity_type TEXT NOT NULL,      -- student, permission, trip, wallet, contact, parent
+  entity_id TEXT NOT NULL,
+  
+  details TEXT NOT NULL,          -- Human-readable description
+  metadata JSONB,
+  
+  device_info TEXT,
+  ip_address TEXT,
+  
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_al_user ON activity_log(user_id);
+CREATE INDEX idx_al_entity ON activity_log(entity_type, entity_id);
+CREATE INDEX idx_al_timestamp ON activity_log(timestamp DESC);
+
+-- ============================================
+-- 23. NOTIFICATIONS (referenced in code, now defined)
+-- ============================================
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  recipient_id UUID NOT NULL,
+  recipient_role TEXT NOT NULL,
+  
+  type TEXT NOT NULL,
+  
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  
+  data JSONB,
+  
+  read_at TIMESTAMPTZ,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_notif_recipient ON notifications(recipient_id);
+CREATE INDEX idx_notif_unread ON notifications(recipient_id) WHERE read_at IS NULL;

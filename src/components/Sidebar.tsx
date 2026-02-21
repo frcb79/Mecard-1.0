@@ -6,7 +6,7 @@ import {
   Wallet, Building2, PenTool, UserCircle, QrCode,
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
-  ChevronRight, Gift, Star, Menu, X
+  ChevronRight, Gift, Star, Menu, X, MapPin
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -78,6 +78,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school/import', label: 'Importar', icon: <Layers size={18} /> },
         { path: '/school/config', label: 'Configuración', icon: <Settings size={18} /> },
         { path: '/school/permissions', label: 'Permisos Salida', icon: <ShieldCheck size={18} /> },
+        { path: '/school/trips', label: 'Viajes', icon: <MapPin size={18} /> },
       ],
     }];
   }
@@ -115,6 +116,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/parent/permissions', label: 'Permisos de Salida', icon: <ShieldCheck size={18} /> },
         { path: '/parent/gifts', label: 'Regalos', icon: <Gift size={18} /> },
         { path: '/parent/rewards', label: 'Premios', icon: <Star size={18} /> },
+        { path: '/parent/trips', label: 'Viajes', icon: <MapPin size={18} /> },
       ],
     }];
   }
