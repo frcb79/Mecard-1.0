@@ -147,8 +147,13 @@ export const Sidebar: React.FC = () => {
   const userRole = user?.role || UserRole.STUDENT;
   const sections = getNavSections(userRole);
 
-  const isActive = (path: string): boolean =>
-    location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path: string): boolean => {
+    if (location.pathname === path) return true;
+    // Index routes like /parent, /school, /admin etc. should only match exactly
+    const segments = path.split('/').filter(Boolean);
+    if (segments.length <= 1) return false;
+    return location.pathname.startsWith(path + '/');
+  };
 
   // Close mobile nav on route change
   useEffect(() => {
