@@ -88,7 +88,7 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
       return;
     }
 
-    if (!selectedFavorite.product_id) {
+    if (!selectedFavorite.productId) {
       setError('Error: producto inválido');
       return;
     }
@@ -102,11 +102,11 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
         user.id,
         selectedFriend.id,
         {
-          id: selectedFavorite.product_id,
-          name: selectedFavorite.product_name || 'Producto',
+          id: selectedFavorite.productId,
+          name: selectedFavorite.productName || 'Producto',
           price: 0 // Price will be fetched from inventory in actual implementation
         },
-        currentSchool?.id || '',
+        schoolId,
         message || undefined
       );
 
@@ -117,7 +117,7 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
       setSelectedFriend(null);
 
       if (onGiftSent) {
-        onGiftSent(selectedFriend.id, selectedFavorite.product_id);
+        onGiftSent(selectedFriend.id, selectedFavorite.productId);
       }
 
       // Clear success message after 3 seconds
@@ -184,15 +184,15 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
                       : 'border-gray-200 hover:border-blue-300'
                   }`}
                 >
-                  {fav.product_image && (
+                  {fav.productImage && (
                     <img
-                      src={fav.product_image}
-                      alt={fav.product_name}
+                      src={fav.productImage}
+                      alt={fav.productName}
                       className="w-full h-20 object-cover rounded mb-2"
                     />
                   )}
                   <p className="font-semibold text-sm text-gray-800">
-                    {fav.product_name}
+                    {fav.productName}
                   </p>
                 </button>
               ))}
@@ -232,7 +232,7 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
             <p className="text-sm text-green-800">
-              ✅ ¡Regalo enviado! {selectedFriend?.full_name} lo recibirá en la app
+              ✅ ¡Regalo enviado! {selectedFriend?.fullName} lo recibirá en la app
             </p>
           </div>
         )}
@@ -257,11 +257,11 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
       {selectedFriend && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-900">
-            <strong>Enviando a:</strong> {selectedFriend.full_name}
+            <strong>Enviando a:</strong> {selectedFriend.fullName}
             {selectedFavorite && (
               <>
                 <br />
-                <strong>Producto:</strong> {selectedFavorite.product_name}
+                <strong>Producto:</strong> {selectedFavorite.productName}
               </>
             )}
           </p>

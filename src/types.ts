@@ -1991,7 +1991,7 @@ export interface ActivityLogEntry {
   userName: string;
   
   action: ActivityAction;
-  entityType: 'student' | 'permission' | 'trip' | 'wallet' | 'contact' | 'parent';
+  entityType: 'student' | 'permission' | 'trip' | 'wallet' | 'contact' | 'parent' | 'session';
   entityId: string;
   
   details: string;                 // Descripción legible: "Depositó $500 a Santiago"

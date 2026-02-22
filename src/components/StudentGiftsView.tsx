@@ -107,7 +107,7 @@ export default function StudentGiftsView() {
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">De: <span className="font-bold">{gift.senderId === '2024003' ? 'Valentina López' : 'Mateo Hernández'}</span></p>
                       {gift.message && <p className="text-xs text-slate-500 italic mt-1">"{gift.message}"</p>}
-                      <p className="text-[10px] text-slate-400 mt-1">{timeAgo(gift.sentAt)}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">{timeAgo(gift.createdAt)}</p>
                     </div>
                   </div>
 
@@ -244,7 +244,7 @@ export default function StudentGiftsView() {
                       <p className="text-xs text-slate-500 mt-0.5">Para: <span className="font-bold">{gift.receiverId === '2024003' ? 'Valentina López' : 'Compañero'}</span></p>
                       {gift.message && <p className="text-xs text-slate-500 italic mt-1">"{gift.message}"</p>}
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[10px] text-slate-400">{timeAgo(gift.sentAt)}</span>
+                        <span className="text-[10px] text-slate-400">{timeAgo(gift.createdAt)}</span>
                         <span className="text-[10px] font-bold text-emerald-600">${gift.amount.toFixed(2)}</span>
                       </div>
                     </div>

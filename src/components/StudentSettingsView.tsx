@@ -213,9 +213,9 @@ export default function StudentSettingsView() {
               {/* Categories */}
               <div className="mb-4">
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-2">Categorías bloqueadas</p>
-                {(student.restrictedCategories?.length || 0) > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {student.restrictedCategories?.map((cat: string) => (
+                {(student.restrictions?.restrictedCategories?.length || 0) > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {student.restrictions?.restrictedCategories?.map((cat: string) => (
                       <span key={cat} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-bold">🚫 {cat}</span>
                     ))}
                   </div>
@@ -227,9 +227,9 @@ export default function StudentSettingsView() {
               {/* Allergens */}
               <div className="mb-4">
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-2">Alergias registradas</p>
-                {(student.allergies?.length || 0) > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {student.allergies?.map((a: string) => (
+                {(student.restrictions?.allergens?.length || 0) > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {student.restrictions?.allergens?.map((a: string) => (
                       <span key={a} className="px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold">⚠️ {a}</span>
                     ))}
                   </div>
