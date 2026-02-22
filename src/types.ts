@@ -2022,3 +2022,30 @@ export function isSale(transaction: WalletTransaction | Sale): transaction is Sa
 export function isDeposit(transaction: WalletTransaction | Deposit): transaction is Deposit {
   return 'method' in transaction && 'allocations' in transaction;
 }
+
+// ============================================
+// 29. STUDENT NOTIFICATIONS
+// ============================================
+
+export type StudentNotificationType =
+  | 'purchase'
+  | 'deposit'
+  | 'low_balance'
+  | 'gift_received'
+  | 'gift_sent'
+  | 'limit_changed'
+  | 'trip_reminder'
+  | 'reward_earned'
+  | 'restriction_added'
+  | 'permission_created';
+
+export interface StudentNotification {
+  id: string;
+  type: StudentNotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  timestamp: string;
+  relatedEntityId?: string;
+  icon?: string;
+}

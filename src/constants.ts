@@ -1,5 +1,5 @@
 
-import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, ActivityLogEntry } from './types';
+import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend } from './types';
 
 // Add missing clabePersonal property
 export const MOCK_STUDENT: StudentProfile = {
@@ -594,3 +594,99 @@ export const MOCK_COPARENT = {
   phone: '+52 55 8877 6655',
   invitationCode: 'ABC123',
 };
+
+// ============================================
+// STUDENT TRANSACTIONS (demo mode)
+// ============================================
+export const MOCK_STUDENT_TRANSACTIONS: Transaction[] = [
+  { id: 'txn_s01', date: '2026-02-21T12:30:00Z', type: 'PURCHASE', description: 'Torta de Jamón', amount: -45.00, balance: 105.50 },
+  { id: 'txn_s02', date: '2026-02-21T10:15:00Z', type: 'PURCHASE', description: 'Jugo de Naranja', amount: -25.00, balance: 150.50 },
+  { id: 'txn_s03', date: '2026-02-20T13:00:00Z', type: 'PURCHASE', description: 'Ensalada César + Agua', amount: -55.00, balance: 175.50 },
+  { id: 'txn_s04', date: '2026-02-20T08:30:00Z', type: 'DEPOSIT', description: 'Depósito de Mamá', amount: 500.00, balance: 230.50 },
+  { id: 'txn_s05', date: '2026-02-19T12:45:00Z', type: 'PURCHASE', description: 'Sandwich de Pollo', amount: -38.00, balance: -269.50 },
+  { id: 'txn_s06', date: '2026-02-19T10:00:00Z', type: 'GIFT_RECEIVED', description: 'Regalo de Valentina M. — Galletas', amount: 0, balance: -231.50 },
+  { id: 'txn_s07', date: '2026-02-18T13:20:00Z', type: 'PURCHASE', description: 'Pizza Pepperoni', amount: -60.00, balance: -231.50 },
+  { id: 'txn_s08', date: '2026-02-18T08:00:00Z', type: 'GIFT_SENT', description: 'Regalo a Diego R. — Brownie', amount: -35.00, balance: -171.50 },
+  { id: 'txn_s09', date: '2026-02-17T12:00:00Z', type: 'PURCHASE', description: 'Hot Dog + Limonada', amount: -42.00, balance: -136.50 },
+  { id: 'txn_s10', date: '2026-02-15T08:00:00Z', type: 'DEPOSIT', description: 'Depósito de Papá', amount: 300.00, balance: -94.50 },
+];
+
+// ============================================
+// STUDENT NOTIFICATIONS (demo mode)
+// ============================================
+export const MOCK_STUDENT_NOTIFICATIONS: StudentNotification[] = [
+  { id: 'notif_s01', type: 'purchase', title: 'Compra realizada', message: 'Torta de Jamón — $45.00 en Cafetería Principal', read: false, timestamp: '2026-02-21T12:30:00Z', icon: '🛒' },
+  { id: 'notif_s02', type: 'low_balance', title: 'Saldo bajo', message: 'Tu saldo es $105.50. Pide a tus papás que recarguen.', read: false, timestamp: '2026-02-21T12:31:00Z', icon: '⚠️' },
+  { id: 'notif_s03', type: 'gift_received', title: '¡Nuevo regalo!', message: 'Valentina M. te envió Galletas 🍪', read: false, timestamp: '2026-02-19T10:00:00Z', icon: '🎁', relatedEntityId: 'gift_r02' },
+  { id: 'notif_s04', type: 'deposit', title: 'Depósito recibido', message: 'Mamá depositó $500.00 a tu cuenta', read: true, timestamp: '2026-02-20T08:30:00Z', icon: '💰' },
+  { id: 'notif_s05', type: 'reward_earned', title: '¡Puntos ganados!', message: 'Ganaste 45 puntos MeCard por tu compra de hoy', read: true, timestamp: '2026-02-21T12:30:00Z', icon: '⭐' },
+  { id: 'notif_s06', type: 'limit_changed', title: 'Límite modificado', message: 'Papá cambió tu límite diario a $300.00', read: true, timestamp: '2026-02-19T14:00:00Z', icon: '🔒' },
+  { id: 'notif_s07', type: 'trip_reminder', title: 'Viaje próximo', message: 'Campamento Sierra Gorda — Faltan 15 días', read: true, timestamp: '2026-02-18T09:00:00Z', icon: '🗺️' },
+  { id: 'notif_s08', type: 'permission_created', title: 'Permiso de salida', message: 'Mamá creó un permiso de salida para el viernes', read: true, timestamp: '2026-02-20T08:00:00Z', icon: '📋' },
+  { id: 'notif_s09', type: 'restriction_added', title: 'Nueva restricción', message: 'Se bloqueó la categoría Bebidas Azucaradas', read: true, timestamp: '2026-02-15T10:00:00Z', icon: '🚫' },
+  { id: 'notif_s10', type: 'gift_sent', title: 'Regalo enviado', message: 'Enviaste un Brownie a Diego R.', read: true, timestamp: '2026-02-18T08:00:00Z', icon: '📤' },
+];
+
+// ============================================
+// STUDENT GIFTS (demo mode)
+// ============================================
+export const MOCK_STUDENT_GIFTS_SENT: Gift[] = [
+  {
+    id: 'gift_s01', senderId: '2024001', senderName: 'Santiago González', senderStudentId: 'STU-001',
+    receiverId: 'stu_003', receiverName: 'Diego Ramírez', receiverStudentId: 'STU-003',
+    inventoryItemId: 'prod_05', productName: 'Brownie de Chocolate', productImage: '🍫',
+    amount: 35.00, redemptionCode: 'MEC7X2', status: GiftStatus.REDEEMED,
+    message: '¡Feliz cumpleaños bro!', createdAt: '2026-02-18T08:00:00Z', expiresAt: '2026-03-20T08:00:00Z',
+    redeemedAt: '2026-02-18T13:00:00Z', thankYouMessage: '¡Gracias Santiago! Estuvo buenísimo 🤤',
+  },
+  {
+    id: 'gift_s02', senderId: '2024001', senderName: 'Santiago González', senderStudentId: 'STU-001',
+    receiverId: 'stu_004', receiverName: 'Sofía López', receiverStudentId: 'STU-004',
+    inventoryItemId: 'prod_08', productName: 'Galletas de Avena', productImage: '🍪',
+    amount: 28.00, redemptionCode: 'MEC9K4', status: GiftStatus.PENDING,
+    message: 'Por ayudarme con mate 📐', createdAt: '2026-02-20T10:00:00Z', expiresAt: '2026-03-22T10:00:00Z',
+  },
+  {
+    id: 'gift_s03', senderId: '2024001', senderName: 'Santiago González', senderStudentId: 'STU-001',
+    receiverId: 'stu_005', receiverName: 'Mateo Hernández', receiverStudentId: 'STU-005',
+    inventoryItemId: 'prod_02', productName: 'Jugo de Naranja', productImage: '🧃',
+    amount: 25.00, redemptionCode: 'MECQ3L', status: GiftStatus.EXPIRED,
+    createdAt: '2026-01-10T12:00:00Z', expiresAt: '2026-02-09T12:00:00Z',
+  },
+];
+
+export const MOCK_STUDENT_GIFTS_RECEIVED: Gift[] = [
+  {
+    id: 'gift_r01', senderId: 'stu_003', senderName: 'Diego Ramírez', senderStudentId: 'STU-003',
+    receiverId: '2024001', receiverName: 'Santiago González', receiverStudentId: 'STU-001',
+    inventoryItemId: 'prod_06', productName: 'Pizza Pepperoni', productImage: '🍕',
+    amount: 60.00, redemptionCode: 'MECW8P', status: GiftStatus.PENDING,
+    message: '¡Por el gol de ayer! ⚽', createdAt: '2026-02-21T09:00:00Z', expiresAt: '2026-03-23T09:00:00Z',
+  },
+  {
+    id: 'gift_r02', senderId: 'stu_004', senderName: 'Valentina Martínez', senderStudentId: 'STU-004',
+    receiverId: '2024001', receiverName: 'Santiago González', receiverStudentId: 'STU-001',
+    inventoryItemId: 'prod_08', productName: 'Galletas', productImage: '🍪',
+    amount: 28.00, redemptionCode: 'MECR5N', status: GiftStatus.REDEEMED,
+    message: '¡Feliz día! 🎉', createdAt: '2026-02-19T10:00:00Z', expiresAt: '2026-03-21T10:00:00Z',
+    redeemedAt: '2026-02-19T12:30:00Z',
+  },
+  {
+    id: 'gift_r03', senderId: 'stu_006', senderName: 'Camila Torres', senderStudentId: 'STU-006',
+    receiverId: '2024001', receiverName: 'Santiago González', receiverStudentId: 'STU-001',
+    inventoryItemId: 'prod_01', productName: 'Sandwich de Pollo', productImage: '🥪',
+    amount: 38.00, redemptionCode: 'MECJ2T', status: GiftStatus.EXPIRED,
+    createdAt: '2026-01-15T08:00:00Z', expiresAt: '2026-02-14T08:00:00Z',
+  },
+];
+
+// ============================================
+// STUDENT FRIENDS (demo mode)
+// ============================================
+export const MOCK_STUDENT_FRIENDS: Friend[] = [
+  { id: 'stu_003', fullName: 'Diego Ramírez', studentId: 'STU-003', grade: '4° Primaria - B', balance: 180.00, favorites: ['prod_05', 'prod_06'], favoritesPublic: true, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
+  { id: 'stu_004', fullName: 'Valentina Martínez', studentId: 'STU-004', grade: '4° Primaria - A', balance: 220.00, favorites: ['prod_08', 'prod_02'], favoritesPublic: true, allergies: ['Gluten'], status: 'ACTIVE', schoolId: 'mx_01' },
+  { id: 'stu_005', fullName: 'Mateo Hernández', studentId: 'STU-005', grade: '4° Primaria - B', balance: 95.00, favorites: ['prod_01', 'prod_03'], favoritesPublic: false, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
+  { id: 'stu_006', fullName: 'Camila Torres', studentId: 'STU-006', grade: '4° Primaria - A', balance: 310.00, favorites: ['prod_01', 'prod_08', 'prod_05'], favoritesPublic: true, allergies: ['Lactosa'], status: 'ACTIVE', schoolId: 'mx_01' },
+  { id: 'stu_007', fullName: 'Emiliano Ruiz', studentId: 'STU-007', grade: '3° Primaria - C', balance: 145.00, favorites: null, favoritesPublic: false, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
+];

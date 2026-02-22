@@ -124,12 +124,12 @@ export default function StudentMenuView() {
   const avgPrice = filteredMenu.length > 0 ? filteredMenu.reduce((acc, i) => acc + i.price, 0) / filteredMenu.length : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-orange-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50 p-8">
       <div className="max-w-6xl mx-auto">
         {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2 flex items-center gap-3">
-            <UtensilsCrossed className="w-8 h-8 text-orange-600" />
+            <UtensilsCrossed className="w-8 h-8 text-emerald-600" />
             Menú Disponible Hoy
           </h1>
           <p className="text-slate-500 font-medium">
@@ -179,7 +179,7 @@ export default function StudentMenuView() {
               placeholder="Buscar productos, comidas, bebidas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-[16px] outline-none focus:border-orange-600 transition-all font-medium"
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-[16px] outline-none focus:border-emerald-600 transition-all font-medium"
             />
           </div>
 
@@ -191,7 +191,7 @@ export default function StudentMenuView() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-2 rounded-[16px] font-black text-[10px] uppercase tracking-[1px] transition-all ${
                   selectedCategory === cat.id
-                    ? 'bg-orange-600 text-white shadow-lg'
+                    ? 'bg-emerald-600 text-white shadow-lg'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -211,8 +211,8 @@ export default function StudentMenuView() {
               <p className="text-2xl font-black text-emerald-600">{availableCount}</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] font-black text-orange-400 uppercase tracking-[2px]">Precio Promedio</p>
-              <p className="text-2xl font-black text-orange-600">${avgPrice.toFixed(2)}</p>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[2px]">Precio Promedio</p>
+              <p className="text-2xl font-black text-emerald-600">${avgPrice.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -253,21 +253,21 @@ export default function StudentMenuView() {
                 <p className="text-[11px] text-slate-500 font-medium mb-4">{item.description}</p>
 
                 {/* NUTRICIÓN */}
-                <div className="mb-4 p-3 bg-orange-50 rounded-[16px]">
-                  <p className="text-[9px] font-black text-orange-600 uppercase tracking-[1px] mb-2 flex items-center gap-1">
+                <div className="mb-4 p-3 bg-emerald-50 rounded-[16px]">
+                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[1px] mb-2 flex items-center gap-1">
                     <TrendingUp className="w-3 h-3" /> Nutrición
                   </p>
                   <div className="grid grid-cols-3 gap-2 text-[10px] font-bold text-slate-700">
                     <div>
-                      <p className="text-orange-600">{item.nutrition.calories}</p>
+                      <p className="text-emerald-600">{item.nutrition.calories}</p>
                       <p className="text-slate-500">kcal</p>
                     </div>
                     <div>
-                      <p className="text-orange-600">{item.nutrition.protein}</p>
+                      <p className="text-emerald-600">{item.nutrition.protein}</p>
                       <p className="text-slate-500">proteína</p>
                     </div>
                     <div>
-                      <p className="text-orange-600">{item.nutrition.carbs}</p>
+                      <p className="text-emerald-600">{item.nutrition.carbs}</p>
                       <p className="text-slate-500">carbs</p>
                     </div>
                   </div>
@@ -277,13 +277,13 @@ export default function StudentMenuView() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[1px]">Precio</p>
-                    <p className="text-2xl font-black text-orange-600">${item.price.toFixed(2)}</p>
+                    <p className="text-2xl font-black text-emerald-600">${item.price.toFixed(2)}</p>
                   </div>
                   <button
                     disabled={!item.available}
                     className={`px-4 py-2 rounded-[16px] font-black text-[10px] uppercase tracking-[1px] transition-all ${
                       item.available
-                        ? 'bg-orange-600 hover:bg-orange-700 text-white hover:shadow-lg'
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-lg'
                         : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                     }`}
                   >

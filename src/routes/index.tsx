@@ -62,7 +62,13 @@ const StudentDashboard = React.lazy(() => import('../components/StudentDashboard
 const TransactionHistory = React.lazy(() => import('../components/TransactionHistory'));
 const StudentCredentialView = React.lazy(() => import('../components/StudentCredentialView'));
 const StudentMenuView = React.lazy(() => import('../components/StudentMenuView'));
-const StudentSocialHub = React.lazy(() => import('../components/StudentSocialHub'));
+const StudentGiftsView = React.lazy(() => import('../components/StudentGiftsView'));
+const StudentRewardsView = React.lazy(() => import('../components/StudentRewardsView'));
+const StudentNotificationsView = React.lazy(() => import('../components/StudentNotificationsView'));
+const StudentReportsView = React.lazy(() => import('../components/StudentReportsView'));
+const StudentTripsView = React.lazy(() => import('../components/StudentTripsView'));
+const StudentPermissionsView = React.lazy(() => import('../components/StudentPermissionsView'));
+const StudentSettingsView = React.lazy(() => import('../components/StudentSettingsView'));
 const DashboardPlaceholder = React.lazy(() => import('../components/DashboardPlaceholder'));
 
 // ========== SUSPENSE FALLBACK ==========
@@ -428,21 +434,81 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/student/social"
-        element={
-          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
-            <RoleBasedLayout>
-              <StudentSocialHub />
-            </RoleBasedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/student/menu"
         element={
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
               <StudentMenuView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/gifts"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentGiftsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/rewards"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentRewardsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/notifications"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentNotificationsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/reports"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentReportsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/trips"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentTripsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/permissions"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentPermissionsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/settings"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentSettingsView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

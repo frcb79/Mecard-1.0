@@ -19,7 +19,8 @@ interface GiftSenderProps {
  * 5. Balance is deferred until POS redemption
  */
 export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
-  const { user, currentSchool } = useAuth();
+  const { user } = useAuth();
+  const schoolId = (user as any)?.schoolId || 'mx_01';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
@@ -33,7 +34,7 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
 
   // Step 1: Search for friend
   const handleSearchFriend = async () => {
-    if (!searchTerm.trim() || !currentSchool?.id) {
+    if (!searchTerm.trim() || !schoolId) {
       setError('Ingresa la matrícula o nombre del amigo');
       return;
     }
@@ -42,7 +43,7 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
       setLoading(true);
       setError(null);
       const { data, error: searchError } = await socialService.findPotentialFriend(
-        currentSchool.id,
+        schoolId,
         searchTerm
       );
 

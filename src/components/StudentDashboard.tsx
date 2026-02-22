@@ -1,24 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { Wallet, ShoppingBag, History, Users, Zap, Sparkles, Award, Gift } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import {
+  Wallet, QrCode, History, UtensilsCrossed, Gift, Star, Bell,
+  MapPin, ShieldCheck, Settings, Sparkles, Award, TrendingUp,
+  ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Zap
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { StudentProfile } from '../types';
+import { MOCK_STUDENT, MOCK_STUDENT_TRANSACTIONS, MOCK_STUDENT_NOTIFICATIONS, MOCK_STUDENT_GIFTS_RECEIVED } from '../constants';
 import { getFinancialEducation, getHealthChallenges } from '../services/geminiService';
-import { StudentRewardsDashboard } from './StudentRewardsDashboard';
-import { RewardsMarketplace } from './RewardsMarketplace';
 
-/**
- * Simplified StudentDashboard - Demo Mode
- * Works with or without Supabase
- * Now includes MeCard Rewards integration
- */
 export default function StudentDashboard() {
   const { user, isAuthenticated, isStudent } = useAuth();
-  const [activeTab, setActiveTab] = useState<'wallet' | 'shop' | 'history' | 'learning' | 'rewards' | 'marketplace'>('wallet');
-  const [dailyLesson, setDailyLesson] = useState<string>('');
-  const [dailyChallenge, setDailyChallenge] = useState<string>('');
+  const navigate = useNavigate();
+  const [dailyLesson, setDailyLesson] = useState('');
+  const [dailyChallenge, setDailyChallenge] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  
+
   if (!isAuthenticated || !isStudent) {
     return <Navigate to="/login" replace />;
   }
@@ -30,203 +27,235 @@ export default function StudentDashboard() {
   const loadAIContent = async () => {
     setAiLoading(true);
     try {
-      const lesson = await getFinancialEducation(15, 'cafeteria');
+      const [lesson, challenge] = await Promise.all([
+        getFinancialEducation(10, 'cafeteria'),
+        getHealthChallenges(10, [], []),
+      ]);
       setDailyLesson(lesson);
-
-      const challenge = await getHealthChallenges(15, [], []);
       setDailyChallenge(challenge);
-    } catch (error) {
-      console.error('Error loading AI content:', error);
+    } catch (e) {
+      console.error('AI content error:', e);
     } finally {
       setAiLoading(false);
     }
   };
 
-  // Demo student profile
-  const profile: StudentProfile = {
-    id: user?.id || 'student-001',
-    userId: user?.id || 'student-001',
-    studentId: 'STU-001',
-    fullName: user?.fullName || 'Demo Student',
-    firstName: user?.fullName?.split(' ')[0] || 'Demo',
-    lastName: user?.fullName?.split(' ').slice(1).join(' ') || 'Student',
-    grade: '10',
-    schoolId: user?.schoolId || 'school-001',
-    balance: 250.75,
-    dailyLimit: 100,
-    spentToday: 25.50,
-    totalSpent: 500,
-    restrictions: {
-      restrictedCategories: [],
-      restrictedProducts: [],
-      allergens: []
-    },
-    parentId: 'parent-001',
-    parentName: 'Demo Parent',
-    photo: undefined,
-    enrollmentDate: new Date().toISOString(),
-    status: 'ACTIVE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    credential: {
-      id: user?.id || 'student-001',
-      studentId: 'STU-001',
-      qrCode: `MECARD_STU001`,
-      issuedAt: new Date().toISOString(),
-      isActive: true,
-      usageCount: 12
-    },
-    favorites: [],
-    favoritesPublic: false
-  };
+  const student = MOCK_STUDENT;
+  const recentTxns = MOCK_STUDENT_TRANSACTIONS.slice(0, 4);
+  const unreadNotifs = MOCK_STUDENT_NOTIFICATIONS.filter(n => !n.read).length;
+  const pendingGifts = MOCK_STUDENT_GIFTS_RECEIVED.filter(g => g.status === 'PENDING').length;
+  const available = student.dailyLimit - student.spentToday;
+  const spentPercent = Math.min((student.spentToday / student.dailyLimit) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-surface-50 p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-extrabold text-surface-800 tracking-tight mb-1">
-            ¡Hola, {profile.firstName}! 👋
-          </h1>
-          <p className="text-surface-400 text-sm">
-            Bienvenido a tu panel de control
-          </p>
-        </div>
+        <header className="mb-6 md:mb-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white text-2xl shadow-lg overflow-hidden">
+                {student.photo ? (
+                  <img src={student.photo} alt="" className="w-full h-full object-cover" />
+                ) : <span>👦</span>}
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
+                  ¡Hola, {(student as any).name?.split(' ')[0] || 'Santiago'}! 👋
+                </h1>
+                <p className="text-xs text-slate-400 flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded font-bold">{student.grade}</span>
+                  <span>Matrícula: {student.id}</span>
+                </p>
+              </div>
+            </div>
+            <button onClick={() => navigate('/student/notifications')} className="relative p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm">
+              <Bell size={20} />
+              {unreadNotifs > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadNotifs}</span>
+              )}
+            </button>
+          </div>
+        </header>
 
         {/* Balance Card */}
-        <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl p-6 sm:p-8 text-white mb-6 shadow-md">
-          <p className="text-brand-100 text-xs font-semibold uppercase tracking-wider mb-1">Tu Saldo Disponible</p>
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">${profile.balance.toFixed(2)}</h2>
-            <div className="text-right">
-              <p className="text-brand-100 text-xs">Gastado hoy</p>
-              <p className="text-xl font-bold">${profile.spentToday}</p>
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-3xl p-6 md:p-8 text-white mb-6 shadow-xl shadow-emerald-200/50">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-[3px]">Mi Saldo</p>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight mt-1">${student.balance.toFixed(2)}</h2>
+            </div>
+            <button onClick={() => navigate('/student/id')} className="p-3 bg-white/20 rounded-2xl hover:bg-white/30 transition-colors">
+              <QrCode size={24} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 bg-white/10 rounded-xl">
+              <p className="text-emerald-100 text-[10px] font-bold uppercase">Gastado hoy</p>
+              <p className="text-lg font-black">${student.spentToday.toFixed(2)}</p>
+            </div>
+            <div className="p-3 bg-white/10 rounded-xl">
+              <p className="text-emerald-100 text-[10px] font-bold uppercase">Disponible</p>
+              <p className="text-lg font-black">${available.toFixed(2)}</p>
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="flex justify-between text-[10px] text-emerald-100 mb-1">
+              <span>Límite diario</span>
+              <span>${student.spentToday.toFixed(0)} / ${student.dailyLimit.toFixed(0)}</span>
+            </div>
+            <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white/80 rounded-full transition-all" style={{ width: `${spentPercent}%` }} />
             </div>
           </div>
         </div>
 
-        {/* Tab Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6" role="tablist" aria-label="Secciones del estudiante">
-          {([
-            { key: 'wallet', icon: <Wallet size={22} />, label: 'Billetera', desc: 'Gestiona tu saldo', activeColor: 'bg-brand-500' },
-            { key: 'shop', icon: <ShoppingBag size={22} />, label: 'Tienda', desc: 'Compra productos', activeColor: 'bg-trust-500' },
-            { key: 'history', icon: <History size={22} />, label: 'Historial', desc: 'Transacciones', activeColor: 'bg-purple-600' },
-            { key: 'learning', icon: <Sparkles size={22} />, label: 'Aprender', desc: 'Retos & Educación', activeColor: 'bg-brand-600' },
-            { key: 'rewards', icon: <Award size={22} />, label: 'Mis Puntos', desc: 'MeCard Rewards', activeColor: 'bg-warm-500' },
-            { key: 'marketplace', icon: <Gift size={22} />, label: 'Canjear', desc: 'Premios & Regalos', activeColor: 'bg-rose-600' },
-          ] as const).map((tab) => (
-            <button
-              key={tab.key}
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              onClick={() => setActiveTab(tab.key as typeof activeTab)}
-              className={`p-4 sm:p-5 rounded-xl text-left transition-all ${
-                activeTab === tab.key
-                  ? `${tab.activeColor} text-white shadow-md scale-[1.02]`
-                  : 'bg-white text-surface-700 hover:shadow-sm border border-surface-100'
-              }`}
-            >
-              <span className="mb-2 block">{tab.icon}</span>
-              <h3 className="font-bold text-sm mb-0.5">{tab.label}</h3>
-              <p className={`text-xs ${activeTab === tab.key ? 'text-white/70' : 'text-surface-400'}`}>{tab.desc}</p>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-3 mb-6">
+          {[
+            { path: '/student/id', icon: <QrCode size={20} />, label: 'Credencial', color: 'from-emerald-500 to-emerald-600' },
+            { path: '/student/menu', icon: <UtensilsCrossed size={20} />, label: 'Menú', color: 'from-teal-500 to-teal-600' },
+            { path: '/student/history', icon: <History size={20} />, label: 'Historial', color: 'from-cyan-500 to-cyan-600' },
+            { path: '/student/gifts', icon: <Gift size={20} />, label: 'Regalos', color: 'from-pink-500 to-pink-600' },
+            { path: '/student/rewards', icon: <Star size={20} />, label: 'Premios', color: 'from-amber-500 to-amber-600' },
+            { path: '/student/reports', icon: <TrendingUp size={20} />, label: 'Reportes', color: 'from-indigo-500 to-indigo-600' },
+          ].map(a => (
+            <button key={a.path} onClick={() => navigate(a.path)}
+              className="flex flex-col items-center gap-1.5 p-3 md:p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all group">
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${a.color} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform`}>
+                {a.icon}
+              </div>
+              <span className="text-[10px] md:text-xs font-bold text-slate-600">{a.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="mt-4">
-          {activeTab === 'wallet' && (
-            <div className="bg-white rounded-2xl p-6 shadow-xs border border-surface-100">
-              <h2 className="text-xl font-bold mb-4 text-surface-800">Mi Billetera</h2>
-              <div className="space-y-2">
-                {[
-                  { label: 'Saldo Actual', value: `$${profile.balance}`, color: 'text-brand-600' },
-                  { label: 'Límite Diario', value: `$${profile.dailyLimit}`, color: 'text-surface-800' },
-                  { label: 'Disponible Hoy', value: `$${(profile.dailyLimit - profile.spentToday).toFixed(2)}`, color: 'text-trust-600' },
-                ].map((row) => (
-                  <div key={row.label} className="flex justify-between items-center p-3.5 bg-surface-50 rounded-xl">
-                    <span className="font-medium text-sm text-surface-600">{row.label}</span>
-                    <span className={`text-lg font-bold ${row.color}`}>{row.value}</span>
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          {/* Recent Transactions */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><History size={16} /> Últimas Compras</h3>
+              <button onClick={() => navigate('/student/history')} className="text-emerald-600 text-xs font-bold flex items-center gap-1 hover:underline">
+                Ver todo <ChevronRight size={12} />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {recentTxns.map(t => (
+                <div key={t.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.amount > 0 ? 'bg-emerald-100' : 'bg-rose-100'}`}>
+                      {t.amount > 0 ? <ArrowDownLeft size={14} className="text-emerald-600" /> : <ArrowUpRight size={14} className="text-rose-600" />}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">{t.description}</p>
+                      <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Clock size={8} />
+                        {new Date(t.date).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'shop' && (
-            <div className="bg-white rounded-2xl p-6 shadow-xs border border-surface-100">
-              <h2 className="text-xl font-bold mb-3 text-surface-800">Tienda</h2>
-              <p className="text-surface-500 text-sm">La tienda estará disponible pronto en el modo completo.</p>
-              <p className="text-surface-400 text-xs mt-1">Podrás comprar productos de la cafetería, papelería y más.</p>
-            </div>
-          )}
-
-          {activeTab === 'history' && (
-            <div className="bg-white rounded-2xl p-6 shadow-xs border border-surface-100">
-              <h2 className="text-xl font-bold mb-3 text-surface-800">Historial de Transacciones</h2>
-              <p className="text-surface-500 text-sm">No hay transacciones aún.</p>
-              <p className="text-surface-400 text-xs mt-1">Tus compras aparecerán aquí.</p>
-            </div>
-          )}
-
-          {activeTab === 'learning' && (
-            <div className="space-y-4">
-              <div className="bg-brand-50 rounded-xl p-5 border border-brand-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles size={18} className="text-brand-600" />
-                  <h3 className="text-base font-bold text-surface-800">Lección del Día</h3>
+                  <span className={`text-sm font-black ${t.amount > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                    {t.amount > 0 ? '+' : ''}${Math.abs(t.amount).toFixed(2)}
+                  </span>
                 </div>
-                {aiLoading ? (
-                  <p className="text-surface-500 text-sm">Preparando tu lección…</p>
-                ) : (
-                  <p className="text-surface-700 text-sm leading-relaxed">{dailyLesson}</p>
-                )}
-              </div>
-              <div className="bg-trust-50 rounded-xl p-5 border border-trust-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Award size={18} className="text-trust-600" />
-                  <h3 className="text-base font-bold text-surface-800">Reto de Hoy</h3>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-4">
+            {/* Pending Gifts */}
+            {pendingGifts > 0 && (
+              <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-2xl p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-xl">🎁</div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">Tienes {pendingGifts} regalo{pendingGifts > 1 ? 's' : ''} pendiente{pendingGifts > 1 ? 's' : ''}</p>
+                      <p className="text-[10px] text-slate-500">Ve al POS a canjear tu código</p>
+                    </div>
+                  </div>
+                  <button onClick={() => navigate('/student/gifts')} className="px-3 py-2 bg-pink-500 text-white rounded-xl text-[10px] font-bold hover:bg-pink-600">
+                    Ver
+                  </button>
                 </div>
-                {aiLoading ? (
-                  <p className="text-surface-500 text-sm">Creando tu reto…</p>
-                ) : (
-                  <p className="text-surface-700 text-sm leading-relaxed">{dailyChallenge}</p>
-                )}
-                <button className="mt-3 bg-trust-500 hover:bg-trust-600 text-white font-semibold px-4 py-2 rounded-lg text-xs transition-colors">
-                  Completar Reto
+              </div>
+            )}
+
+            {/* Rewards Preview */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2"><Star size={16} /> MeCard Rewards</h3>
+                <button onClick={() => navigate('/student/rewards')} className="text-amber-600 text-xs font-bold flex items-center gap-1 hover:underline">
+                  Ir <ChevronRight size={12} />
                 </button>
               </div>
-              <div className="bg-brand-50/50 rounded-xl p-4 border border-brand-100">
-                <p className="text-brand-800 text-xs font-medium">
-                  <strong>Gemini AI Coach:</strong> Completa retos y lecciones para desbloquear logros.
-                </p>
+              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+                <div className="text-3xl">🏆</div>
+                <div className="flex-1">
+                  <p className="text-2xl font-black text-slate-800">1,250</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Puntos MeCard</p>
+                </div>
+                <div className="text-right">
+                  <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-black uppercase">Gold</span>
+                  <p className="text-[10px] text-slate-400 mt-1">x1.5 puntos</p>
+                </div>
               </div>
             </div>
-          )}
 
-          {activeTab === 'rewards' && (
-            <StudentRewardsDashboard
-              studentId={profile.id}
-              schoolId={profile.schoolId}
-              onMarketplaceClick={() => setActiveTab('marketplace')}
-            />
-          )}
-
-          {activeTab === 'marketplace' && (
-            <RewardsMarketplace
-              studentId={profile.id}
-              schoolId={profile.schoolId}
-              onRedemptionSuccess={() => setActiveTab('rewards')}
-            />
-          )}
+            {/* AI Learning Mini */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={16} className="text-emerald-600" />
+                <h3 className="font-bold text-slate-800 text-sm">Lección del Día</h3>
+              </div>
+              {aiLoading ? (
+                <div className="flex items-center gap-2 text-slate-400 text-xs">
+                  <div className="w-4 h-4 border-2 border-emerald-300 border-t-transparent rounded-full animate-spin" />
+                  Preparando tu lección…
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">{dailyLesson || 'Ahorra un poco cada día y verás cómo crece tu alcancía 🐷'}</p>
+                  <div className="p-3 bg-teal-50 rounded-xl border border-teal-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Award size={12} className="text-teal-600" />
+                      <span className="text-[10px] font-bold text-teal-700 uppercase">Reto de Hoy</span>
+                    </div>
+                    <p className="text-xs text-slate-600">{dailyChallenge || 'Elige una fruta en vez de un snack hoy 🍎'}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Demo info */}
-        <div className="mt-6 bg-brand-50 border border-brand-200 rounded-xl p-4 flex gap-3">
-          <Zap size={18} className="text-brand-500 shrink-0 mt-0.5" />
+        {/* Bottom Quick Nav */}
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { path: '/student/trips', icon: '🗺️', label: 'Viajes', desc: 'Próximas excursiones' },
+            { path: '/student/permissions', icon: '📋', label: 'Permisos', desc: 'Permisos de salida' },
+            { path: '/student/notifications', icon: '🔔', label: 'Notificaciones', desc: `${unreadNotifs} sin leer` },
+            { path: '/student/settings', icon: '⚙️', label: 'Configuración', desc: 'Mi perfil' },
+          ].map(a => (
+            <button key={a.path} onClick={() => navigate(a.path)}
+              className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all text-left">
+              <span className="text-xl">{a.icon}</span>
+              <div>
+                <p className="text-xs font-bold text-slate-700">{a.label}</p>
+                <p className="text-[10px] text-slate-400">{a.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Demo Banner */}
+        <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
+          <Zap size={18} className="text-emerald-500 shrink-0" />
           <div>
-            <p className="font-semibold text-brand-900 text-sm mb-0.5">Modo Demo Activado</p>
-            <p className="text-brand-700 text-xs">Los datos reales se cargarán cuando se conecte Supabase.</p>
+            <p className="font-bold text-emerald-900 text-xs">Modo Demo</p>
+            <p className="text-emerald-700 text-[10px]">Datos de ejemplo — se conectará a Supabase en producción.</p>
           </div>
         </div>
       </div>

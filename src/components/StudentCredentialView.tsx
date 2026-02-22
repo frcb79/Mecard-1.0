@@ -8,12 +8,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { QrCode, Download, Share2, Copy, CheckCircle, Users } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../hooks/useAuth';
+import { MOCK_STUDENT } from '../constants';
 
 export default function StudentCredentialView() {
   const { user } = useAuth();
   const qrRef = useRef<any>(null);
   const [copied, setCopied] = useState(false);
-  const [balance, setBalance] = useState<number>(850.00);
+  const balance = MOCK_STUDENT.balance;
 
   // Generar datos del QR
   const qrData = user ? JSON.stringify({
@@ -53,7 +54,7 @@ export default function StudentCredentialView() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50 p-8">
       <div className="max-w-2xl mx-auto">
         {/* HEADER */}
         <div className="mb-12">
@@ -66,15 +67,15 @@ export default function StudentCredentialView() {
         </div>
 
         {/* CREDENCIAL CARD */}
-        <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border-2 border-indigo-100 mb-8">
+        <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border-2 border-emerald-100 mb-8">
           {/* HEADER GRADIENT */}
-          <div className="h-32 bg-gradient-to-r from-indigo-600 to-indigo-500 relative overflow-hidden">
-            <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-indigo-400/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-[-20%] left-[-10%] w-32 h-32 bg-indigo-300/20 rounded-full blur-3xl"></div>
+          <div className="h-32 bg-gradient-to-r from-emerald-600 to-teal-500 relative overflow-hidden">
+            <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-emerald-400/20 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-[-20%] left-[-10%] w-32 h-32 bg-teal-300/20 rounded-full blur-3xl"></div>
             
             <div className="relative h-full flex items-center justify-between px-8">
               <div>
-                <p className="text-indigo-100 text-[11px] font-black uppercase tracking-[3px] mb-1">
+                <p className="text-emerald-100 text-[11px] font-black uppercase tracking-[3px] mb-1">
                   Credencial Estudiante
                 </p>
                 <h2 className="text-white text-2xl font-black">MeCard Network</h2>
@@ -87,7 +88,7 @@ export default function StudentCredentialView() {
           <div className="p-12 space-y-8">
             {/* DATOS PERSONALES */}
             <div className="space-y-4">
-              <h3 className="text-sm font-black text-indigo-400 uppercase tracking-[3px]">
+              <h3 className="text-sm font-black text-emerald-500 uppercase tracking-[3px]">
                 Información Personal
               </h3>
               <div className="bg-slate-50 rounded-[24px] p-6 space-y-4">
@@ -100,8 +101,8 @@ export default function StudentCredentialView() {
                       {user?.fullName || 'Nombre del Estudiante'}
                     </p>
                   </div>
-                  <div className="bg-indigo-100 px-4 py-2 rounded-[16px]">
-                    <p className="text-[9px] font-black text-indigo-600 uppercase tracking-[2px]">
+                  <div className="bg-emerald-100 px-4 py-2 rounded-[16px]">
+                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[2px]">
                       ACTIVO
                     </p>
                   </div>
@@ -126,7 +127,7 @@ export default function StudentCredentialView() {
 
             {/* QR CODE SECTION */}
             <div className="space-y-4">
-              <h3 className="text-sm font-black text-indigo-400 uppercase tracking-[3px]">
+              <h3 className="text-sm font-black text-emerald-500 uppercase tracking-[3px]">
                 Código de Acceso
               </h3>
               <div className="bg-slate-50 rounded-[24px] p-8 flex flex-col items-center space-y-4">
@@ -157,7 +158,7 @@ export default function StudentCredentialView() {
                 {/* COPY BUTTON */}
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-black rounded-[16px] px-4 py-2 transition-all text-[10px] uppercase tracking-[2px]"
+                  className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-black rounded-[16px] px-4 py-2 transition-all text-[10px] uppercase tracking-[2px]"
                 >
                   {copied ? (
                     <>
@@ -174,17 +175,17 @@ export default function StudentCredentialView() {
 
             {/* BALANCE & ACCESS */}
             <div className="space-y-4">
-              <h3 className="text-sm font-black text-indigo-400 uppercase tracking-[3px]">
+              <h3 className="text-sm font-black text-emerald-500 uppercase tracking-[3px]">
                 Saldo Disponible
               </h3>
-              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-[24px] p-8 border-2 border-indigo-200">
-                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[2px] mb-2">
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-100 rounded-[24px] p-8 border-2 border-emerald-200">
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[2px] mb-2">
                   Saldo actual
                 </p>
-                <p className="text-5xl font-black text-indigo-900 tracking-tighter">
+                <p className="text-5xl font-black text-emerald-900 tracking-tighter">
                   ${balance.toFixed(2)}
                 </p>
-                <p className="text-[9px] text-indigo-700 mt-4">
+                <p className="text-[9px] text-teal-700 mt-4">
                   💡 Tu saldo se actualiza en tiempo real con cada compra. Consulta tu billetera para más detalles.
                 </p>
               </div>
@@ -198,7 +199,7 @@ export default function StudentCredentialView() {
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={handleDownload}
-            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-4 rounded-[24px] transition-all shadow-lg hover:shadow-xl"
+            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-4 rounded-[24px] transition-all shadow-lg hover:shadow-xl"
           >
             <Download className="w-5 h-5" />
             Descargar

@@ -45,8 +45,8 @@ const TRANSACTION_CONFIG = {
   },
   GIFT_RECEIVED: {
     icon: Gift,
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50',
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
     label: 'Regalo Recibido'
   },
   GIFT_SENT: {
@@ -88,7 +88,7 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <RefreshCw className="animate-spin text-indigo-600" size={40} />
+        <RefreshCw className="animate-spin text-emerald-600" size={40} />
       </div>
     );
   }
@@ -120,8 +120,8 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
             onClick={() => setShowFilters(!showFilters)}
             className={`px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
               showFilters
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white border-2 border-slate-100 text-slate-600 hover:border-indigo-200'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-white border-2 border-slate-100 text-slate-600 hover:border-emerald-200'
             }`}
           >
             <Filter size={16} />
@@ -142,8 +142,8 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-indigo-50 rounded-2xl">
-              <TrendingUp size={20} className="text-indigo-600" />
+            <div className="p-3 bg-emerald-50 rounded-2xl">
+              <TrendingUp size={20} className="text-emerald-600" />
             </div>
             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
               Total
@@ -211,7 +211,7 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
                 onClick={() => setFilters({ ...filters, dateRange: range })}
                 className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
                   filters.dateRange === range
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-emerald-600 text-white'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >

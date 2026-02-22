@@ -130,7 +130,13 @@ function getNavSections(role: UserRole): NavSection[] {
       { path: '/student/id', label: 'Mi Credencial', icon: <QrCode size={18} /> },
       { path: '/student/history', label: 'Historial', icon: <History size={18} /> },
       { path: '/student/menu', label: 'Menú', icon: <UtensilsCrossed size={18} /> },
-      { path: '/student/social', label: 'Social', icon: <MessageSquare size={18} /> },
+      { path: '/student/gifts', label: 'Regalos', icon: <Gift size={18} /> },
+      { path: '/student/rewards', label: 'Premios', icon: <Star size={18} /> },
+      { path: '/student/notifications', label: 'Notificaciones', icon: <MessageSquare size={18} /> },
+      { path: '/student/reports', label: 'Reportes', icon: <PieChart size={18} /> },
+      { path: '/student/trips', label: 'Viajes', icon: <MapPin size={18} /> },
+      { path: '/student/permissions', label: 'Permisos', icon: <ShieldCheck size={18} /> },
+      { path: '/student/settings', label: 'Configuración', icon: <Settings size={18} /> },
     ],
   }];
 }
