@@ -16,13 +16,13 @@ import {
   Calendar,
   RefreshCw,
 } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from '../Button';
 import {
   generateRevenueAnalytics,
   generateReconciliationReport,
   formatCurrency,
-} from '../services/BillingService';
-import type { RevenueAnalytics, ReconciliationReport, SchoolMetrics } from '../services/BillingService';
+} from '../../services/BillingService';
+import type { RevenueAnalytics, ReconciliationReport, SchoolMetrics } from '../../services/BillingService';
 
 export default function MecardAnalyticsDashboard() {
   const [period, setPeriod] = useState(

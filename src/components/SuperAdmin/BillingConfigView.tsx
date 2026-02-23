@@ -7,14 +7,13 @@
 import React, { useState, useEffect } from 'react'
 import { SchoolBillingConfig } from '../../types'
 import { getBillingConfig, updateBillingConfig, formatCurrency, formatPercentage } from '../../services/BillingService'
-import { Card, Button, Input, Alert, Tabs, Badge } from 'lucide-react'
 
 interface BillingConfigViewProps {
-  schoolId: string
+  schoolId?: string
   onSaved?: (config: SchoolBillingConfig) => void
 }
 
-export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, onSaved }) => {
+export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId = 'mx_01', onSaved }) => {
   const [config, setConfig] = useState<SchoolBillingConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -81,11 +80,11 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
 
       {/* Message Alert */}
       {message && (
-        <Alert className={message.type === 'success' ? 'bg-green-50' : 'bg-red-50'}>
+        <div className={`rounded-lg p-4 ${message.type === 'success' ? 'bg-green-50' : 'bg-red-50'}`}>
           <span className={message.type === 'success' ? 'text-green-700' : 'text-red-700'}>
             {message.text}
           </span>
-        </Alert>
+        </div>
       )}
 
       {/* Tabs */}
@@ -114,7 +113,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
 
       {/* Tab: Infrastructure */}
       {activeTab === 'infrastructure' && (
-        <Card className="p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
           <h2 className="text-xl font-bold">Infraestructura y Ventas</h2>
 
           <div className="grid grid-cols-2 gap-6">
@@ -122,7 +121,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Setup Fee (One-time)</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.setupFee}
                   onChange={handleNumberChange('setupFee')}
@@ -137,7 +136,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Monthly Rent</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.monthlyRent}
                   onChange={handleNumberChange('monthlyRent')}
@@ -152,7 +151,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Yearly Card Cost (per student)</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.yearlyCardCost}
                   onChange={handleNumberChange('yearlyCardCost')}
@@ -167,7 +166,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Card Design Fee (One-time)</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.cardDesignFee}
                   onChange={handleNumberChange('cardDesignFee')}
@@ -177,19 +176,19 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Tab: Deposits */}
       {activeTab === 'deposits' && (
-        <Card className="p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
           <h2 className="text-xl font-bold">Fees de Depósitos (Padres)</h2>
 
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-2">Fee Tarjeta Crédito/Débito</label>
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   type="number"
                   value={(config.depositFeeCard * 100).toFixed(1)}
                   onChange={(e) => updateField('depositFeeCard', parseFloat(e.target.value) / 100)}
@@ -206,7 +205,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Fee SPEI Fijo</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.depositFeeSPEI}
                   onChange={handleNumberChange('depositFeeSPEI')}
@@ -221,7 +220,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Fee Depósito en Efectivo</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.depositFeeCash}
                   onChange={handleNumberChange('depositFeeCash')}
@@ -233,19 +232,19 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <p className="text-xs text-gray-500 mt-1">Siempre $0 - sin comisión</p>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Tab: POS */}
       {activeTab === 'pos' && (
-        <Card className="p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
           <h2 className="text-xl font-bold">Comisiones POS / Cafetería</h2>
 
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-2">POS Markup % (en precio)</label>
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   type="number"
                   value={(config.posMarkupPercentage * 100).toFixed(1)}
                   onChange={(e) => updateField('posMarkupPercentage', parseFloat(e.target.value) / 100)}
@@ -260,7 +259,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
             <div>
               <label className="block text-sm font-medium mb-2">POS Comisión % (por venta)</label>
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   type="number"
                   value={(config.posCommissionPercentage * 100).toFixed(1)}
                   onChange={(e) => updateField('posCommissionPercentage', parseFloat(e.target.value) / 100)}
@@ -273,17 +272,17 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
             </div>
           </div>
 
-          <Alert className="bg-blue-50">
+          <div className="rounded-lg p-4 bg-blue-50">
             <p className="text-sm text-blue-700">
               💡 <strong>Nota:</strong> Las escuelas NO reciben % de ventas POS. Solo reciben si ELLOS manejan la cafetería.
             </p>
-          </Alert>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Tab: Concessionaire */}
       {activeTab === 'concessionaire' && (
-        <Card className="p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
           <h2 className="text-xl font-bold">Fees Concesionario</h2>
           <p className="text-sm text-gray-600 mb-4">Solo aplica si hay concesionario separado (no escuela)</p>
 
@@ -292,7 +291,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Monthly System Fee</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.concessMonthlySystemFee}
                   onChange={handleNumberChange('concessMonthlySystemFee')}
@@ -306,7 +305,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Monthly Tech Support Fee</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.concessTechSupportFee}
                   onChange={handleNumberChange('concessTechSupportFee')}
@@ -319,7 +318,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
             <div className="col-span-2">
               <label className="block text-sm font-medium mb-2">Early Withdrawal Fee %</label>
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   type="number"
                   value={(config.earlyWithdrawalFeePercentage * 100).toFixed(1)}
                   onChange={(e) => updateField('earlyWithdrawalFeePercentage', parseFloat(e.target.value) / 100)}
@@ -331,12 +330,12 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <p className="text-xs text-gray-500 mt-1">Cargo extra para retiro antes de 7 días</p>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Tab: Limits */}
       {activeTab === 'limits' && (
-        <Card className="p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
           <h2 className="text-xl font-bold">Límites de Seguridad</h2>
 
           <div className="grid grid-cols-2 gap-6">
@@ -344,7 +343,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Max Depósito por Transacción</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.maxDepositPerTx}
                   onChange={handleNumberChange('maxDepositPerTx')}
@@ -358,7 +357,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Límite Diario Estudiante</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.studentDailyLimit}
                   onChange={handleNumberChange('studentDailyLimit')}
@@ -372,7 +371,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <label className="block text-sm font-medium mb-2">Límite Semanal Estudiante</label>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">$</span>
-                <Input
+                <input
                   type="number"
                   value={config.studentWeeklyLimit}
                   onChange={handleNumberChange('studentWeeklyLimit')}
@@ -385,7 +384,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
             <div>
               <label className="block text-sm font-medium mb-2">Invoice Due Date</label>
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   type="number"
                   value={config.invoiceDueDate}
                   onChange={(e) => updateField('invoiceDueDate', parseInt(e.target.value))}
@@ -400,7 +399,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
             <div>
               <label className="block text-sm font-medium mb-2">Días Antes de Suspensión</label>
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   type="number"
                   value={config.overdueDaysBeforeSuspension}
                   onChange={(e) => updateField('overdueDaysBeforeSuspension', parseInt(e.target.value))}
@@ -412,12 +411,12 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               <p className="text-xs text-gray-500 mt-1">Después de vencimiento</p>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Tab: Preview */}
       {activeTab === 'preview' && (
-        <Card className="p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
           <h2 className="text-xl font-bold">Vista Previa de Cálculos</h2>
 
           <div className="space-y-6">
@@ -460,25 +459,25 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, 
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Save Button */}
       <div className="flex gap-4 sticky bottom-0 bg-white p-4 border-t">
-        <Button
+        <button
           onClick={handleSave}
           disabled={saving}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
         >
           {saving ? 'Guardando...' : 'Guardar Configuración'}
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={loadConfig}
           disabled={loading}
           className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400"
         >
           Descartar Cambios
-        </Button>
+        </button>
       </div>
     </div>
   )

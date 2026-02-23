@@ -1,10 +1,349 @@
 -- ============================================
--- MECARD REWARDS SYSTEM - SUPABASE SCHEMA
+-- MECARD PLATFORM - COMPLETE SUPABASE SCHEMA
 -- ============================================
--- Versión: 1.0
--- Fecha: 2026-02-12
--- Propósito: Tablas necesarias para MeCard Rewards
--- Estado: LISTA PARA IMPLEMENTAR
+-- Versión: 2.0
+-- Fecha: 2026-02-23
+-- Propósito: Schema completo de la plataforma MeCard
+-- Estado: Phase 1 — Base tables + Feature tables
+
+-- ============================================
+-- 0. BASE TABLES (fundacionales)
+-- ============================================
+
+-- 0.1 SCHOOLS — Tabla base de escuelas
+CREATE TABLE IF NOT EXISTS schools (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  name TEXT NOT NULL,
+  legal_name TEXT,
+  rfc TEXT,
+  logo_url TEXT,
+  
+  -- Estadísticas
+  student_count INT NOT NULL DEFAULT 0,
+  balance DECIMAL(12,2) NOT NULL DEFAULT 0,
+  unified_balance BOOLEAN NOT NULL DEFAULT true,
+  
+  -- Status
+  status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'TRIAL', 'SUSPENDED', 'BLOCKED')),
+  contract_type TEXT NOT NULL DEFAULT 'STANDARD' CHECK (contract_type IN ('STANDARD', 'ENTERPRISE', 'TRIAL', 'CUSTOM')),
+  trial_duration_months INT,
+  onboarding_status TEXT NOT NULL DEFAULT 'PENDING' CHECK (onboarding_status IN ('PENDING', 'COMPLETED')),
+  
+  -- Finanzas
+  stp_cost_center TEXT,
+  settlement_clabe TEXT,
+  platform_fee_percent DECIMAL(5,2) NOT NULL DEFAULT 3.5,
+  
+  -- Dirección (JSONB para flexibilidad)
+  address JSONB,
+  contact JSONB,
+  branding JSONB,
+  
+  -- Modelo de negocio (JSONB — cafeteria_fee_percent, stationery_fee_percent, etc.)
+  business_model JSONB NOT NULL DEFAULT '{}',
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_schools_status ON schools(status);
+
+-- 0.2 CAMPUSES — Campus/sedes de una escuela
+CREATE TABLE IF NOT EXISTS campuses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  
+  name TEXT NOT NULL,
+  stp_cost_center TEXT,
+  
+  address JSONB,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_campuses_school ON campuses(school_id);
+
+-- 0.3 OPERATING UNITS — Cafeterías, papelerías, etc.
+CREATE TABLE IF NOT EXISTS operating_units (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  campus_id UUID REFERENCES campuses(id),
+  
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('CAFETERIA', 'STATIONERY', 'LIBRARY', 'BOOKSTORE', 'OTHER')),
+  owner_type TEXT NOT NULL DEFAULT 'SCHOOL' CHECK (owner_type IN ('SCHOOL', 'CONCESSIONAIRE')),
+  
+  manager_id UUID,
+  vendor_name TEXT,
+  vendor_clabe TEXT,
+  commission_percent DECIMAL(5,2),
+  
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  opening_hours JSONB,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_units_school ON operating_units(school_id);
+
+-- 0.4 USER ROLES — Mapeo de usuarios a roles por escuela/unidad
+CREATE TABLE IF NOT EXISTS user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,  -- References auth.users
+  
+  role TEXT NOT NULL CHECK (role IN (
+    'SUPER_ADMIN', 'SCHOOL_ADMIN', 'SCHOOL_FINANCE',
+    'UNIT_MANAGER', 'CAFETERIA_STAFF', 'STATIONERY_STAFF',
+    'CASHIER', 'POS_OPERATOR', 'PARENT', 'STUDENT'
+  )),
+  
+  school_id UUID REFERENCES schools(id),
+  unit_id UUID REFERENCES operating_units(id),
+  
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX idx_user_roles_unique ON user_roles(user_id, role, COALESCE(school_id, '00000000-0000-0000-0000-000000000000'::UUID));
+CREATE INDEX idx_user_roles_user ON user_roles(user_id);
+
+-- 0.5 STUDENTS — Tabla base de estudiantes
+CREATE TABLE IF NOT EXISTS students (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID,  -- References auth.users (nullable for imported students without login)
+  
+  -- Identificación
+  student_id TEXT NOT NULL,  -- Matrícula
+  full_name TEXT NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  grade TEXT NOT NULL,
+  "group" TEXT,
+  curp TEXT,
+  
+  -- Escuela
+  school_id UUID NOT NULL REFERENCES schools(id),
+  campus_id UUID REFERENCES campuses(id),
+  
+  -- Credencial (JSONB — qrCode, barcode, nfcId, cardDesign, etc.)
+  credential JSONB NOT NULL DEFAULT '{}',
+  
+  -- Wallet
+  balance DECIMAL(12,2) NOT NULL DEFAULT 0,
+  daily_limit DECIMAL(12,2) NOT NULL DEFAULT 200,
+  spent_today DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total_spent DECIMAL(12,2) NOT NULL DEFAULT 0,
+  
+  -- Restricciones (JSONB — restrictedCategories, allergens, maxPerTransaction, etc.)
+  restrictions JSONB NOT NULL DEFAULT '{}',
+  
+  -- Familia
+  parent_id UUID,
+  parent_name TEXT,
+  parent_email TEXT,
+  
+  -- Transporte
+  bus_route TEXT,
+  
+  -- Foto & metadata
+  photo_url TEXT,
+  enrollment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'PENDING', 'SUSPENDED')),
+  
+  clabe_personal TEXT,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX idx_students_student_id ON students(student_id, school_id);
+CREATE INDEX idx_students_school ON students(school_id);
+CREATE INDEX idx_students_parent ON students(parent_id);
+
+-- 0.6 PRODUCTS — Catálogo de productos POS
+CREATE TABLE IF NOT EXISTS products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  sku TEXT,
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL CHECK (category IN (
+    'HOT_MEALS', 'SANDWICHES', 'SNACKS', 'DRINKS', 'DESSERTS',
+    'HEALTHY', 'COMBO_MEALS', 'BREAKFAST', 'SUPPLIES',
+    'UNIFORMS', 'BOOKS', 'TECH', 'MERCH', 'SEASONAL'
+  )),
+  
+  -- Pricing
+  price DECIMAL(10,2) NOT NULL,
+  cost DECIMAL(10,2),
+  
+  -- Media
+  image_url TEXT,
+  images JSONB,
+  
+  -- Nutricional
+  calories INT,
+  ingredients TEXT[],
+  allergens TEXT[],
+  nutrition_facts JSONB,
+  
+  -- Ownership
+  owner_type TEXT NOT NULL DEFAULT 'SCHOOL' CHECK (owner_type IN ('SCHOOL', 'CONCESSIONAIRE')),
+  unit_id UUID REFERENCES operating_units(id),
+  
+  -- Status
+  is_available BOOLEAN NOT NULL DEFAULT true,
+  is_combo BOOLEAN NOT NULL DEFAULT false,
+  is_featured BOOLEAN NOT NULL DEFAULT false,
+  
+  -- Combo items (JSONB array)
+  combo_items JSONB,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_products_unit ON products(unit_id);
+CREATE INDEX idx_products_category ON products(category);
+
+-- 0.7 WALLET TRANSACTIONS — Movimientos financieros de estudiantes
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  student_id UUID NOT NULL REFERENCES students(id),
+  
+  type TEXT NOT NULL CHECK (type IN ('DEPOSIT', 'PURCHASE', 'REFUND', 'GIFT_SENT', 'GIFT_RECEIVED', 'REWARD_REDEMPTION', 'ADJUSTMENT')),
+  amount DECIMAL(12,2) NOT NULL,  -- Positive for deposits, negative for purchases
+  
+  -- Referencia
+  unit_id UUID REFERENCES operating_units(id),
+  unit_name TEXT,
+  description TEXT NOT NULL,
+  category TEXT,
+  
+  -- Metadata (items purchased, payment method, etc.)
+  metadata JSONB,
+  
+  -- Status
+  status TEXT NOT NULL DEFAULT 'COMPLETED' CHECK (status IN ('COMPLETED', 'PENDING', 'FAILED', 'REVERSED')),
+  
+  created_by UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_wallet_tx_student ON wallet_transactions(student_id);
+CREATE INDEX idx_wallet_tx_date ON wallet_transactions(created_at DESC);
+CREATE INDEX idx_wallet_tx_type ON wallet_transactions(type);
+
+-- 0.8 GIFTS — Regalos entre estudiantes
+CREATE TABLE IF NOT EXISTS gifts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  sender_id UUID NOT NULL REFERENCES students(id),
+  sender_name TEXT NOT NULL,
+  sender_student_id TEXT NOT NULL,
+  
+  receiver_id UUID NOT NULL REFERENCES students(id),
+  receiver_name TEXT NOT NULL,
+  receiver_student_id TEXT NOT NULL,
+  
+  -- Producto
+  inventory_item_id UUID REFERENCES products(id),
+  product_name TEXT NOT NULL,
+  product_image TEXT,
+  
+  amount DECIMAL(10,2) NOT NULL,
+  redemption_code TEXT NOT NULL,
+  
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'DELIVERED', 'REDEEMED', 'EXPIRED', 'CANCELLED')),
+  
+  message TEXT,
+  thank_you_message TEXT,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  
+  -- Redemption tracking
+  redeemable_at TIMESTAMPTZ,
+  redeemed_at TIMESTAMPTZ,
+  redeeming_student_id UUID REFERENCES students(id),
+  location_id UUID REFERENCES operating_units(id),
+  
+  metadata JSONB
+);
+
+CREATE INDEX idx_gifts_sender ON gifts(sender_id);
+CREATE INDEX idx_gifts_receiver ON gifts(receiver_id);
+CREATE INDEX idx_gifts_status ON gifts(status);
+
+-- 0.9 CATEGORIES — Categorías de productos (extensible)
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  icon TEXT,
+  
+  unit_type TEXT CHECK (unit_type IN ('CAFETERIA', 'STATIONERY', 'ALL')),
+  
+  display_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- RLS POLICIES FOR BASE TABLES
+-- ============================================
+
+ALTER TABLE schools ENABLE ROW LEVEL SECURITY;
+ALTER TABLE campuses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE operating_units ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+
+-- Super admins can see everything
+CREATE POLICY "super_admin_all_schools" ON schools FOR ALL
+  USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'SUPER_ADMIN'));
+
+CREATE POLICY "super_admin_all_students" ON students FOR ALL
+  USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'SUPER_ADMIN'));
+
+-- School admins can see their school's data
+CREATE POLICY "school_admin_own_students" ON students FOR ALL
+  USING (school_id IN (SELECT school_id FROM user_roles WHERE user_id = auth.uid() AND role IN ('SCHOOL_ADMIN', 'SCHOOL_FINANCE')));
+
+-- Students can see their own data
+CREATE POLICY "student_own_profile" ON students FOR SELECT
+  USING (user_id = auth.uid());
+
+-- Parents can see their children's data
+CREATE POLICY "parent_children" ON students FOR SELECT
+  USING (parent_id = auth.uid());
+
+-- Students can see their own transactions
+CREATE POLICY "student_own_transactions" ON wallet_transactions FOR SELECT
+  USING (student_id IN (SELECT id FROM students WHERE user_id = auth.uid()));
+
+-- Students can see their own gifts (sent or received)
+CREATE POLICY "student_own_gifts" ON gifts FOR SELECT
+  USING (
+    sender_id IN (SELECT id FROM students WHERE user_id = auth.uid()) OR
+    receiver_id IN (SELECT id FROM students WHERE user_id = auth.uid())
+  );
+
+-- Products visible to all authenticated users
+CREATE POLICY "products_visible" ON products FOR SELECT
+  USING (auth.role() = 'authenticated');
 
 -- ============================================
 -- 1. SCHOOL REWARDS CONFIGURATION

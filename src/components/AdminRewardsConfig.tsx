@@ -21,14 +21,14 @@ import { SchoolRewardsConfig } from '../types';
 import { rewardsService } from '../services/rewardsService';
 
 interface AdminRewardsConfigProps {
-  schoolId: string;
+  schoolId?: string;
   schoolName?: string;
   onSave?: (config: SchoolRewardsConfig) => void;
 }
 
 export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
-  schoolId,
-  schoolName,
+  schoolId = 'mx_01',
+  schoolName = 'Instituto Cumbres',
   onSave
 }) => {
   const [config, setConfig] = useState<SchoolRewardsConfig | null>(null);
@@ -422,3 +422,5 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
     </div>
   );
 };
+
+export default AdminRewardsConfig;

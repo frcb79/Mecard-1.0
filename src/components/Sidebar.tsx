@@ -6,7 +6,8 @@ import {
   Wallet, Building2, PenTool, UserCircle, QrCode,
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
-  ChevronRight, Gift, Star, Menu, X, MapPin
+  ChevronRight, Gift, Star, Menu, X, MapPin,
+  Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -37,9 +38,22 @@ function getNavSections(role: UserRole): NavSection[] {
         items: [
           { path: '/admin', label: 'Dashboard', icon: <Globe size={18} /> },
           { path: '/admin/schools', label: 'Escuelas', icon: <Building2 size={18} /> },
+          { path: '/admin/onboarding', label: 'Onboarding', icon: <Rocket size={18} /> },
           { path: '/admin/settlement', label: 'Settlement', icon: <Banknote size={18} /> },
           { path: '/admin/reports', label: 'Reportes', icon: <PieChart size={18} /> },
+          { path: '/admin/rewards-config', label: 'Rewards Config', icon: <Trophy size={18} /> },
+          { path: '/admin/support', label: 'Soporte', icon: <HeadphonesIcon size={18} /> },
           { path: '/admin/config', label: 'Configuración', icon: <Settings size={18} /> },
+        ],
+      },
+      {
+        label: 'Facturación',
+        icon: <Receipt size={10} />,
+        items: [
+          { path: '/admin/billing/config', label: 'Config Billing', icon: <Settings size={18} /> },
+          { path: '/admin/billing/operations', label: 'Operaciones', icon: <FileText size={18} /> },
+          { path: '/admin/billing/analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
+          { path: '/admin/billing/blocking', label: 'Bloqueos', icon: <Ban size={18} /> },
         ],
       },
       {
@@ -79,6 +93,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school/config', label: 'Configuración', icon: <Settings size={18} /> },
         { path: '/school/permissions', label: 'Permisos Salida', icon: <ShieldCheck size={18} /> },
         { path: '/school/trips', label: 'Viajes', icon: <MapPin size={18} /> },
+        { path: '/school/invoices', label: 'Facturas', icon: <FileText size={18} /> },
       ],
     }];
   }

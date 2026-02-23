@@ -2,16 +2,17 @@
 import React, { useState } from 'react';
 import { MessageSquare, Send, CheckCircle, Clock, AlertTriangle, ChevronRight, X, Bot, Sparkles } from 'lucide-react';
 import { SupportTicket, TicketMessage } from '../types';
+import { MOCK_TICKETS } from '../constants';
 import { Button } from './Button';
 
 interface SupportSystemProps {
-  tickets: SupportTicket[];
-  isAdmin: boolean;
+  tickets?: SupportTicket[];
+  isAdmin?: boolean;
   onUpdateTicket?: (id: string, updates: Partial<SupportTicket>) => void;
   onSendMessage?: (ticketId: string, text: string) => void;
 }
 
-export const SupportSystem: React.FC<SupportSystemProps> = ({ tickets, isAdmin, onUpdateTicket, onSendMessage }) => {
+export const SupportSystem: React.FC<SupportSystemProps> = ({ tickets = MOCK_TICKETS, isAdmin = true, onUpdateTicket, onSendMessage }) => {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [newMessage, setNewMessage] = useState('');
 
@@ -121,3 +122,5 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ tickets, isAdmin, 
     </div>
   );
 };
+
+export default SupportSystem;

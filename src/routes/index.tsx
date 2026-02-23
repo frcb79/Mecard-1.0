@@ -28,6 +28,13 @@ const SchoolManagement = React.lazy(() => import('../components/SchoolManagement
 const BusinessModelConfiguration = React.lazy(() => import('../components/BusinessModelConfiguration'));
 const SettlementsView = React.lazy(() => import('../components/SettlementsView'));
 const ReportsView = React.lazy(() => import('../components/ReportsView'));
+const BillingConfigView = React.lazy(() => import('../components/SuperAdmin/BillingConfigView'));
+const BillingOperationsPanel = React.lazy(() => import('../components/SuperAdmin/BillingOperationsPanel'));
+const MecardAnalyticsDashboard = React.lazy(() => import('../components/SuperAdmin/MecardAnalyticsDashboard'));
+const SchoolBlockingManagement = React.lazy(() => import('../components/SuperAdmin/SchoolBlockingManagement'));
+const SchoolOnboardingDashboard = React.lazy(() => import('../components/SchoolOnboardingDashboard'));
+const AdminRewardsConfig = React.lazy(() => import('../components/AdminRewardsConfig'));
+const SupportSystem = React.lazy(() => import('../components/SupportSystem'));
 
 // School Admin
 const SchoolAdminContainer = React.lazy(() => import('../components/SchoolAdminContainer'));
@@ -36,6 +43,7 @@ const SmartStaffManager = React.lazy(() => import('../components/SmartStaffManag
 const StudentImportWizard = React.lazy(() => import('../components/StudentImportWizard'));
 const SchoolPermissionsView = React.lazy(() => import('../components/SchoolPermissionsView'));
 const SchoolTripsView = React.lazy(() => import('../components/SchoolTripsView'));
+const SchoolInvoiceDashboard = React.lazy(() => import('../components/SchoolInvoiceDashboard'));
 
 // Unit Manager
 const ConcessionaireDashboard = React.lazy(() => import('../components/ConcessionaireDashboard'));
@@ -164,6 +172,78 @@ export default function AppRoutes() {
         }
       />
 
+      {/* ====== SUPER ADMIN — BILLING ====== */}
+      <Route
+        path="/admin/billing/config"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <BillingConfigView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/billing/operations"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <BillingOperationsPanel />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/billing/analytics"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <MecardAnalyticsDashboard />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/billing/blocking"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <SchoolBlockingManagement />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/onboarding"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <SchoolOnboardingDashboard />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/rewards-config"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <AdminRewardsConfig />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/support"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <SupportSystem />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* ====== SCHOOL ADMIN ROUTES ====== */}
       <Route
         path="/school"
@@ -231,6 +311,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
             <RoleBasedLayout>
               <SchoolTripsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/school/invoices"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolInvoiceDashboard />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

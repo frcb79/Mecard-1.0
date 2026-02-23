@@ -23,12 +23,12 @@ import {
 import { Invoice, InvoiceStatus } from '../types';
 
 interface SchoolInvoiceDashboardProps {
-  schoolId: string;
+  schoolId?: string;
   schoolName?: string;
 }
 
 export default function SchoolInvoiceDashboard({
-  schoolId,
+  schoolId = 'mx_01',
   schoolName = 'Mi Escuela',
 }: SchoolInvoiceDashboardProps) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);

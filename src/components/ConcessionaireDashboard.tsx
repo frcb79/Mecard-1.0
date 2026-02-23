@@ -7,16 +7,17 @@ import {
   Settings, Save, Plus
 } from 'lucide-react';
 import { OperatingUnit, School, SalesData, Product, Category, UserRole } from '../types';
-import { MOCK_SCHOOLS, SALES_DATA, PRODUCTS } from '../constants';
+import { MOCK_SCHOOLS, MOCK_UNITS, SALES_DATA, PRODUCTS } from '../constants';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { InventoryManagementView } from './InventoryManagementView';
 import { SmartStaffManager } from './SmartStaffManager';
 
 interface ConcessionaireDashboardProps {
-  unit: OperatingUnit;
+  unit?: OperatingUnit;
 }
 
-export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = ({ unit }) => {
+export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = ({ unit: unitProp }) => {
+  const unit = unitProp || MOCK_UNITS[0];
   const [activeTab, setActiveTab] = useState<'sales' | 'inventory' | 'staff' | 'config'>('sales');
   const [localInventory, setLocalInventory] = useState<Product[]>(PRODUCTS.filter(p => p.unitId === unit.id || p.unitId === 'unit_01'));
   

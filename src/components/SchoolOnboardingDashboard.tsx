@@ -7,22 +7,23 @@ import {
   Plus
 } from 'lucide-react';
 import { School, AppView, StudentProfile, OperatingUnit } from '../types';
+import { MOCK_SCHOOLS, MOCK_STUDENTS_LIST } from '../constants';
 import { Button } from './Button';
 import { StudentImportWizard } from './StudentImportWizard';
 import { CLABEService } from '../services/clabeService';
 
 interface OnboardingDashboardProps {
-  school: School;
-  onComplete: () => void;
-  onUpdateSchool: (data: Partial<School>) => void;
-  allStudents: StudentProfile[];
-  onBulkAddStudents: (students: StudentProfile[]) => void;
+  school?: School;
+  onComplete?: () => void;
+  onUpdateSchool?: (data: Partial<School>) => void;
+  allStudents?: StudentProfile[];
+  onBulkAddStudents?: (students: StudentProfile[]) => void;
 }
 
 type OnboardingStep = 'welcome' | 'profile' | 'banking' | 'students' | 'pos' | 'finish';
 
 export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({ 
-  school, onComplete, onUpdateSchool, allStudents, onBulkAddStudents 
+  school = MOCK_SCHOOLS[0], onComplete = () => {}, onUpdateSchool = () => {}, allStudents = MOCK_STUDENTS_LIST, onBulkAddStudents = () => {} 
 }) => {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [showImportWizard, setShowImportWizard] = useState(false);

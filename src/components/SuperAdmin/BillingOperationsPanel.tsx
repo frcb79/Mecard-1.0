@@ -5,13 +5,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, Zap, CheckCircle, AlertCircle, Loader2, TrendingUp } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from '../Button';
 import {
   executeMonthlyBillingCycle,
   getSchoolInvoices,
   formatCurrency,
-} from '../services/BillingService';
-import { Invoice } from '../types';
+} from '../../services/BillingService';
+import { Invoice } from '../../types';
 
 interface BillingOperationResult {
   success: boolean;

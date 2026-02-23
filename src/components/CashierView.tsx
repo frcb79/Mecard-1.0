@@ -2,15 +2,17 @@
 import React, { useState } from 'react';
 import { Search, Banknote, History, ArrowUpCircle, User, CheckCircle2, XCircle, CreditCard } from 'lucide-react';
 import { StudentProfile, Transaction } from '../types';
+import { MOCK_STUDENT } from '../constants';
 import { Button } from './Button';
 import { useToast } from './ui/Toast';
 
 interface CashierViewProps {
-  student: StudentProfile;
-  onDeposit: (amount: number) => void;
+  student?: StudentProfile;
+  onDeposit?: (amount: number) => void;
 }
 
-export const CashierView: React.FC<CashierViewProps> = ({ student, onDeposit }) => {
+export const CashierView: React.FC<CashierViewProps> = ({ student: studentProp, onDeposit: onDepositProp }) => {
+  const student = studentProp || MOCK_STUDENT;
   const [searchId, setSearchId] = useState('');
   const [amount, setAmount] = useState<string>('');
   const [step, setStep] = useState<'search' | 'deposit' | 'success'>('search');
@@ -33,7 +35,11 @@ export const CashierView: React.FC<CashierViewProps> = ({ student, onDeposit }) 
       return;
     }
     setLastAmount(numAmount);
-    onDeposit(numAmount);
+    if (onDepositProp) {
+      onDepositProp(numAmount);
+    } else {
+      toast.success('Depósito simulado', `$${numAmount.toFixed(2)} abonados (modo demo)`);
+    }
     setStep('success');
     setAmount('');
   };
