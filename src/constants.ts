@@ -1,5 +1,5 @@
 
-import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend } from './types';
+import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus } from './types';
 
 // Add missing clabePersonal property
 export const MOCK_STUDENT: StudentProfile = {
@@ -788,4 +788,43 @@ export const MOCK_STUDENT_FRIENDS: Friend[] = [
   { id: 'stu_005', fullName: 'Mateo Hernández', studentId: 'STU-005', grade: '4° Primaria - B', balance: 95.00, favorites: ['prod_01', 'prod_03'], favoritesPublic: false, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
   { id: 'stu_006', fullName: 'Camila Torres', studentId: 'STU-006', grade: '4° Primaria - A', balance: 310.00, favorites: ['prod_01', 'prod_08', 'prod_05'], favoritesPublic: true, allergies: ['Lactosa'], status: 'ACTIVE', schoolId: 'mx_01' },
   { id: 'stu_007', fullName: 'Emiliano Ruiz', studentId: 'STU-007', grade: '3° Primaria - C', balance: 145.00, favorites: null, favoritesPublic: false, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
+];
+
+// ── PRE-ORDERS (Demo) ──
+const today = new Date().toISOString().slice(0, 10);
+export const MOCK_PRE_ORDERS: PreOrder[] = [
+  {
+    id: 'po_001', studentId: '2024001', studentName: 'Santiago Gonzalez', schoolId: 'mx_01', unitId: 'unit_01',
+    items: [
+      { productId: 'c1', productName: 'Menú del Día', productImage: 'https://images.unsplash.com/photo-1547496502-ffa222f79634?w=500', category: Category.COMBO_MEALS, quantity: 1, unitPrice: 85.00, subtotal: 85.00 },
+      { productId: '6', productName: 'Jugo de Naranja', productImage: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500', category: Category.DRINKS, quantity: 1, unitPrice: 25.00, subtotal: 25.00 },
+    ],
+    total: 110.00, status: PreOrderStatus.CONFIRMED, pickupTime: '10:30', pickupDate: today, notes: 'Sin cebolla por favor',
+    createdAt: new Date(Date.now() - 3600000).toISOString(), updatedAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'po_002', studentId: '2024002', studentName: 'Ana García', schoolId: 'mx_01', unitId: 'unit_01',
+    items: [
+      { productId: '2', productName: 'Quesadillas (3 pzas)', productImage: 'https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=500', category: Category.HOT_MEALS, quantity: 1, unitPrice: 40.00, subtotal: 40.00 },
+    ],
+    total: 40.00, status: PreOrderStatus.PREPARING, pickupTime: '11:00', pickupDate: today, preparedBy: 'Cajero 1',
+    createdAt: new Date(Date.now() - 1800000).toISOString(), updatedAt: new Date(Date.now() - 900000).toISOString(),
+  },
+  {
+    id: 'po_003', studentId: '2024003', studentName: 'Carlos López', schoolId: 'mx_01', unitId: 'unit_01',
+    items: [
+      { productId: 'c2', productName: 'Combo Hamburguesa', productImage: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500', category: Category.COMBO_MEALS, quantity: 1, unitPrice: 75.00, subtotal: 75.00 },
+      { productId: '7', productName: 'Agua Natural 600ml', productImage: 'https://images.unsplash.com/photo-1560023907-5f339617ea30?w=500', category: Category.DRINKS, quantity: 2, unitPrice: 15.00, subtotal: 30.00 },
+    ],
+    total: 105.00, status: PreOrderStatus.READY, pickupTime: '10:00', pickupDate: today,
+    createdAt: new Date(Date.now() - 7200000).toISOString(), updatedAt: new Date(Date.now() - 600000).toISOString(), preparedBy: 'Cajero 2',
+  },
+  {
+    id: 'po_004', studentId: '2024001', studentName: 'Santiago Gonzalez', schoolId: 'mx_01', unitId: 'unit_01',
+    items: [
+      { productId: '4', productName: 'Galletas de Avena (3)', productImage: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=500', category: Category.SNACKS, quantity: 2, unitPrice: 20.00, subtotal: 40.00 },
+    ],
+    total: 40.00, status: PreOrderStatus.PICKED_UP, pickupTime: '09:30', pickupDate: today,
+    createdAt: new Date(Date.now() - 14400000).toISOString(), updatedAt: new Date(Date.now() - 10800000).toISOString(), preparedBy: 'Cajero 1',
+  },
 ];

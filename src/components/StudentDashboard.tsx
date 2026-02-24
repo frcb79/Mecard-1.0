@@ -3,11 +3,13 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import {
   Wallet, QrCode, History, UtensilsCrossed, Gift, Star, Bell,
   MapPin, ShieldCheck, Settings, Sparkles, Award, TrendingUp,
-  ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Zap
+  ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Zap, ShoppingCart, ChefHat
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { MOCK_STUDENT, MOCK_STUDENT_TRANSACTIONS, MOCK_STUDENT_NOTIFICATIONS, MOCK_STUDENT_GIFTS_RECEIVED } from '../constants';
 import { getFinancialEducation, getHealthChallenges } from '../services/geminiService';
+import { getActivePreOrdersByStudent } from '../services/PreOrderService';
+import { PreOrderStatus } from '../types';
 
 export default function StudentDashboard() {
   const { user, isAuthenticated, isStudent } = useAuth();
@@ -44,6 +46,7 @@ export default function StudentDashboard() {
   const recentTxns = MOCK_STUDENT_TRANSACTIONS.slice(0, 4);
   const unreadNotifs = MOCK_STUDENT_NOTIFICATIONS.filter(n => !n.read).length;
   const pendingGifts = MOCK_STUDENT_GIFTS_RECEIVED.filter(g => g.status === 'PENDING').length;
+  const activePreOrders = getActivePreOrdersByStudent(student.id);
   const available = student.dailyLimit - student.spentToday;
   const spentPercent = Math.min((student.spentToday / student.dailyLimit) * 100, 100);
 
@@ -115,6 +118,7 @@ export default function StudentDashboard() {
           {[
             { path: '/student/id', icon: <QrCode size={20} />, label: 'Credencial', color: 'from-emerald-500 to-emerald-600' },
             { path: '/student/menu', icon: <UtensilsCrossed size={20} />, label: 'Menú', color: 'from-teal-500 to-teal-600' },
+            { path: '/student/preorder', icon: <ShoppingCart size={20} />, label: 'Pre-Orden', color: 'from-indigo-500 to-indigo-600' },
             { path: '/student/history', icon: <History size={20} />, label: 'Historial', color: 'from-cyan-500 to-cyan-600' },
             { path: '/student/gifts', icon: <Gift size={20} />, label: 'Regalos', color: 'from-pink-500 to-pink-600' },
             { path: '/student/rewards', icon: <Star size={20} />, label: 'Premios', color: 'from-amber-500 to-amber-600' },
@@ -164,7 +168,40 @@ export default function StudentDashboard() {
           </div>
 
           {/* Right Column */}
-          <div className="space-y-4">
+          <div className="space-y-4">            {/* Active Pre-Orders */}
+            {activePreOrders.length > 0 && (
+              <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <ChefHat size={16} className="text-indigo-600" /> Pre-Órdenes Activas
+                  </h3>
+                  <button onClick={() => navigate('/student/preorder')} className="text-indigo-600 text-xs font-bold flex items-center gap-1 hover:underline">
+                    Ver todo <ChevronRight size={12} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {activePreOrders.slice(0, 2).map(o => {
+                    const statusLabel = o.status === PreOrderStatus.CONFIRMED ? 'Confirmado'
+                      : o.status === PreOrderStatus.PREPARING ? '🔥 Preparando'
+                      : o.status === PreOrderStatus.READY ? '✅ ¡Listo!' : o.status;
+                    const isReady = o.status === PreOrderStatus.READY;
+                    return (
+                      <div key={o.id} className={`flex items-center justify-between p-3 rounded-xl ${
+                        isReady ? 'bg-emerald-50 border border-emerald-200 animate-pulse' : 'bg-white/70'
+                      }`}>
+                        <div>
+                          <p className="text-xs font-bold text-slate-700">{o.items.map(i => i.productName).join(', ')}</p>
+                          <p className="text-[10px] text-slate-400">Recoge: {o.pickupTime}</p>
+                        </div>
+                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${
+                          isReady ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'
+                        }`}>{statusLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {/* Pending Gifts */}
             {pendingGifts > 0 && (
               <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-2xl p-5">

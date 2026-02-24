@@ -67,6 +67,7 @@ function getNavSections(role: UserRole): NavSection[] {
         label: 'Operación POS',
         items: [
           { path: '/pos', label: 'Cafetería', icon: <Terminal size={18} /> },
+          { path: '/pos/preorders', label: 'Pre-Órdenes', icon: <ChefHat size={18} /> },
           { path: '/pos/stationery', label: 'Papelería', icon: <PenTool size={18} /> },
           { path: '/cashier', label: 'Caja Recargas', icon: <Wallet size={18} /> },
         ],
@@ -125,6 +126,7 @@ function getNavSections(role: UserRole): NavSection[] {
       label: 'Operación',
       items: [
         { path: '/pos', label: 'Punto de Venta', icon: <Terminal size={18} /> },
+        { path: '/pos/preorders', label: 'Pre-Órdenes', icon: <ChefHat size={18} /> },
         ...(role === UserRole.STATIONERY_STAFF ? [{ path: '/pos/stationery', label: 'Papelería', icon: <Briefcase size={18} /> }] : []),
         { path: '/cashier', label: 'Caja', icon: <Banknote size={18} /> },
       ],
@@ -157,6 +159,7 @@ function getNavSections(role: UserRole): NavSection[] {
       { path: '/student/id', label: 'Mi Credencial', icon: <QrCode size={18} /> },
       { path: '/student/history', label: 'Historial', icon: <History size={18} /> },
       { path: '/student/menu', label: 'Menú', icon: <UtensilsCrossed size={18} /> },
+      { path: '/student/preorder', label: 'Pre-Orden', icon: <ShoppingCart size={18} /> },
       { path: '/student/gifts', label: 'Regalos', icon: <Gift size={18} /> },
       { path: '/student/rewards', label: 'Premios', icon: <Star size={18} /> },
       { path: '/student/notifications', label: 'Notificaciones', icon: <MessageSquare size={18} /> },

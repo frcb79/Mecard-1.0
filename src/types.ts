@@ -2049,3 +2049,44 @@ export interface StudentNotification {
   relatedEntityId?: string;
   icon?: string;
 }
+
+// ============================================
+// PRE-ORDERING SYSTEM
+// ============================================
+
+export enum PreOrderStatus {
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  PREPARING = 'preparing',
+  READY = 'ready',
+  PICKED_UP = 'picked_up',
+  CANCELLED = 'cancelled',
+}
+
+export interface PreOrderItem {
+  productId: string;
+  productName: string;
+  productImage: string;
+  category: Category;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+export interface PreOrder {
+  id: string;
+  studentId: string;
+  studentName: string;
+  schoolId: string;
+  unitId: string;
+  items: PreOrderItem[];
+  total: number;
+  status: PreOrderStatus;
+  pickupTime: string;       // "10:30" format
+  pickupDate: string;       // ISO date "2026-02-24"
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  preparedBy?: string;
+  cancelledReason?: string;
+}

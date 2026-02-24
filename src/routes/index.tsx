@@ -77,6 +77,8 @@ const StudentReportsView = React.lazy(() => import('../components/StudentReports
 const StudentTripsView = React.lazy(() => import('../components/StudentTripsView'));
 const StudentPermissionsView = React.lazy(() => import('../components/StudentPermissionsView'));
 const StudentSettingsView = React.lazy(() => import('../components/StudentSettingsView'));
+const StudentPreOrderView = React.lazy(() => import('../components/StudentPreOrderView'));
+const PreOrderQueueView = React.lazy(() => import('../components/PreOrderQueueView'));
 const DashboardPlaceholder = React.lazy(() => import('../components/DashboardPlaceholder'));
 
 // ========== SUSPENSE FALLBACK ==========
@@ -380,6 +382,16 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/pos/preorders"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.POS_OPERATOR, UserRole.CAFETERIA_STAFF, UserRole.UNIT_MANAGER]}>
+            <RoleBasedLayout>
+              <PreOrderQueueView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/cashier"
         element={
           <ProtectedRoute allowedRoles={[UserRole.CASHIER, UserRole.UNIT_MANAGER]}>
@@ -589,6 +601,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
               <StudentPermissionsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/preorder"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentPreOrderView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
