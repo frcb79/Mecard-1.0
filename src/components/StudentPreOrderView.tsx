@@ -110,7 +110,7 @@ export const StudentPreOrderView: React.FC = () => {
 
     createPreOrder({
       studentId: student.id,
-      studentName: student.name,
+      studentName: student.fullName,
       schoolId: student.schoolId,
       unitId: 'unit_01',
       items,
