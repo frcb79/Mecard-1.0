@@ -6,7 +6,7 @@ import {
   Wallet, Building2, PenTool, UserCircle, QrCode,
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
-  ChevronRight, Gift, Star, Menu, X, MapPin,
+  ChevronRight, Gift, Star, Menu, X, MapPin, Briefcase,
   Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText
 } from 'lucide-react';
 import { UserRole } from '../types';
@@ -109,11 +109,12 @@ function getNavSections(role: UserRole): NavSection[] {
     }];
   }
 
-  if ([UserRole.POS_OPERATOR, UserRole.CAFETERIA_STAFF, UserRole.CASHIER].includes(role)) {
+  if ([UserRole.POS_OPERATOR, UserRole.CAFETERIA_STAFF, UserRole.CASHIER, UserRole.STATIONERY_STAFF].includes(role)) {
     return [{
       label: 'Operación',
       items: [
         { path: '/pos', label: 'Punto de Venta', icon: <Terminal size={18} /> },
+        ...(role === UserRole.STATIONERY_STAFF ? [{ path: '/pos/stationery', label: 'Papelería', icon: <Briefcase size={18} /> }] : []),
         { path: '/cashier', label: 'Caja', icon: <Banknote size={18} /> },
       ],
     }];

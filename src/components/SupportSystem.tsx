@@ -13,13 +13,37 @@ interface SupportSystemProps {
 }
 
 export const SupportSystem: React.FC<SupportSystemProps> = ({ tickets = MOCK_TICKETS, isAdmin = true, onUpdateTicket, onSendMessage }) => {
+  const [localTickets, setLocalTickets] = useState<SupportTicket[]>(tickets);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [newMessage, setNewMessage] = useState('');
 
+  // Keep selectedTicket in sync with localTickets
+  const activeTicket = selectedTicket ? localTickets.find(t => t.id === selectedTicket.id) ?? null : null;
+
   const handleSend = () => {
-    if (!newMessage.trim() || !selectedTicket) return;
-    onSendMessage?.(selectedTicket.id, newMessage);
+    if (!newMessage.trim() || !activeTicket) return;
+    const msg: TicketMessage = {
+      id: `msg_${Date.now()}`,
+      ticketId: activeTicket.id,
+      senderName: isAdmin ? 'Soporte MeCard' : 'Usuario',
+      text: newMessage.trim(),
+      timestamp: new Date().toISOString(),
+      isAdmin,
+    };
+    setLocalTickets(prev => prev.map(t =>
+      t.id === activeTicket.id
+        ? { ...t, messages: [...t.messages, msg], status: t.status === 'OPEN' ? 'IN_PROGRESS' : t.status }
+        : t
+    ));
+    onSendMessage?.(activeTicket.id, newMessage);
     setNewMessage('');
+  };
+
+  const handleResolve = (ticketId: string) => {
+    setLocalTickets(prev => prev.map(t =>
+      t.id === ticketId ? { ...t, status: 'RESOLVED' } : t
+    ));
+    onUpdateTicket?.(ticketId, { status: 'RESOLVED' });
   };
 
   const getStatusColor = (status: string) => {
@@ -40,11 +64,11 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ tickets = MOCK_TIC
           <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[4px] mt-1">Centro de Soporte MeCard</p>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {tickets.map(t => (
+          {localTickets.map(t => (
             <button 
               key={t.id} 
               onClick={() => setSelectedTicket(t)}
-              className={`w-full p-6 rounded-[32px] border text-left transition-all ${selectedTicket?.id === t.id ? 'bg-indigo-50 border-indigo-200 shadow-xl shadow-indigo-100/50' : 'bg-white border-slate-50 hover:border-slate-200'}`}
+              className={`w-full p-6 rounded-[32px] border text-left transition-all ${activeTicket?.id === t.id ? 'bg-indigo-50 border-indigo-200 shadow-xl shadow-indigo-100/50' : 'bg-white border-slate-50 hover:border-slate-200'}`}
             >
               <div className="flex justify-between mb-3">
                 <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${getStatusColor(t.status)}`}>{t.status}</span>
@@ -64,28 +88,28 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ tickets = MOCK_TIC
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col h-full bg-slate-50/30">
-        {selectedTicket ? (
+        {activeTicket ? (
           <>
             <div className="p-10 bg-white border-b border-slate-100 flex justify-between items-center shadow-sm">
                <div>
-                  <h3 className="text-xl font-black text-slate-800 leading-none">{selectedTicket.subject}</h3>
+                  <h3 className="text-xl font-black text-slate-800 leading-none">{activeTicket.subject}</h3>
                   <div className="flex items-center gap-3 mt-2">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Atendido por Soporte MeCard</p>
                   </div>
                </div>
-               {isAdmin && selectedTicket.status !== 'RESOLVED' && (
-                 <Button onClick={() => onUpdateTicket?.(selectedTicket.id, { status: 'RESOLVED' })} className="bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase"><CheckCircle size={16} className="mr-2"/> Resolver</Button>
+               {isAdmin && activeTicket.status !== 'RESOLVED' && (
+                 <Button onClick={() => handleResolve(activeTicket.id)} className="bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase"><CheckCircle size={16} className="mr-2"/> Resolver</Button>
                )}
             </div>
             
             <div className="flex-1 overflow-y-auto p-10 space-y-8 scroll-smooth">
                <div className="flex justify-center mb-10">
                   <div className="bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100">
-                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Ticket creado el {new Date(selectedTicket.createdAt).toLocaleString()}</p>
+                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Ticket creado el {new Date(activeTicket.createdAt).toLocaleString()}</p>
                   </div>
                </div>
-               {selectedTicket.messages.map(m => (
+               {activeTicket.messages.map(m => (
                  <div key={m.id} className={`flex ${m.isAdmin ? 'justify-start' : 'justify-end'}`}>
                     <div className={`max-w-md p-6 rounded-[32px] shadow-sm ${m.isAdmin ? 'bg-white border border-slate-100 rounded-bl-none' : 'bg-indigo-600 text-white rounded-br-none shadow-xl shadow-indigo-100'}`}>
                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${m.isAdmin ? 'text-indigo-500' : 'text-indigo-200'}`}>{m.senderName}</p>

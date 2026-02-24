@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { UserPlus, UserX, ShieldCheck, Mail, Building2, Briefcase, Filter, Search, X, Check, Users } from 'lucide-react';
 import { UserRole, EntityOwner, OperatingUnit } from '../types';
+import { MOCK_UNITS } from '../constants';
 import { Button } from './Button';
 
 interface StaffMember {
@@ -13,15 +14,15 @@ interface StaffMember {
 }
 
 interface SmartStaffManagerProps {
-  currentUserRole: UserRole;
-  operatingUnits: OperatingUnit[];
-  ownerScope?: EntityOwner; // SCHOOL or CONCESSIONAIRE
+  currentUserRole?: UserRole;
+  operatingUnits?: OperatingUnit[];
+  ownerScope?: EntityOwner;
 }
 
 export const SmartStaffManager: React.FC<SmartStaffManagerProps> = ({ 
-  currentUserRole, 
-  operatingUnits,
-  ownerScope 
+  currentUserRole = UserRole.SCHOOL_ADMIN, 
+  operatingUnits = MOCK_UNITS,
+  ownerScope = EntityOwner.SCHOOL 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);

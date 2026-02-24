@@ -127,6 +127,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('setupFee')}
                   placeholder="25000.00"
                   step="100"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">Pagado por: {config.setupFeePaidBy}</p>
@@ -142,6 +143,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('monthlyRent')}
                   placeholder="3500.00"
                   step="100"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">{formatCurrency(config.monthlyRent * 12)}/año</p>
@@ -157,6 +159,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('yearlyCardCost')}
                   placeholder="140.00"
                   step="10"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">Costo real de tarjeta</p>
@@ -172,6 +175,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('cardDesignFee')}
                   placeholder="0.00"
                   step="10"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>
@@ -211,6 +215,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('depositFeeSPEI')}
                   placeholder="8.00"
                   step="1"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">Cantidad fija por cada SPEI</p>
@@ -297,6 +302,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('concessMonthlySystemFee')}
                   placeholder="0.00"
                   step="100"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>
@@ -311,6 +317,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('concessTechSupportFee')}
                   placeholder="0.00"
                   step="100"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>
@@ -349,6 +356,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('maxDepositPerTx')}
                   placeholder="50000"
                   step="1000"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>
@@ -363,6 +371,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('studentDailyLimit')}
                   placeholder="500"
                   step="50"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>
@@ -377,6 +386,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
                   onChange={handleNumberChange('studentWeeklyLimit')}
                   placeholder="2000"
                   step="100"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
               </div>
             </div>

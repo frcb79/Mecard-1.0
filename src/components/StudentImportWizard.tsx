@@ -4,22 +4,23 @@ import { Upload, CheckCircle, AlertCircle, Download, FileText, Users, X, ArrowRi
 import { StudentImportService, ValidationResult, ImportResult } from '../services/studentImportService';
 import { Button } from './Button';
 import { StudentProfile } from '../types';
+import { MOCK_STUDENTS_LIST } from '../constants';
 import { useToast } from './ui/Toast';
 
 interface StudentImportWizardProps {
-  schoolId: string;
-  stpCostCenter: string;
-  existingStudents: StudentProfile[];
-  onComplete: (newStudents: StudentProfile[]) => void;
-  onCancel: () => void;
+  schoolId?: string;
+  stpCostCenter?: string;
+  existingStudents?: StudentProfile[];
+  onComplete?: (newStudents: StudentProfile[]) => void;
+  onCancel?: () => void;
 }
 
 export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
-  schoolId,
-  stpCostCenter,
-  existingStudents,
-  onComplete,
-  onCancel
+  schoolId = 'mx_01',
+  stpCostCenter = '646180110000000001',
+  existingStudents = MOCK_STUDENTS_LIST,
+  onComplete = () => {},
+  onCancel = () => {}
 }) => {
   const [step, setStep] = useState<'upload' | 'validate' | 'import' | 'complete'>('upload');
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);

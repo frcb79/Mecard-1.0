@@ -393,7 +393,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
         </div>
 
         {/* Gift Redemption Section */}
-        {scanStage === 'active' && (
+        {scanStage === 'verify' && (
           <div className="px-5 pt-4 border-b border-surface-100">
             <div className="space-y-3 pb-4">
               <p className="text-[10px] font-semibold text-surface-400 uppercase tracking-widest">Canjear Regalo</p>

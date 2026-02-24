@@ -373,13 +373,15 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                         <select
                             id="bmc-bank-select"
                             aria-label="Seleccionar banco destino"
+                            value={model.settlement.bankAccount?.bank || ''}
+                            onChange={(e) => setModel({...model, settlement: {...model.settlement, bankAccount: { ...model.settlement.bankAccount!, bank: e.target.value, accountNumber: model.settlement.bankAccount?.accountNumber || '', clabe: model.settlement.bankAccount?.clabe || '', beneficiary: model.settlement.bankAccount?.beneficiary || '' }}})}
                             className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-bold text-indigo-900 outline-none"
                         >
-                            <option>Seleccionar Banco Destino</option>
-                            {BANKS.map(b => <option key={b}>{b}</option>)}
+                            <option value="">Seleccionar Banco Destino</option>
+                            {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
-                        <input placeholder="CLABE Interbancaria (18 dígitos)" aria-label="CLABE interbancaria" className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-mono text-indigo-900 outline-none" />
-                        <input placeholder="Nombre de la Institución / Empresa" aria-label="Nombre del beneficiario" className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-bold text-indigo-900 outline-none" />
+                        <input placeholder="CLABE Interbancaria (18 dígitos)" aria-label="CLABE interbancaria" value={model.settlement.bankAccount?.clabe || ''} onChange={(e) => setModel({...model, settlement: {...model.settlement, bankAccount: { ...model.settlement.bankAccount!, bank: model.settlement.bankAccount?.bank || '', accountNumber: model.settlement.bankAccount?.accountNumber || '', clabe: e.target.value, beneficiary: model.settlement.bankAccount?.beneficiary || '' }}})} className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-mono text-indigo-900 outline-none" />
+                        <input placeholder="Nombre de la Institución / Empresa" aria-label="Nombre del beneficiario" value={model.settlement.bankAccount?.beneficiary || ''} onChange={(e) => setModel({...model, settlement: {...model.settlement, bankAccount: { ...model.settlement.bankAccount!, bank: model.settlement.bankAccount?.bank || '', accountNumber: model.settlement.bankAccount?.accountNumber || '', clabe: model.settlement.bankAccount?.clabe || '', beneficiary: e.target.value }}})} className="w-full px-6 py-4 bg-white border border-indigo-100 rounded-2xl font-bold text-indigo-900 outline-none" />
                     </div>
                 </div>
             </div>
@@ -438,7 +440,7 @@ const MarginSlider = ({ label, value, onChange, color }: MarginSliderProps) => {
     );
 };
 
-interface SplitItemProps { label: string; val: string; color: string; }
+interface SplitItemProps { label: string; val: number; color: string; }
 const SplitItem = ({ label, val, color }: SplitItemProps) => (
     <div className="flex justify-between items-center">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</span>
@@ -446,7 +448,7 @@ const SplitItem = ({ label, val, color }: SplitItemProps) => (
     </div>
 );
 
-interface InputFieldProps { label: string; value: string | number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; prefix?: string; }
+interface InputFieldProps { label: string; value: string | number; onChange: (value: number) => void; prefix?: string; }
 const InputField = ({ label, value, onChange, prefix }: InputFieldProps) => {
     const fieldId = `bmc-${label.toLowerCase().replace(/\s+/g, '-')}`;
     return (
