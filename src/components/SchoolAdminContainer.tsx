@@ -7,29 +7,31 @@
 import React, { useState } from 'react';
 import { SchoolAdminView } from './SchoolAdminView';
 import { MOCK_STUDENTS_LIST } from '../constants';
-import { StudentProfile, OperatingUnit } from '../types';
+import { StudentProfile, OperatingUnit, EntityOwner } from '../types';
 
-// Mock operating units
+// Mock operating units — aligned with OperatingUnit type definition
 const MOCK_OPERATING_UNITS: OperatingUnit[] = [
   {
     id: 'unit-001',
     name: 'Cafetería Principal',
     type: 'CAFETERIA',
     schoolId: 'school-001',
-    status: 'active',
-    manager: { id: 'mgr-001', name: 'Carlos García', email: 'carlos@escuela.mx' },
-    hours: { open: '07:00', close: '16:00' },
-    createdAt: '2026-01-01'
+    ownerType: EntityOwner.SCHOOL,
+    managerId: 'mgr-001',
+    isActive: true,
+    createdAt: '2026-01-01',
+    updatedAt: '2026-01-01'
   },
   {
     id: 'unit-002',
     name: 'Tienda Escolar',
     type: 'STATIONERY',
     schoolId: 'school-001',
-    status: 'active',
-    manager: { id: 'mgr-002', name: 'Rosa López', email: 'rosa@escuela.mx' },
-    hours: { open: '08:00', close: '15:00' },
-    createdAt: '2026-01-01'
+    ownerType: EntityOwner.SCHOOL,
+    managerId: 'mgr-002',
+    isActive: true,
+    createdAt: '2026-01-01',
+    updatedAt: '2026-01-01'
   }
 ];
 

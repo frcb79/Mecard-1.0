@@ -1,15 +1,15 @@
-
 import React, { useState, useMemo } from 'react';
 import { 
   Users, Utensils, Plus, Wallet, Search, Filter, 
   ShieldCheck, Upload, X, Landmark, HeartPulse,
   ChefHat, PenTool, LayoutGrid, CheckCircle2, MoreVertical,
-  Activity, PieChart, Store, ArrowUpRight, TrendingUp
+  Activity, PieChart, Store, ArrowUpRight, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import { StudentProfile, OperatingUnit, EntityOwner } from '../types';
 import { Button } from './Button';
 import { SchoolAdminStudentsView } from './SchoolAdminStudentsView';
 import { useToast } from './ui/Toast';
+import { MOCK_STUDENT_TRANSACTIONS } from '../constants';
 
 interface StatCardProps { title: string; value: string | number; icon: React.ComponentType<{ size?: number; className?: string }>; color: string; trend?: string; subtitle?: string; }
 const StatCard = ({ title, value, icon: Icon, color, trend, subtitle }: StatCardProps) => (
@@ -41,10 +41,36 @@ export const SchoolAdminView: React.FC<{
 }> = ({ onUpdateStudent, allStudents, onBulkAddStudents, operatingUnits, onAddUnit, onUpdateUnit, onDeleteUnit }) => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'units'>('dashboard');
+  const [showAddUnitModal, setShowAddUnitModal] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitType, setNewUnitType] = useState<'CAFETERIA' | 'STATIONERY'>('CAFETERIA');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  // Dynamic KPIs
+  const todayTransactions = MOCK_STUDENT_TRANSACTIONS.filter(t => {
+    const d = new Date(t.date);
+    const today = new Date();
+    return d.toDateString() === today.toDateString();
+  });
+  const todaySales = todayTransactions.reduce((s, t) => s + Math.abs(t.amount), 0);
+  const totalBalance = allStudents.reduce((a, b) => a + b.balance, 0);
+  const allergiesCount = allStudents.filter(s => s.allergies && s.allergies.length > 0).length;
+  // Simulated per-unit daily revenue
+  const unitDailyRevenue = (unitId: string) => {
+    const base = unitId.charCodeAt(unitId.length - 1) * 50 + 3200;
+    return base;
+  };
 
   const handleDeleteStudent = (id: string) => {
-      // Logic handled via parent state usually, simulation here
-      toast.info('Procesando', `Eliminando alumno ${id}`);
+      setShowDeleteConfirm(id);
+  };
+
+  const confirmDeleteStudent = () => {
+    if (showDeleteConfirm) {
+      // In a real app this would call a service
+      toast.info('Procesando', `Alumno eliminado`);
+      setShowDeleteConfirm(null);
+    }
   };
 
   const handleToggleStudent = (id: string) => {
@@ -74,10 +100,10 @@ export const SchoolAdminView: React.FC<{
               <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 {/* Master KPIs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                  <StatCard title="Población Red" value={allStudents.length} icon={Users} color="bg-indigo-600" trend="+12 Alumnos" />
-                  <StatCard title="Saldo en Red" value={`$${(allStudents.reduce((a,b)=>a+b.balance,0)).toLocaleString()}`} icon={Landmark} color="bg-emerald-500" trend="Capital Escolar" />
-                  <StatCard title="Ventas Hoy" value="$14,250" icon={Activity} color="bg-orange-600" trend="78 Operaciones" />
-                  <StatCard title="Salud Estudiantil" value={allStudents.filter(s=>s.allergies.length>0).length} icon={HeartPulse} color="bg-rose-500" subtitle="Alumnos con Alergias" />
+                  <StatCard title="Población Red" value={allStudents.length} icon={Users} color="bg-indigo-600" trend={`${allStudents.filter(s => s.status === 'Active').length} activos`} />
+                  <StatCard title="Saldo en Red" value={`$${totalBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Landmark} color="bg-emerald-500" trend="Capital Escolar" />
+                  <StatCard title="Ventas Hoy" value={`$${todaySales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Activity} color="bg-orange-600" trend={`${todayTransactions.length} Operaciones`} />
+                  <StatCard title="Salud Estudiantil" value={allergiesCount} icon={HeartPulse} color="bg-rose-500" subtitle="Alumnos con Alergias" />
                 </div>
 
                 {/* Second Row: Units Status and Activity */}
@@ -96,7 +122,7 @@ export const SchoolAdminView: React.FC<{
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-black text-slate-800 text-2xl tracking-tighter">$8,240.00</p>
+                                <p className="font-black text-slate-800 text-2xl tracking-tighter">${unitDailyRevenue(unit.id).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
                                 <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Activa Hoy</span>
                               </div>
                            </div>
@@ -113,7 +139,7 @@ export const SchoolAdminView: React.FC<{
                       </div>
                       <div className="pt-10 border-t border-white/10 mt-10">
                         <div className="flex justify-between items-end">
-                            <div><p className="text-[10px] text-indigo-400 uppercase font-black tracking-widest mb-1">Monto Estimado</p><p className="text-5xl font-black tracking-tighter">$24,150.00</p></div>
+                            <div><p className="text-[10px] text-indigo-400 uppercase font-black tracking-widest mb-1">Monto Estimado</p><p className="text-5xl font-black tracking-tighter">${(operatingUnits.length * 8050).toLocaleString('es-MX')}</p></div>
                             <button className="p-5 bg-white text-indigo-900 rounded-3xl shadow-xl hover:scale-110 transition-all"><ArrowUpRight size={28}/></button>
                         </div>
                       </div>
@@ -143,14 +169,14 @@ export const SchoolAdminView: React.FC<{
                       
                       <div className="grid grid-cols-2 gap-4 w-full pt-8 border-t border-slate-50">
                         <div className="text-left"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cajeros</p><p className="font-black text-slate-800 text-lg">2 Activos</p></div>
-                        <div className="text-right"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p><span className="text-emerald-500 font-black text-[9px] uppercase tracking-widest flex items-center justify-end gap-1"><CheckCircle2 size={12}/> Online</span></div>
+                        <div className="text-right"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p><span className={`${unit.isActive ? 'text-emerald-500' : 'text-slate-400'} font-black text-[9px] uppercase tracking-widest flex items-center justify-end gap-1`}><CheckCircle2 size={12}/> {unit.isActive ? 'Activa' : 'Inactiva'}</span></div>
                       </div>
 
-                      <button className="mt-10 w-full py-5 rounded-2xl bg-slate-50 text-slate-400 font-black uppercase text-[10px] tracking-[2px] hover:bg-indigo-50 hover:text-indigo-600 transition-all">Gestionar Terminales</button>
+                      <button onClick={() => toast.info('Terminales', `${unit.name} — Gestión de terminales disponible en V2`)} className="mt-10 w-full py-5 rounded-2xl bg-slate-50 text-slate-400 font-black uppercase text-[10px] tracking-[2px] hover:bg-indigo-50 hover:text-indigo-600 transition-all">Gestionar Terminales</button>
                    </div>
                 ))}
                 
-                <div className="border-4 border-dashed border-slate-200 rounded-[56px] p-12 flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100 hover:border-indigo-400 cursor-pointer transition-all group">
+                <div onClick={() => setShowAddUnitModal(true)} className="border-4 border-dashed border-slate-200 rounded-[56px] p-12 flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100 hover:border-indigo-400 cursor-pointer transition-all group">
                    <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-300 group-hover:text-indigo-600 mb-6 transition-all"><Plus size={40}/></div>
                    <p className="font-black text-slate-800 text-xl tracking-tight">Nueva Unidad</p>
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Cafetería o Papelería</p>
@@ -158,6 +184,59 @@ export const SchoolAdminView: React.FC<{
               </div>
             )}
         </div>
+
+        {/* ===== ADD UNIT MODAL ===== */}
+        {showAddUnitModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
+            <div className="bg-white rounded-[48px] p-12 w-full max-w-md shadow-2xl relative">
+              <button onClick={() => setShowAddUnitModal(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-800"><X size={28}/></button>
+              <h3 className="text-2xl font-black text-slate-800 tracking-tighter mb-8">Nueva Unidad Operativa</h3>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nombre</label>
+                  <input value={newUnitName} onChange={e => setNewUnitName(e.target.value)} placeholder="Ej. Cafetería Norte"
+                    className="w-full p-5 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 focus:ring-4 focus:ring-indigo-100" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tipo</label>
+                  <div className="flex gap-3">
+                    {[{ val: 'CAFETERIA' as const, icon: <ChefHat size={20}/>, label: 'Cafetería' }, { val: 'STATIONERY' as const, icon: <PenTool size={20}/>, label: 'Papelería' }].map(t => (
+                      <button key={t.val} onClick={() => setNewUnitType(t.val)}
+                        className={`flex-1 p-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-xs transition-all ${newUnitType === t.val ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
+                        {t.icon} {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={() => {
+                  if (!newUnitName.trim()) { toast.warning('Requerido', 'Ingresa un nombre para la unidad'); return; }
+                  onAddUnit({ id: `unit_${Date.now()}`, name: newUnitName.trim(), type: newUnitType, schoolId: 'school-001', ownerType: EntityOwner.SCHOOL } as OperatingUnit);
+                  setNewUnitName(''); setShowAddUnitModal(false);
+                  toast.info('Unidad Creada', `${newUnitName} agregada exitosamente`);
+                }} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[2px] shadow-lg hover:bg-indigo-700 transition-all">
+                  Crear Unidad
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== DELETE CONFIRMATION DIALOG ===== */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
+            <div className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl text-center">
+              <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle size={32} className="text-rose-500" />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">¿Eliminar alumno?</h3>
+              <p className="text-sm text-slate-500 mb-8">Esta acción no se puede deshacer. El alumno perderá acceso a la plataforma.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-xs">Cancelar</button>
+                <button onClick={confirmDeleteStudent} className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-bold text-xs hover:bg-rose-600 transition-all">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };

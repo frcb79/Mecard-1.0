@@ -5,8 +5,13 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Edit2, Trash2, Eye, MoreVertical, Users, X } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Eye, MoreVertical, Users, X, AlertTriangle, GraduationCap } from 'lucide-react';
 import { useToast } from './ui/Toast';
+
+const ITEMS_PER_PAGE = 10;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CURP_RE = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
+const maskPII = (value: string, visibleEnd = 4) => value.length > visibleEnd ? '•'.repeat(value.length - visibleEnd) + value.slice(-visibleEnd) : value;
 
 export default function StudentManagementView() {
   const toast = useToast();
@@ -15,6 +20,8 @@ export default function StudentManagementView() {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -24,6 +31,7 @@ export default function StudentManagementView() {
     phone: '',
     balance: 0,
     clabe: '',
+    grade: '',
   });
 
   // MOCK: Lista de estudiantes
@@ -37,6 +45,7 @@ export default function StudentManagementView() {
       balance: 850.00,
       status: 'active' as const,
       clabe: '002341234567890123',
+      grade: '3-A',
       createdAt: '2026-01-15'
     },
     {
@@ -48,6 +57,7 @@ export default function StudentManagementView() {
       balance: 1200.50,
       status: 'active' as const,
       clabe: '002341234567890124',
+      grade: '2-B',
       createdAt: '2026-01-10'
     },
     {
@@ -59,6 +69,7 @@ export default function StudentManagementView() {
       balance: 0,
       status: 'inactive' as const,
       clabe: '002341234567890125',
+      grade: '1-C',
       createdAt: '2025-11-20'
     },
   ]);
@@ -78,8 +89,15 @@ export default function StudentManagementView() {
     });
   }, [searchTerm, filterStatus, students]);
 
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / ITEMS_PER_PAGE));
+  const paginatedStudents = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredStudents.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredStudents, currentPage]);
+
   const handleAddStudent = () => {
-    setFormData({ name: '', email: '', curp: '', phone: '', balance: 0, clabe: '' });
+    setFormData({ name: '', email: '', curp: '', phone: '', balance: 0, clabe: '', grade: '' });
     setModalMode('add');
     setSelectedStudent(null);
     setShowModal(true);
@@ -95,6 +113,7 @@ export default function StudentManagementView() {
         phone: student.phone,
         balance: student.balance,
         clabe: student.clabe,
+        grade: student.grade || '',
       });
       setSelectedStudent(id);
       setModalMode('edit');
@@ -104,7 +123,19 @@ export default function StudentManagementView() {
 
   const handleSaveStudent = () => {
     if (!formData.name || !formData.email || !formData.curp) {
-      toast.warning('Campos requeridos', 'Por favor completa los campos requeridos');
+      toast.warning('Campos requeridos', 'Nombre, email y CURP son obligatorios');
+      return;
+    }
+    if (!EMAIL_RE.test(formData.email)) {
+      toast.warning('Email inválido', 'Ingresa un email con formato válido');
+      return;
+    }
+    if (!CURP_RE.test(formData.curp)) {
+      toast.warning('CURP inválido', 'El CURP debe tener 18 caracteres alfanuméricos válidos');
+      return;
+    }
+    if (formData.clabe && formData.clabe.length !== 18) {
+      toast.warning('CLABE inválida', 'La CLABE debe tener exactamente 18 dígitos');
       return;
     }
 
@@ -128,8 +159,14 @@ export default function StudentManagementView() {
   };
 
   const handleDeleteStudent = (id: string) => {
-    if (confirm('¿Eliminar este estudiante?')) {
-      setStudents(students.filter(s => s.id !== id));
+    setDeleteConfirm(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      setStudents(students.filter(s => s.id !== deleteConfirm));
+      toast.info('Eliminado', 'El estudiante fue removido');
+      setDeleteConfirm(null);
     }
   };
 
@@ -256,7 +293,7 @@ export default function StudentManagementView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStudents.map((student, idx) => (
+                  {paginatedStudents.map((student, idx) => (
                     <tr
                       key={student.id}
                       className={`border-b border-slate-100 hover:bg-slate-50 transition-all ${
@@ -270,8 +307,8 @@ export default function StudentManagementView() {
                       <td className="px-6 py-4 text-sm text-slate-600 font-medium">
                         {student.email}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 font-medium font-mono">
-                        {student.curp}
+                      <td className="px-6 py-4 text-sm text-slate-600 font-medium font-mono" title="Dato protegido">
+                        {maskPII(student.curp)}
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-black text-slate-900">
@@ -322,18 +359,17 @@ export default function StudentManagementView() {
         {filteredStudents.length > 0 && (
           <div className="mt-6 flex items-center justify-between">
             <p className="text-sm font-medium text-slate-500">
-              Mostrando {filteredStudents.length} de {students.length} estudiantes
+              Mostrando {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredStudents.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredStudents.length)} de {filteredStudents.length} estudiantes
             </p>
             <div className="flex gap-2">
-              <button className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-[12px] font-black text-[10px] uppercase transition-all">
-                Anterior
-              </button>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[12px] font-black text-[10px] uppercase transition-all">
-                1
-              </button>
-              <button className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-[12px] font-black text-[10px] uppercase transition-all">
-                Siguiente
-              </button>
+              <button disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-[12px] font-black text-[10px] uppercase transition-all">Anterior</button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button key={i + 1} onClick={() => setCurrentPage(i + 1)}
+                  className={`px-4 py-2 rounded-[12px] font-black text-[10px] uppercase transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}>{i + 1}</button>
+              ))}
+              <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-[12px] font-black text-[10px] uppercase transition-all">Siguiente</button>
             </div>
           </div>
         )}
@@ -440,6 +476,21 @@ export default function StudentManagementView() {
                   />
                 </div>
 
+                {/* Grado / Grupo */}
+                <div>
+                  <label htmlFor="student-grade" className="block text-sm font-black text-slate-700 mb-1">
+                    Grado / Grupo
+                  </label>
+                  <input
+                    id="student-grade"
+                    type="text"
+                    value={formData.grade}
+                    onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                    placeholder="3-A"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
                 {/* Saldo Inicial */}
                 <div>
                   <label htmlFor="student-balance" className="block text-sm font-black text-slate-700 mb-1">
@@ -471,6 +522,22 @@ export default function StudentManagementView() {
                 >
                   {modalMode === 'add' ? 'Agregar' : 'Guardar'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* DELETE CONFIRMATION DIALOG */}
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
+            <div className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl text-center">
+              <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle size={32} className="text-rose-500" />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">¿Eliminar alumno?</h3>
+              <p className="text-sm text-slate-500 mb-8">Esta acción no se puede deshacer. El alumno será removido del sistema.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-xs">Cancelar</button>
+                <button onClick={confirmDelete} className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-bold text-xs hover:bg-rose-600 transition-all">Eliminar</button>
               </div>
             </div>
           </div>

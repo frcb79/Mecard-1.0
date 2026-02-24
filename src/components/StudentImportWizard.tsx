@@ -28,7 +28,17 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
   const handleFileUpload = async (file: File) => {
+    if (!file.name.endsWith('.csv')) {
+      toast.error('Formato no soportado', 'Solo se aceptan archivos CSV (.csv)');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('Archivo demasiado grande', `El archivo pesa ${(file.size / 1024 / 1024).toFixed(1)} MB. Máximo permitido: 5 MB`);
+      return;
+    }
     setLoading(true);
     try {
       const rows = await StudentImportService.parseCSV(file);
@@ -93,12 +103,14 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
 
           {/* Stepper Visual */}
           <div className="flex gap-2">
-            {['upload', 'validate', 'import', 'complete'].map((s, idx) => (
-              <div key={s} className={`h-2 flex-1 rounded-full transition-all duration-500 ${
-                (step === s) || (idx < ['upload', 'validate', 'import', 'complete'].indexOf(step)) 
-                ? 'bg-indigo-600' : 'bg-slate-100'
-              }`} />
-            ))}
+            {(['upload', 'validate', 'import', 'complete'] as const).map((s, idx) => {
+              const currentIdx = ['upload', 'validate', 'import', 'complete'].indexOf(step);
+              return (
+                <div key={s} className={`h-2 flex-1 rounded-full transition-all duration-500 ${
+                  idx <= currentIdx ? 'bg-indigo-600' : 'bg-slate-100'
+                }`} />
+              );
+            })}
           </div>
         </div>
 
@@ -135,9 +147,9 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
                     <Upload size={40} />
                   </div>
                   <h3 className="text-xl font-black text-slate-800 mb-2">Sube tu Archivo</h3>
-                  <p className="text-slate-400 text-sm mb-6">Arrastra tu archivo Excel o CSV aquí</p>
-                  <span className="bg-white px-4 py-2 rounded-xl text-[9px] font-black text-slate-400 border border-slate-100 uppercase tracking-widest">Formatos: CSV, XLSX</span>
-                  <input type="file" id="wizard-file" hidden accept=".csv,.xlsx" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
+                  <p className="text-slate-400 text-sm mb-6">Arrastra tu archivo CSV aquí (máx. 5 MB)</p>
+                  <span className="bg-white px-4 py-2 rounded-xl text-[9px] font-black text-slate-400 border border-slate-100 uppercase tracking-widest">Formato: CSV</span>
+                  <input type="file" id="wizard-file" hidden accept=".csv" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
                 </div>
               </div>
 
