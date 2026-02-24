@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../types';
-import { LayoutGrid, LogOut } from 'lucide-react';
+import { LayoutGrid, LogOut, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardPlaceholderProps {
@@ -11,7 +11,7 @@ interface DashboardPlaceholderProps {
 
 /**
  * Placeholder dashboard component for testing routes
- * Shows basic welcome message and navigation
+ * Premium/Bento design language
  */
 export const DashboardPlaceholder: React.FC<DashboardPlaceholderProps> = ({ title, role }) => {
   const navigate = useNavigate();
@@ -39,41 +39,45 @@ export const DashboardPlaceholder: React.FC<DashboardPlaceholderProps> = ({ titl
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-        <div className="flex items-center justify-center mb-6">
-          <div className="bg-indigo-100 p-3 rounded-full">
-            <LayoutGrid className="w-6 h-6 text-indigo-600" />
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6">
+      <div className="bg-white rounded-[56px] shadow-sm border border-slate-100 p-14 max-w-lg w-full space-y-8">
+        <div className="flex items-center justify-center">
+          <div className="bg-indigo-50 w-20 h-20 rounded-[32px] flex items-center justify-center">
+            <LayoutGrid className="w-8 h-8 text-indigo-600" />
           </div>
         </div>
         
-        <h1 className="text-2xl font-bold text-center mb-2 text-gray-800">
-          {title}
-        </h1>
-        
-        <p className="text-center text-gray-600 mb-6">
-          Bienvenido, <span className="font-semibold">{getRoleDisplayName(role)}</span>
-        </p>
-
-        <div className="bg-indigo-50 border border-indigo-200 rounded p-4 mb-6">
-          <p className="text-sm text-indigo-800">
-            ✓ Autenticación exitosa
-          </p>
-          <p className="text-sm text-indigo-800">
-            ✓ Rol: <span className="font-semibold">{role}</span>
-          </p>
-          <p className="text-sm text-indigo-800">
-            ✓ Sistema de routing activo
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-black text-slate-800 tracking-tighter">
+            {title}
+          </h1>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Bienvenido, {getRoleDisplayName(role)}
           </p>
         </div>
 
-        <p className="text-center text-gray-500 text-sm mb-6">
+        <div className="bg-indigo-50/60 rounded-3xl p-6 space-y-3">
+          <div className="flex items-center gap-2 text-indigo-700">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-bold">Autenticación exitosa</span>
+          </div>
+          <div className="flex items-center gap-2 text-indigo-700">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-bold">Rol: {role}</span>
+          </div>
+          <div className="flex items-center gap-2 text-indigo-700">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-bold">Sistema de routing activo</span>
+          </div>
+        </div>
+
+        <p className="text-center text-slate-400 text-xs font-medium leading-relaxed px-4">
           El dashboard está siendo cargado. Los componentes específicos de esta sección se integrarán pronto.
         </p>
 
         <button
           onClick={handleLogout}
-          className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition flex items-center justify-center gap-2"
+          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest py-5 rounded-2xl transition-all flex items-center justify-center gap-2"
         >
           <LogOut className="w-4 h-4" />
           Cerrar sesión

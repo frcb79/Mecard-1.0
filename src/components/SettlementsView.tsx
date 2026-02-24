@@ -147,16 +147,16 @@ export default function SettlementsView() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 p-8">
+    <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* HEADER */}
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-10 flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2 flex items-center gap-3">
-              <Banknote className="w-8 h-8 text-purple-600" />
+            <h1 className="text-4xl font-black text-slate-800 tracking-tighter mb-1 flex items-center gap-3">
+              <Banknote className="w-8 h-8 text-indigo-600" />
               Liquidaciones
             </h1>
-            <p className="text-slate-500 font-medium">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
               Historial y estado de dispersión de fondos a concesionarios
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function SettlementsView() {
           <Button 
             onClick={generateSettlement}
             disabled={isGenerating}
-            className="flex items-center gap-2 bg-purple-600 text-white py-3 px-6 rounded-[20px] font-black hover:bg-purple-700"
+            className="flex items-center gap-2 bg-indigo-600 text-white py-4 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-200 hover:bg-indigo-700 transition-all"
           >
             {isGenerating ? <Loader2 className="animate-spin w-5 h-5" /> : <Plus className="w-5 h-5" />}
             {isGenerating ? 'Generando...' : 'Generar Liquidación'}
@@ -172,17 +172,17 @@ export default function SettlementsView() {
         </div>
 
         {/* FILTROS */}
-        <div className="bg-white rounded-[28px] shadow-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-[48px] shadow-sm border border-slate-100 p-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* FILTRO DE ESTADO */}
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                 Estado
               </label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-[16px] outline-none focus:border-purple-600 transition-all font-medium"
+                className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-black text-slate-700 appearance-none"
               >
                 <option value="all">Todos los Estados</option>
                 <option value="completed">Completado</option>
@@ -197,7 +197,7 @@ export default function SettlementsView() {
               <button
                 onClick={loadSettlements}
                 disabled={isLoading}
-                className="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[16px] font-bold flex items-center justify-center gap-2 transition-all"
+                className="w-full px-5 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
               >
                 {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <RefreshCw className="w-5 h-5" />}
                 {isLoading ? 'Cargando...' : 'Actualizar'}
@@ -206,20 +206,20 @@ export default function SettlementsView() {
           </div>
 
           {/* ESTADÍSTICAS */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 mt-4">
-            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-transparent rounded-[16px]">
-              <p className="text-[10px] font-black text-purple-400 uppercase tracking-[2px]">
+          <div className="grid grid-cols-2 gap-5 pt-6 border-t border-slate-100 mt-6">
+            <div className="text-center p-5 bg-indigo-50/60 rounded-3xl">
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
                 Ventas Totales
               </p>
-              <p className="text-2xl font-black text-purple-600 mt-2">
+              <p className="text-2xl font-black text-indigo-600 tracking-tighter mt-2">
                 ${totalSales.toFixed(2)}
               </p>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-transparent rounded-[16px]">
-              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[2px]">
+            <div className="text-center p-5 bg-emerald-50/60 rounded-3xl">
+              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
                 Dispersados
               </p>
-              <p className="text-2xl font-black text-emerald-600 mt-2">
+              <p className="text-2xl font-black text-emerald-600 tracking-tighter mt-2">
                 ${totalDisbursed.toFixed(2)}
               </p>
             </div>
@@ -229,21 +229,21 @@ export default function SettlementsView() {
         {/* SETTLEMENTS LIST */}
         <div className="space-y-6">
           {isLoading ? (
-            <div className="bg-white rounded-[28px] shadow-lg p-12 text-center">
-              <Loader2 className="w-8 h-8 text-purple-600 animate-spin mx-auto mb-4" />
-              <p className="text-slate-500 font-bold">Cargando liquidaciones...</p>
+            <div className="bg-white rounded-[48px] shadow-sm border border-slate-100 p-16 text-center">
+              <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-4" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargando liquidaciones...</p>
             </div>
           ) : filteredSettlements.length === 0 ? (
-            <div className="bg-white rounded-[28px] shadow-lg p-12 text-center">
+            <div className="bg-white rounded-[48px] shadow-sm border border-slate-100 p-16 text-center">
               <Banknote className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-              <p className="text-slate-500 font-bold text-lg">No hay liquidaciones</p>
-              <p className="text-slate-400 text-sm mt-2">Genera una nueva liquidación para comenzar</p>
+              <p className="text-slate-500 font-black text-lg">No hay liquidaciones</p>
+              <p className="text-slate-400 text-xs font-medium mt-2">Genera una nueva liquidación para comenzar</p>
             </div>
           ) : (
             filteredSettlements.map((settlement) => (
               <div
                 key={settlement.id}
-                className="bg-white rounded-[28px] shadow-lg overflow-hidden"
+                className="bg-white rounded-[48px] shadow-sm border border-slate-100 overflow-hidden"
               >
                 <div
                   className="p-6 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors flex justify-between items-center"
@@ -274,7 +274,7 @@ export default function SettlementsView() {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[2px]">
                       Total
                     </p>
-                    <p className="text-3xl font-black text-purple-600">
+                    <p className="text-3xl font-black text-indigo-600 tracking-tighter">
                       ${settlement.totalAmount.toFixed(2)}
                     </p>
                   </div>
@@ -285,7 +285,7 @@ export default function SettlementsView() {
                     {settlement.disbursements.map((disburse) => (
                       <div
                         key={disburse.id}
-                        className="border border-slate-200 rounded-[20px] p-4 hover:border-slate-300 transition-all"
+                        className="bg-slate-50/60 border border-slate-100 rounded-3xl p-5 hover:border-slate-200 transition-all"
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div>
@@ -329,7 +329,7 @@ export default function SettlementsView() {
                           <Button
                             onClick={() => processDisbursement(disburse)}
                             disabled={processingDisbursement === disburse.id}
-                            className="w-full bg-indigo-600 text-white py-2 rounded-[16px] font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
                           >
                             {processingDisbursement === disburse.id ? (
                               <>

@@ -1,10 +1,12 @@
 /**
  * SUPERADMIN BILLING CONFIG VIEW
  * Interfaz para configurar variables de precios y fees por escuela
- * @version 1.0.0
+ * Premium/Bento design language
+ * @version 2.0.0
  */
 
 import React, { useState, useEffect } from 'react'
+import { DollarSign, CreditCard, Store, ShieldCheck, Eye, Settings2, Loader2, Save, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { SchoolBillingConfig } from '../../types'
 import { getBillingConfig, updateBillingConfig, formatCurrency, formatPercentage } from '../../services/BillingService'
 
@@ -12,6 +14,47 @@ interface BillingConfigViewProps {
   schoolId?: string
   onSaved?: (config: SchoolBillingConfig) => void
 }
+
+/* ── Shared sub-components ─────────────────────────────── */
+const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{children}</label>
+)
+
+const Hint: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p className="text-[10px] text-slate-400 font-medium mt-1.5">{children}</p>
+)
+
+const NumInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { prefix?: string; suffix?: string }> = ({ prefix, suffix, className, ...props }) => (
+  <div className="flex items-center gap-3">
+    {prefix && <span className="text-slate-400 font-black text-sm">{prefix}</span>}
+    <input
+      type="number"
+      className={`w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-black text-slate-700 text-lg outline-none focus:ring-4 focus:ring-indigo-100 transition-all ${className ?? ''}`}
+      {...props}
+    />
+    {suffix && <span className="text-slate-400 font-black text-sm">{suffix}</span>}
+  </div>
+)
+
+const SectionCard: React.FC<{ children: React.ReactNode; title: string; subtitle?: string }> = ({ children, title, subtitle }) => (
+  <div className="bg-white rounded-[48px] border border-slate-100 shadow-sm p-10 space-y-8 animate-in fade-in duration-300">
+    <div>
+      <h2 className="text-2xl font-black text-slate-800 tracking-tighter">{title}</h2>
+      {subtitle && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{subtitle}</p>}
+    </div>
+    {children}
+  </div>
+)
+
+/* ── Tabs data ─────────────────────────────────────────── */
+const TABS = [
+  { id: 'infrastructure', label: 'Infraestructura', icon: Settings2 },
+  { id: 'deposits', label: 'Depósitos', icon: CreditCard },
+  { id: 'pos', label: 'POS / Comisiones', icon: Store },
+  { id: 'concessionaire', label: 'Concesionario', icon: DollarSign },
+  { id: 'limits', label: 'Límites', icon: ShieldCheck },
+  { id: 'preview', label: 'Vista Previa', icon: Eye },
+] as const
 
 export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId = 'mx_01', onSaved }) => {
   const [config, setConfig] = useState<SchoolBillingConfig | null>(null)
@@ -63,431 +106,280 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
   }
 
   if (loading) {
-    return <div className="text-center">Cargando configuración...</div>
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin mr-3" />
+        <span className="font-black text-[10px] uppercase tracking-widest">Cargando configuración…</span>
+      </div>
+    )
   }
 
   if (!config) {
-    return <div className="text-red-500">No se pudo cargar la configuración</div>
+    return (
+      <div className="flex items-center justify-center h-64 text-rose-500">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="font-bold">No se pudo cargar la configuración</span>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-8 space-y-8 pb-32">
       {/* Header */}
-      <div className="border-b pb-4">
-        <h1 className="text-3xl font-bold">Configuración de Billing</h1>
-        <p className="text-gray-600">Escuela: {schoolId}</p>
-      </div>
+      <header>
+        <h1 className="text-4xl font-black text-slate-800 tracking-tighter">Configuración de Billing</h1>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Escuela: {schoolId}</p>
+      </header>
 
       {/* Message Alert */}
       {message && (
-        <div className={`rounded-lg p-4 ${message.type === 'success' ? 'bg-green-50' : 'bg-red-50'}`}>
-          <span className={message.type === 'success' ? 'text-green-700' : 'text-red-700'}>
-            {message.text}
-          </span>
+        <div className={`rounded-3xl p-5 flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+          {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+          <span className="font-bold text-sm">{message.text}</span>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="border-b">
-        <div className="flex gap-4">
-          {[
-            { id: 'infrastructure', label: 'Infraestructura' },
-            { id: 'deposits', label: 'Depósitos' },
-            { id: 'pos', label: 'POS/Comisiones' },
-            { id: 'concessionaire', label: 'Concesionario' },
-            { id: 'limits', label: 'Límites' },
-            { id: 'preview', label: 'Vista Previa' }
-          ].map((tab) => (
+      {/* Tabs — pill style */}
+      <div className="bg-slate-100/60 p-1.5 rounded-2xl inline-flex gap-1 flex-wrap">
+        {TABS.map((tab) => {
+          const Icon = tab.icon
+          return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 font-medium border-b-2 ${
-                activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600'
+              className={`px-5 py-3 rounded-xl flex items-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all ${
+                activeTab === tab.id
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-white/60'
               }`}
             >
+              <Icon size={14} />
               {tab.label}
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
       {/* Tab: Infrastructure */}
       {activeTab === 'infrastructure' && (
-        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
-          <h2 className="text-xl font-bold">Infraestructura y Ventas</h2>
-
-          <div className="grid grid-cols-2 gap-6">
+        <SectionCard title="Infraestructura y Ventas" subtitle="Costos fijos de setup y renta mensual">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium mb-2">Setup Fee (One-time)</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.setupFee}
-                  onChange={handleNumberChange('setupFee')}
-                  placeholder="25000.00"
-                  step="100"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Pagado por: {config.setupFeePaidBy}</p>
+              <Label>Setup Fee (One-time)</Label>
+              <NumInput prefix="$" value={config.setupFee} onChange={handleNumberChange('setupFee')} placeholder="25000.00" step="100" />
+              <Hint>Pagado por: {config.setupFeePaidBy}</Hint>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Monthly Rent</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.monthlyRent}
-                  onChange={handleNumberChange('monthlyRent')}
-                  placeholder="3500.00"
-                  step="100"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">{formatCurrency(config.monthlyRent * 12)}/año</p>
+              <Label>Monthly Rent</Label>
+              <NumInput prefix="$" value={config.monthlyRent} onChange={handleNumberChange('monthlyRent')} placeholder="3500.00" step="100" />
+              <Hint>{formatCurrency(config.monthlyRent * 12)}/año</Hint>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Yearly Card Cost (per student)</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.yearlyCardCost}
-                  onChange={handleNumberChange('yearlyCardCost')}
-                  placeholder="140.00"
-                  step="10"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Costo real de tarjeta</p>
+              <Label>Yearly Card Cost (per student)</Label>
+              <NumInput prefix="$" value={config.yearlyCardCost} onChange={handleNumberChange('yearlyCardCost')} placeholder="140.00" step="10" />
+              <Hint>Costo real de tarjeta</Hint>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Card Design Fee (One-time)</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.cardDesignFee}
-                  onChange={handleNumberChange('cardDesignFee')}
-                  placeholder="0.00"
-                  step="10"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
+              <Label>Card Design Fee (One-time)</Label>
+              <NumInput prefix="$" value={config.cardDesignFee} onChange={handleNumberChange('cardDesignFee')} placeholder="0.00" step="10" />
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Tab: Deposits */}
       {activeTab === 'deposits' && (
-        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
-          <h2 className="text-xl font-bold">Fees de Depósitos (Padres)</h2>
-
-          <div className="grid grid-cols-2 gap-6">
+        <SectionCard title="Fees de Depósitos" subtitle="Comisiones cobradas al padre al recargar">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium mb-2">Fee Tarjeta Crédito/Débito</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={(config.depositFeeCard * 100).toFixed(1)}
-                  onChange={(e) => updateField('depositFeeCard', parseFloat(e.target.value) / 100)}
-                  placeholder="3.5"
-                  step="0.1"
-                  max="10"
-                />
-                <span className="text-gray-500">%</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Ej: Si padre deposita $1,000 paga ${(1000 * config.depositFeeCard).toFixed(2)}</p>
+              <Label>Fee Tarjeta Crédito/Débito</Label>
+              <NumInput
+                suffix="%"
+                value={(config.depositFeeCard * 100).toFixed(1)}
+                onChange={(e) => updateField('depositFeeCard', parseFloat(e.currentTarget.value) / 100)}
+                placeholder="3.5" step="0.1" max="10"
+              />
+              <Hint>Ej: Si padre deposita $1,000 paga ${(1000 * config.depositFeeCard).toFixed(2)}</Hint>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Fee SPEI Fijo</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.depositFeeSPEI}
-                  onChange={handleNumberChange('depositFeeSPEI')}
-                  placeholder="8.00"
-                  step="1"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Cantidad fija por cada SPEI</p>
+              <Label>Fee SPEI Fijo</Label>
+              <NumInput prefix="$" value={config.depositFeeSPEI} onChange={handleNumberChange('depositFeeSPEI')} placeholder="8.00" step="1" />
+              <Hint>Cantidad fija por cada SPEI</Hint>
             </div>
 
-            <div className="col-span-2">
-              <label className="block text-sm font-medium mb-2">Fee Depósito en Efectivo</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.depositFeeCash}
-                  onChange={handleNumberChange('depositFeeCash')}
-                  placeholder="0.00"
-                  disabled
-                  className="bg-gray-100"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Siempre $0 - sin comisión</p>
+            <div className="md:col-span-2">
+              <Label>Fee Depósito en Efectivo</Label>
+              <NumInput prefix="$" value={config.depositFeeCash} onChange={handleNumberChange('depositFeeCash')} placeholder="0.00" disabled className="opacity-50 cursor-not-allowed" />
+              <Hint>Siempre $0 — sin comisión</Hint>
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Tab: POS */}
       {activeTab === 'pos' && (
-        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
-          <h2 className="text-xl font-bold">Comisiones POS / Cafetería</h2>
-
-          <div className="grid grid-cols-2 gap-6">
+        <SectionCard title="Comisiones POS / Cafetería" subtitle="Markup y comisión por venta en punto de venta">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium mb-2">POS Markup % (en precio)</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={(config.posMarkupPercentage * 100).toFixed(1)}
-                  onChange={(e) => updateField('posMarkupPercentage', parseFloat(e.target.value) / 100)}
-                  placeholder="3.0"
-                  step="0.1"
-                />
-                <span className="text-gray-500">%</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Ej: Producto $100 → Vende por $103</p>
+              <Label>POS Markup % (en precio)</Label>
+              <NumInput
+                suffix="%"
+                value={(config.posMarkupPercentage * 100).toFixed(1)}
+                onChange={(e) => updateField('posMarkupPercentage', parseFloat(e.currentTarget.value) / 100)}
+                placeholder="3.0" step="0.1"
+              />
+              <Hint>Ej: Producto $100 → Vende por $103</Hint>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">POS Comisión % (por venta)</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={(config.posCommissionPercentage * 100).toFixed(1)}
-                  onChange={(e) => updateField('posCommissionPercentage', parseFloat(e.target.value) / 100)}
-                  placeholder="3.0"
-                  step="0.1"
-                />
-                <span className="text-gray-500">%</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Para Cashback & Rewards</p>
+              <Label>POS Comisión % (por venta)</Label>
+              <NumInput
+                suffix="%"
+                value={(config.posCommissionPercentage * 100).toFixed(1)}
+                onChange={(e) => updateField('posCommissionPercentage', parseFloat(e.currentTarget.value) / 100)}
+                placeholder="3.0" step="0.1"
+              />
+              <Hint>Para Cashback &amp; Rewards</Hint>
             </div>
           </div>
 
-          <div className="rounded-lg p-4 bg-blue-50">
-            <p className="text-sm text-blue-700">
+          <div className="rounded-3xl p-5 bg-indigo-50/60 border border-indigo-100">
+            <p className="text-xs text-indigo-700 font-bold leading-relaxed">
               💡 <strong>Nota:</strong> Las escuelas NO reciben % de ventas POS. Solo reciben si ELLOS manejan la cafetería.
             </p>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Tab: Concessionaire */}
       {activeTab === 'concessionaire' && (
-        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
-          <h2 className="text-xl font-bold">Fees Concesionario</h2>
-          <p className="text-sm text-gray-600 mb-4">Solo aplica si hay concesionario separado (no escuela)</p>
-
-          <div className="grid grid-cols-2 gap-6">
+        <SectionCard title="Fees Concesionario" subtitle="Solo aplica si hay concesionario separado (no escuela)">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium mb-2">Monthly System Fee</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.concessMonthlySystemFee}
-                  onChange={handleNumberChange('concessMonthlySystemFee')}
-                  placeholder="0.00"
-                  step="100"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
+              <Label>Monthly System Fee</Label>
+              <NumInput prefix="$" value={config.concessMonthlySystemFee} onChange={handleNumberChange('concessMonthlySystemFee')} placeholder="0.00" step="100" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Monthly Tech Support Fee</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.concessTechSupportFee}
-                  onChange={handleNumberChange('concessTechSupportFee')}
-                  placeholder="0.00"
-                  step="100"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
+              <Label>Monthly Tech Support Fee</Label>
+              <NumInput prefix="$" value={config.concessTechSupportFee} onChange={handleNumberChange('concessTechSupportFee')} placeholder="0.00" step="100" />
             </div>
 
-            <div className="col-span-2">
-              <label className="block text-sm font-medium mb-2">Early Withdrawal Fee %</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={(config.earlyWithdrawalFeePercentage * 100).toFixed(1)}
-                  onChange={(e) => updateField('earlyWithdrawalFeePercentage', parseFloat(e.target.value) / 100)}
-                  placeholder="2.0"
-                  step="0.1"
-                />
-                <span className="text-gray-500">%</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Cargo extra para retiro antes de 7 días</p>
+            <div className="md:col-span-2">
+              <Label>Early Withdrawal Fee %</Label>
+              <NumInput
+                suffix="%"
+                value={(config.earlyWithdrawalFeePercentage * 100).toFixed(1)}
+                onChange={(e) => updateField('earlyWithdrawalFeePercentage', parseFloat(e.currentTarget.value) / 100)}
+                placeholder="2.0" step="0.1"
+              />
+              <Hint>Cargo extra para retiro antes de 7 días</Hint>
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Tab: Limits */}
       {activeTab === 'limits' && (
-        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
-          <h2 className="text-xl font-bold">Límites de Seguridad</h2>
-
-          <div className="grid grid-cols-2 gap-6">
+        <SectionCard title="Límites de Seguridad" subtitle="Topes de depósito y gasto diario/semanal">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium mb-2">Max Depósito por Transacción</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.maxDepositPerTx}
-                  onChange={handleNumberChange('maxDepositPerTx')}
-                  placeholder="50000"
-                  step="1000"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
+              <Label>Max Depósito por Transacción</Label>
+              <NumInput prefix="$" value={config.maxDepositPerTx} onChange={handleNumberChange('maxDepositPerTx')} placeholder="50000" step="1000" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Límite Diario Estudiante</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.studentDailyLimit}
-                  onChange={handleNumberChange('studentDailyLimit')}
-                  placeholder="500"
-                  step="50"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
+              <Label>Límite Diario Estudiante</Label>
+              <NumInput prefix="$" value={config.studentDailyLimit} onChange={handleNumberChange('studentDailyLimit')} placeholder="500" step="50" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Límite Semanal Estudiante</label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">$</span>
-                <input
-                  type="number"
-                  value={config.studentWeeklyLimit}
-                  onChange={handleNumberChange('studentWeeklyLimit')}
-                  placeholder="2000"
-                  step="100"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
+              <Label>Límite Semanal Estudiante</Label>
+              <NumInput prefix="$" value={config.studentWeeklyLimit} onChange={handleNumberChange('studentWeeklyLimit')} placeholder="2000" step="100" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Invoice Due Date</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={config.invoiceDueDate}
-                  onChange={(e) => updateField('invoiceDueDate', parseInt(e.target.value))}
-                  placeholder="10"
-                  step="1"
-                  max="30"
-                />
-                <span className="text-gray-500">días</span>
-              </div>
+              <Label>Invoice Due Date</Label>
+              <NumInput suffix="días" value={config.invoiceDueDate} onChange={(e) => updateField('invoiceDueDate', parseInt(e.currentTarget.value))} placeholder="10" step="1" max="30" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Días Antes de Suspensión</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={config.overdueDaysBeforeSuspension}
-                  onChange={(e) => updateField('overdueDaysBeforeSuspension', parseInt(e.target.value))}
-                  placeholder="30"
-                  step="5"
-                />
-                <span className="text-gray-500">días</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Después de vencimiento</p>
+              <Label>Días Antes de Suspensión</Label>
+              <NumInput suffix="días" value={config.overdueDaysBeforeSuspension} onChange={(e) => updateField('overdueDaysBeforeSuspension', parseInt(e.currentTarget.value))} placeholder="30" step="5" />
+              <Hint>Después de vencimiento</Hint>
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Tab: Preview */}
       {activeTab === 'preview' && (
-        <div className="bg-white rounded-xl border border-surface-100 shadow-sm p-6 space-y-4">
-          <h2 className="text-xl font-bold">Vista Previa de Cálculos</h2>
-
+        <SectionCard title="Vista Previa de Cálculos" subtitle="Simulaciones con los parámetros actuales">
           <div className="space-y-6">
             {/* Deposit Simulation */}
-            <div className="border p-4 rounded bg-gray-50">
-              <h3 className="font-bold mb-3">Simulación: Padre deposita $1,000 por Tarjeta</h3>
-              <div className="space-y-2 text-sm">
-                <p>Monto: <strong>$1,000.00</strong></p>
-                <p>Comisión ({formatPercentage(config.depositFeeCard)}): <strong>-${(1000 * config.depositFeeCard).toFixed(2)}</strong></p>
-                <p className="border-t pt-2">
-                  Saldo para estudiante: <strong className="text-green-600">${(1000 - 1000 * config.depositFeeCard).toFixed(2)}</strong>
-                </p>
+            <div className="p-8 rounded-3xl bg-slate-50 space-y-3">
+              <h3 className="font-black text-slate-700 tracking-tight">Simulación: Padre deposita $1,000 por Tarjeta</h3>
+              <div className="space-y-2 text-sm text-slate-600">
+                <p>Monto: <strong className="text-slate-800">$1,000.00</strong></p>
+                <p>Comisión ({formatPercentage(config.depositFeeCard)}): <strong className="text-rose-600">-${(1000 * config.depositFeeCard).toFixed(2)}</strong></p>
+                <div className="border-t border-slate-200 pt-3 mt-3">
+                  <p>Saldo para estudiante: <strong className="text-emerald-600 text-lg">${(1000 - 1000 * config.depositFeeCard).toFixed(2)}</strong></p>
+                </div>
               </div>
             </div>
 
             {/* Monthly Invoice Simulation */}
-            <div className="border p-4 rounded bg-gray-50">
-              <h3 className="font-bold mb-3">Simulación: Factura Mensual para Escuela</h3>
-              <div className="space-y-1 text-sm">
-                <p>Monthly Rent: <strong>{formatCurrency(config.monthlyRent)}</strong></p>
-                <p>Depósitos procesados (ej. $100,000 × {formatPercentage(config.depositFeeCard)}): <strong>{formatCurrency(100000 * config.depositFeeCard)}</strong></p>
-                <p>SPEI (ej. 50 × ${config.depositFeeSPEI}): <strong>{formatCurrency(50 * config.depositFeeSPEI)}</strong></p>
-                <p className="border-t pt-2">
-                  Subtotal: <strong>{formatCurrency(config.monthlyRent + 100000 * config.depositFeeCard + 50 * config.depositFeeSPEI)}</strong>
-                </p>
-                <p>
-                  Total con IVA (16%): <strong className="text-green-600">{formatCurrency((config.monthlyRent + 100000 * config.depositFeeCard + 50 * config.depositFeeSPEI) * 1.16)}</strong>
-                </p>
+            <div className="p-8 rounded-3xl bg-slate-50 space-y-3">
+              <h3 className="font-black text-slate-700 tracking-tight">Simulación: Factura Mensual para Escuela</h3>
+              <div className="space-y-2 text-sm text-slate-600">
+                <p>Monthly Rent: <strong className="text-slate-800">{formatCurrency(config.monthlyRent)}</strong></p>
+                <p>Depósitos procesados (ej. $100,000 × {formatPercentage(config.depositFeeCard)}): <strong className="text-slate-800">{formatCurrency(100000 * config.depositFeeCard)}</strong></p>
+                <p>SPEI (ej. 50 × ${config.depositFeeSPEI}): <strong className="text-slate-800">{formatCurrency(50 * config.depositFeeSPEI)}</strong></p>
+                <div className="border-t border-slate-200 pt-3 mt-3 space-y-1">
+                  <p>Subtotal: <strong className="text-slate-800">{formatCurrency(config.monthlyRent + 100000 * config.depositFeeCard + 50 * config.depositFeeSPEI)}</strong></p>
+                  <p>Total con IVA (16%): <strong className="text-emerald-600 text-lg">{formatCurrency((config.monthlyRent + 100000 * config.depositFeeCard + 50 * config.depositFeeSPEI) * 1.16)}</strong></p>
+                </div>
               </div>
             </div>
 
             {/* Key Dates */}
-            <div className="border p-4 rounded bg-gray-50">
-              <h3 className="font-bold mb-3">Calendario de Pagos</h3>
-              <div className="space-y-1 text-sm">
-                <p>Invoice creada: <strong>Último día del mes</strong></p>
-                <p>Vencimiento: <strong>+{config.invoiceDueDate} días</strong></p>
-                <p>Período de gracia: <strong>{config.overdueDaysBeforeSuspension} días más</strong></p>
-                <p>Bloqueo automático: <strong>Día {config.invoiceDueDate + config.overdueDaysBeforeSuspension}</strong></p>
+            <div className="p-8 rounded-3xl bg-slate-50 space-y-3">
+              <h3 className="font-black text-slate-700 tracking-tight">Calendario de Pagos</h3>
+              <div className="space-y-2 text-sm text-slate-600">
+                <p>Invoice creada: <strong className="text-slate-800">Último día del mes</strong></p>
+                <p>Vencimiento: <strong className="text-slate-800">+{config.invoiceDueDate} días</strong></p>
+                <p>Período de gracia: <strong className="text-slate-800">{config.overdueDaysBeforeSuspension} días más</strong></p>
+                <p>Bloqueo automático: <strong className="text-rose-600">Día {config.invoiceDueDate + config.overdueDaysBeforeSuspension}</strong></p>
               </div>
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
-      {/* Save Button */}
-      <div className="flex gap-4 sticky bottom-0 bg-white p-4 border-t">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-        >
-          {saving ? 'Guardando...' : 'Guardar Configuración'}
-        </button>
-        <button
-          onClick={loadConfig}
-          disabled={loading}
-          className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400"
-        >
-          Descartar Cambios
-        </button>
+      {/* Sticky Save Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-8 py-4">
+        <div className="max-w-6xl mx-auto flex gap-4 justify-end">
+          <button
+            onClick={loadConfig}
+            disabled={loading}
+            className="px-8 py-4 rounded-2xl bg-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
+          >
+            <RotateCcw size={14} />
+            Descartar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-10 py-4 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {saving ? 'Guardando…' : 'Guardar Configuración'}
+          </button>
+        </div>
       </div>
     </div>
   )
