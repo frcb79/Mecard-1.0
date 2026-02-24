@@ -1833,6 +1833,7 @@ export interface SchoolPermissionConfig {
   mensajePersonalizado: string;        // Default: ""
   bloqueoEnExamenes: boolean;          // Default: false
   fechasExamen: string[];              // Fechas bloqueadas
+  validacionDeRuta: boolean;           // Default: false — verificar que ruta destino sea válida
   rutasCamion: string[];               // Lista de rutas para referencia
   
   createdAt: string;

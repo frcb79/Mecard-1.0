@@ -3,15 +3,15 @@ import {
   MapPin, Calendar, DollarSign, Users, FileText, Clock,
   CheckCircle2, AlertTriangle, ChevronDown, ChevronUp,
   Plus, Edit2, Trash2, Download, Search, Filter,
-  Send, Eye, X, Save, CreditCard, Bus
+  Send, Eye, X, Save, CreditCard, Bus, Bell, Megaphone
 } from 'lucide-react';
 import { useToast } from './ui/Toast';
 import {
-  MOCK_TRIPS, MOCK_TRIP_ENROLLMENTS, MOCK_TRIP_PAYMENTS
+  MOCK_TRIPS, MOCK_TRIP_ENROLLMENTS, MOCK_TRIP_PAYMENTS, MOCK_TRIP_REMINDERS
 } from '../constants';
-import type { SchoolTrip, TripEnrollment, TripPayment, TripStatus, EnrollmentStatus, TripPaymentStatus } from '../types';
+import type { SchoolTrip, TripEnrollment, TripPayment, TripReminder, TripStatus, EnrollmentStatus, TripPaymentStatus } from '../types';
 
-type TabView = 'trips' | 'enrollments' | 'create';
+type TabView = 'trips' | 'enrollments' | 'reminders' | 'create';
 
 function getTripStatusConfig(status: TripStatus) {
   switch (status) {
@@ -61,6 +61,7 @@ export default function SchoolTripsView() {
   const [trips, setTrips] = useState<SchoolTrip[]>(MOCK_TRIPS);
   const [enrollments] = useState<TripEnrollment[]>(MOCK_TRIP_ENROLLMENTS);
   const [payments] = useState<TripPayment[]>(MOCK_TRIP_PAYMENTS);
+  const [reminders, setReminders] = useState<TripReminder[]>(MOCK_TRIP_REMINDERS);
   const [expandedTrip, setExpandedTrip] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<TripStatus | 'todos'>('todos');
@@ -69,6 +70,10 @@ export default function SchoolTripsView() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newDoc, setNewDoc] = useState('');
+
+  // Reminder form
+  const [showReminderForm, setShowReminderForm] = useState(false);
+  const [reminderForm, setReminderForm] = useState({ tripId: '', tipo: 'general' as TripReminder['tipo'], mensaje: '', fechaEnvio: '' });
 
   const filtered = useMemo(() => {
     return trips.filter(t => {
@@ -202,6 +207,10 @@ export default function SchoolTripsView() {
         <button onClick={() => setTabView('enrollments')}
           className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${tabView === 'enrollments' ? 'bg-teal-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
           📝 Inscripciones ({enrollments.length})
+        </button>
+        <button onClick={() => setTabView('reminders')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 ${tabView === 'reminders' ? 'bg-teal-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
+          🔔 Recordatorios ({reminders.length})
         </button>
         <button onClick={() => { setTabView('create'); if (!editingId) { setForm(INITIAL_FORM); } }}
           className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 ${tabView === 'create' ? 'bg-teal-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
@@ -403,6 +412,144 @@ export default function SchoolTripsView() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== REMINDERS TAB ===== */}
+        {tabView === 'reminders' && (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <button onClick={() => setShowReminderForm(!showReminderForm)}
+                className="px-4 py-2 bg-teal-600 text-white rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-teal-700">
+                <Plus size={12} /> Nuevo Recordatorio
+              </button>
+            </div>
+
+            {/* Reminder creation form */}
+            {showReminderForm && (
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-teal-200 space-y-4">
+                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2"><Megaphone size={16} className="text-teal-600" /> Crear Recordatorio</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">Viaje *</label>
+                    <select value={reminderForm.tripId} onChange={e => setReminderForm(f => ({ ...f, tripId: e.target.value }))}
+                      className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-300 outline-none">
+                      <option value="">Seleccionar viaje...</option>
+                      {trips.filter(t => t.status === 'abierto' || t.status === 'cerrado').map(t => (
+                        <option key={t.id} value={t.id}>{t.imageEmoji} {t.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">Tipo *</label>
+                    <select value={reminderForm.tipo} onChange={e => setReminderForm(f => ({ ...f, tipo: e.target.value as TripReminder['tipo'] }))}
+                      className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-300 outline-none">
+                      <option value="pago">💰 Pago</option>
+                      <option value="documento">📄 Documento</option>
+                      <option value="inscripcion">📝 Inscripción</option>
+                      <option value="general">📢 General</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Mensaje *</label>
+                  <textarea value={reminderForm.mensaje} onChange={e => setReminderForm(f => ({ ...f, mensaje: e.target.value }))}
+                    placeholder="Escribe el mensaje del recordatorio..." rows={3}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-300 outline-none resize-none" />
+                </div>
+                <div className="sm:w-1/2">
+                  <label className="text-xs text-slate-500 mb-1 block">Fecha de envío</label>
+                  <input type="datetime-local" value={reminderForm.fechaEnvio} onChange={e => setReminderForm(f => ({ ...f, fechaEnvio: e.target.value }))}
+                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-300 outline-none" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => {
+                    if (!reminderForm.tripId || !reminderForm.mensaje.trim()) {
+                      showToast('Selecciona un viaje y escribe un mensaje', 'error'); return;
+                    }
+                    const trip = trips.find(t => t.id === reminderForm.tripId)!;
+                    const tripEnrolled = enrollments.filter(e => e.tripId === reminderForm.tripId);
+                    const newReminder: TripReminder = {
+                      id: `rem_${Date.now()}`,
+                      tripId: reminderForm.tripId,
+                      tripName: trip.nombre,
+                      tipo: reminderForm.tipo,
+                      mensaje: reminderForm.mensaje,
+                      destinatarios: tripEnrolled.map(e => e.parentId),
+                      fechaEnvio: reminderForm.fechaEnvio || new Date().toISOString(),
+                      enviado: false,
+                      createdAt: new Date().toISOString(),
+                    };
+                    setReminders(prev => [newReminder, ...prev]);
+                    setReminderForm({ tripId: '', tipo: 'general', mensaje: '', fechaEnvio: '' });
+                    setShowReminderForm(false);
+                    showToast('✅ Recordatorio creado', 'success');
+                  }} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center gap-1">
+                    <Save size={14} /> Crear Recordatorio
+                  </button>
+                  <button onClick={() => setShowReminderForm(false)} className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold">Cancelar</button>
+                </div>
+              </div>
+            )}
+
+            {/* Reminders list */}
+            {reminders.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+                <Bell size={48} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-slate-500">No hay recordatorios</p>
+                <button onClick={() => setShowReminderForm(true)} className="mt-3 text-teal-600 text-sm font-bold hover:underline">+ Crear recordatorio</button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reminders.map(rem => {
+                  const typeConfig: Record<string, { label: string; emoji: string; color: string }> = {
+                    pago: { label: 'Pago', emoji: '💰', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+                    documento: { label: 'Documento', emoji: '📄', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                    inscripcion: { label: 'Inscripción', emoji: '📝', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+                    general: { label: 'General', emoji: '📢', color: 'bg-slate-50 text-slate-700 border-slate-200' },
+                  };
+                  const tc = typeConfig[rem.tipo] || typeConfig.general;
+                  return (
+                    <div key={rem.id} className={`bg-white rounded-2xl p-4 shadow-sm border ${rem.enviado ? 'border-slate-100 opacity-70' : 'border-slate-200'}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${tc.color}`}>{tc.emoji} {tc.label}</span>
+                            <span className="text-xs text-slate-500">{rem.tripName}</span>
+                            {rem.enviado ? (
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold flex items-center gap-1"><CheckCircle2 size={10} /> Enviado</span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-bold flex items-center gap-1"><Clock size={10} /> Programado</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-700 leading-relaxed">{rem.mensaje}</p>
+                          <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400">
+                            <span><Users size={10} className="inline" /> {rem.destinatarios.length} destinatario{rem.destinatarios.length !== 1 ? 's' : ''}</span>
+                            <span><Calendar size={10} className="inline" /> {new Date(rem.fechaEnvio).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          {!rem.enviado && (
+                            <button onClick={() => {
+                              setReminders(prev => prev.map(r => r.id === rem.id ? { ...r, enviado: true, fechaEnvio: new Date().toISOString() } : r));
+                              showToast(`📤 Recordatorio enviado a ${rem.destinatarios.length} padre(s)`, 'success');
+                            }} className="px-3 py-2 bg-teal-600 text-white rounded-xl text-[10px] font-bold hover:bg-teal-700 flex items-center gap-1">
+                              <Send size={12} /> Enviar ahora
+                            </button>
+                          )}
+                          <button onClick={() => {
+                            setReminders(prev => prev.filter(r => r.id !== rem.id));
+                            showToast('Recordatorio eliminado', 'info');
+                          }} className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

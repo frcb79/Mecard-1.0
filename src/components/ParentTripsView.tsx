@@ -258,6 +258,27 @@ export default function ParentTripsView() {
                           </div>
                         )}
 
+                        {/* Classmates enrolled */}
+                        {(() => {
+                          const classmates = enrollments.filter(e => e.tripId === trip.id);
+                          if (classmates.length === 0) return null;
+                          return (
+                            <div>
+                              <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-2">Compañeros inscritos ({classmates.length})</p>
+                              <div className="flex flex-wrap gap-2">
+                                {classmates.map(c => (
+                                  <span key={c.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-xl text-[10px] font-medium">
+                                    <span className="w-5 h-5 rounded-full bg-teal-200 flex items-center justify-center text-[9px] font-bold text-teal-800">
+                                      {c.studentName.charAt(0)}
+                                    </span>
+                                    {c.studentName.split(' ')[0]} • {c.studentGrade}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {!isEnrolled && !isBorrador && (
                           enrollingTrip === trip.id ? (
                             <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl space-y-3">

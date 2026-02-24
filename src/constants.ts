@@ -1,5 +1,5 @@
 
-import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus } from './types';
+import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, TripReminder, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus } from './types';
 
 // Add missing clabePersonal property
 export const MOCK_STUDENT: StudentProfile = {
@@ -437,6 +437,7 @@ export const MOCK_SCHOOL_PERMISSION_CONFIG: SchoolPermissionConfig = {
   mensajePersonalizado: 'Recuerde que los permisos deben solicitarse con al menos 6 horas de anticipación.',
   bloqueoEnExamenes: false,
   fechasExamen: [],
+  validacionDeRuta: false,
   rutasCamion: [
     'Ruta 1 - Lomas',
     'Ruta 2 - Del Valle',
@@ -619,6 +620,45 @@ export const MOCK_TRIP_PAYMENTS: TripPayment[] = [
     fechaPago: '',
     fechaLimite: '2026-03-10T00:00:00Z',
     createdAt: '2026-02-01T00:00:00Z',
+  },
+];
+
+// ============================================
+// TRIP REMINDERS
+// ============================================
+export const MOCK_TRIP_REMINDERS: TripReminder[] = [
+  {
+    id: 'rem_01',
+    tripId: 'trip_01',
+    tripName: 'Campamento Sierra Gorda',
+    tipo: 'pago',
+    mensaje: 'Recuerda que la 3ª parcialidad del campamento vence el 10 de marzo. ¡No te quedes sin lugar!',
+    destinatarios: ['parent_01'],
+    fechaEnvio: '2026-03-01T08:00:00Z',
+    enviado: true,
+    createdAt: '2026-02-25T10:00:00Z',
+  },
+  {
+    id: 'rem_02',
+    tripId: 'trip_01',
+    tripName: 'Campamento Sierra Gorda',
+    tipo: 'documento',
+    mensaje: 'Faltan documentos para el campamento: Carta responsiva y Copia INE tutor. Favor de entregarlos antes del 10 de marzo.',
+    destinatarios: ['parent_01', 'parent_02'],
+    fechaEnvio: '2026-03-05T08:00:00Z',
+    enviado: false,
+    createdAt: '2026-02-26T10:00:00Z',
+  },
+  {
+    id: 'rem_03',
+    tripId: 'trip_02',
+    tripName: 'Visita al Museo de Antropología',
+    tipo: 'general',
+    mensaje: 'El autobús sale a las 7:30 AM en punto. Los alumnos deben traer lunch, agua y gorra.',
+    destinatarios: ['parent_01'],
+    fechaEnvio: '2026-04-09T08:00:00Z',
+    enviado: false,
+    createdAt: '2026-02-26T12:00:00Z',
   },
 ];
 

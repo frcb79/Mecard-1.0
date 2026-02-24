@@ -380,6 +380,7 @@ export default function SchoolPermissionsView() {
                   { key: 'notificarDireccion' as const, label: 'Notificar a dirección', desc: 'Enviar copia de cada permiso a la dirección escolar' },
                   { key: 'requiereMotivo' as const, label: 'Requerir motivo obligatorio', desc: 'El padre debe describir el motivo del permiso' },
                   { key: 'bloqueoEnExamenes' as const, label: 'Bloquear durante exámenes', desc: 'No permitir permisos en fechas de examen' },
+                  { key: 'validacionDeRuta' as const, label: 'Validación de ruta destino', desc: 'Verificar que la ruta de camión destino sea una ruta válida registrada' },
                 ].map(opt => (
                   <div key={opt.key} className="flex items-start justify-between gap-3 p-3 bg-slate-50 rounded-xl">
                     <div>
