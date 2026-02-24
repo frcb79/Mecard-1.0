@@ -185,10 +185,60 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
             </div>
           )}
 
-          {step > 1 && step < 5 && (
-              <div className="py-40 text-center opacity-20 grayscale flex flex-col items-center">
-                  <Info size={80} strokeWidth={1} className="mb-6" />
-                  <p className="font-black uppercase tracking-[10px]">Fase {step} de Configuración</p>
+          {step > 1 && step < 5 && step === 2 && (
+              <div className="space-y-8 animate-in fade-in">
+                <h3 className="text-xl font-black text-slate-800 italic uppercase flex items-center gap-3 mb-6"><MapPin size={20} className="text-indigo-600"/> Dirección y Contacto</h3>
+                <div className="grid grid-cols-2 gap-8">
+                  <InputField label="Calle y Número" value={formData.address?.street || ''} onChange={(v:any)=>setFormData({...formData, address: {...formData.address!, street: v}})} />
+                  <InputField label="Ciudad" value={formData.address?.city || ''} onChange={(v:any)=>setFormData({...formData, address: {...formData.address!, city: v}})} />
+                  <InputField label="Estado" value={formData.address?.state || ''} onChange={(v:any)=>setFormData({...formData, address: {...formData.address!, state: v}})} />
+                  <InputField label="Código Postal" value={formData.address?.zipCode || ''} onChange={(v:any)=>setFormData({...formData, address: {...formData.address!, zipCode: v}})} />
+                </div>
+                <div className="border-t border-slate-100 pt-8">
+                  <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Mail size={16}/> Contacto Principal</h4>
+                  <div className="grid grid-cols-2 gap-8">
+                    <InputField label="Persona de Contacto" value={formData.contact?.contactPerson || ''} onChange={(v:any)=>setFormData({...formData, contact: {...formData.contact!, contactPerson: v}})} />
+                    <InputField label="Cargo" value={formData.contact?.position || ''} onChange={(v:any)=>setFormData({...formData, contact: {...formData.contact!, position: v}})} />
+                    <InputField label="Email" value={formData.contact?.email || ''} onChange={(v:any)=>setFormData({...formData, contact: {...formData.contact!, email: v}})} type="email" />
+                    <InputField label="Teléfono" value={formData.contact?.phone || ''} onChange={(v:any)=>setFormData({...formData, contact: {...formData.contact!, phone: v}})} type="tel" />
+                  </div>
+                </div>
+              </div>
+          )}
+
+          {step === 3 && (
+              <div className="space-y-8 animate-in fade-in">
+                <h3 className="text-xl font-black text-slate-800 italic uppercase flex items-center gap-3 mb-6"><DollarSign size={20} className="text-indigo-600"/> Modelo Comercial</h3>
+                <div className="grid grid-cols-2 gap-8">
+                  <InputField label="Setup Fee" value={formData.businessModel?.setupFee ?? 25000} onChange={(v:any)=> updateBusiness('setupFee', parseFloat(v) || 0)} prefix="$" />
+                  <InputField label="Renta Mensual" value={formData.businessModel?.monthlyRentFee ?? 5000} onChange={(v:any)=> updateBusiness('monthlyRentFee', parseFloat(v) || 0)} prefix="$" />
+                  <InputField label="SaaS por Alumno" value={formData.businessModel?.saasPerStudent ?? 45} onChange={(v:any)=> updateBusiness('saasPerStudent', parseFloat(v) || 0)} prefix="$" suffix="/mes" />
+                  <InputField label="Fee Depósitos Tarjeta %" value={formData.businessModel?.cardDepositFeePercent ?? 3.5} onChange={(v:any)=> updateBusiness('cardDepositFeePercent', parseFloat(v) || 0)} suffix="%" />
+                </div>
+                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Distribución de Márgenes</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <InputField label="Concesionario %" value={formData.businessModel?.margins?.concessionaireMargin ?? 85} onChange={(v:any)=> setFormData(prev => ({...prev, businessModel: {...prev.businessModel!, margins: {...prev.businessModel!.margins, concessionaireMargin: parseFloat(v) || 0}} as any}))} suffix="%" />
+                    <InputField label="Escuela %" value={formData.businessModel?.margins?.schoolMargin ?? 10} onChange={(v:any)=> setFormData(prev => ({...prev, businessModel: {...prev.businessModel!, margins: {...prev.businessModel!.margins, schoolMargin: parseFloat(v) || 0}} as any}))} suffix="%" />
+                    <InputField label="MeCard %" value={formData.businessModel?.margins?.mecardMargin ?? 5} onChange={(v:any)=> setFormData(prev => ({...prev, businessModel: {...prev.businessModel!, margins: {...prev.businessModel!.margins, mecardMargin: parseFloat(v) || 0}} as any}))} suffix="%" />
+                  </div>
+                </div>
+              </div>
+          )}
+
+          {step === 4 && (
+              <div className="space-y-8 animate-in fade-in">
+                <h3 className="text-xl font-black text-slate-800 italic uppercase flex items-center gap-3 mb-6"><Terminal size={20} className="text-indigo-600"/> Operación POS y Métodos</h3>
+                <div className="space-y-4">
+                  <ToggleSwitch label="Escaneo QR / Código de Barras" active={formData.businessModel?.posMethods?.allowQrBarcode ?? true} onChange={(v) => setFormData(prev => ({...prev, businessModel: {...prev.businessModel!, posMethods: {...prev.businessModel!.posMethods, allowQrBarcode: v}} as any}))} description="Permite identificar alumnos con QR en la credencial" />
+                  <ToggleSwitch label="Búsqueda por Matrícula" active={formData.businessModel?.posMethods?.allowMatricula ?? true} onChange={(v) => setFormData(prev => ({...prev, businessModel: {...prev.businessModel!, posMethods: {...prev.businessModel!.posMethods, allowMatricula: v}} as any}))} description="El cajero puede teclear el número de matrícula" />
+                  <ToggleSwitch label="Venta Anónima" active={formData.businessModel?.posMethods?.allowAnonymous ?? false} onChange={(v) => setFormData(prev => ({...prev, businessModel: {...prev.businessModel!, posMethods: {...prev.businessModel!.posMethods, allowAnonymous: v}} as any}))} description="Permitir ventas sin identificar al alumno (solo efectivo)" />
+                  <ToggleSwitch label="Cobrar Uso a Personal" active={formData.businessModel?.chargeStaffUsage ?? false} onChange={(v) => updateBusiness('chargeStaffUsage', v)} description="Incluir licencias de staff en la factura mensual" />
+                  <ToggleSwitch label="Auto-Markup Cafetería" active={formData.businessModel?.cafeteriaFeeAutoMarkup ?? true} onChange={(v) => updateBusiness('cafeteriaFeeAutoMarkup', v)} description="Sumar comisión al precio automáticamente" />
+                </div>
+                <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100">
+                  <InputField label="Comisión Cafetería %" value={formData.businessModel?.cafeteriaFeePercent ?? 5} onChange={(v:any)=> updateBusiness('cafeteriaFeePercent', parseFloat(v) || 0)} suffix="%" />
+                </div>
               </div>
           )}
         </div>

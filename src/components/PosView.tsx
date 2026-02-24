@@ -8,7 +8,7 @@ import {
   ChefHat, Package, Plus, Minus, Hash, Tag, Store, CheckCircle2
 } from 'lucide-react';
 import { Product, CartItem, Category, StudentProfile } from '../types';
-import { PRODUCTS, MOCK_STUDENT } from '../constants';
+import { PRODUCTS, MOCK_STUDENT, MOCK_STUDENTS_LIST } from '../constants';
 import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { useToast } from './ui/Toast';
@@ -55,12 +55,27 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   const [isRedeemingGift, setIsRedeemingGift] = useState(false);
   const [giftRedemptionSuccess, setGiftRedemptionSuccess] = useState<string | null>(null);
   
-  // Get current student (from auth context or use mock)
-  const student: StudentProfile = {
+  // Active student (searched from MOCK_STUDENTS_LIST)
+  const [activeStudent, setActiveStudent] = useState<StudentProfile | null>(null);
+  
+  // Receipt state
+  const [lastReceipt, setLastReceipt] = useState<{items: CartItem[], total: number, student: string, date: string, folio: string} | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+  
+  // Transaction history
+  const [txHistory, setTxHistory] = useState<{id: string, student: string, total: number, items: number, date: string, folio: string}[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  
+  // Corte de caja
+  const [showCorte, setShowCorte] = useState(false);
+  
+  // Default student (for when no search is done)
+  const defaultStudent: StudentProfile = {
     ...MOCK_STUDENT,
-    // Override with authenticated user if available
     ...(user?.id && { id: user.id, name: user.name || 'Estudiante' }),
   };
+
+  const student = activeStudent || defaultStudent;
 
   const isCafeteria = mode === 'cafeteria';
 
@@ -134,10 +149,15 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
     const term = studentIdInput.toLowerCase().trim();
-    if (term === student.id || student.name.toLowerCase().includes(term)) {
+    const found = MOCK_STUDENTS_LIST.find(s =>
+      s.id.toLowerCase() === term ||
+      s.name.toLowerCase().includes(term)
+    );
+    if (found) {
+        setActiveStudent(found);
         setScanStage('verify');
     } else {
-        toast.warning('Alumno no encontrado', 'No está registrado en este campus.');
+        toast.warning('Alumno no encontrado', 'No está registrado en este campus. Prueba: 2024001–2024005.');
         setStudentIdInput('');
     }
   };
@@ -219,14 +239,38 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
         }
 
         setTransactionSuccess(true);
+        
+        // Generate receipt
+        const folio = `MEC-${Date.now().toString(36).toUpperCase()}`;
+        const receipt = {
+          items: [...cart],
+          total,
+          student: student.name,
+          date: new Date().toLocaleString('es-MX'),
+          folio,
+        };
+        setLastReceipt(receipt);
+        setShowReceipt(true);
+        
+        // Add to transaction history
+        setTxHistory(prev => [{
+          id: result.transactionId || `tx_${Date.now()}`,
+          student: student.name,
+          total,
+          items: cart.reduce((s, i) => s + i.quantity, 0),
+          date: new Date().toLocaleString('es-MX'),
+          folio,
+        }, ...prev]);
+        
         clearCart();
         setScanStage('idle');
         setStudentIdInput('');
+        setActiveStudent(null);
         
-        // Show success for 2 seconds then reset
+        // Hide success after 3 seconds
         setTimeout(() => {
           setTransactionSuccess(false);
-        }, 2000);
+        }, 3000);
       } else {
         setTransactionError(result.message || 'Transacción fallida');
       }
@@ -505,17 +549,146 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
                     </div>
                 </div>
             </div>
-            <Button 
-                className="w-full py-4 rounded-xl text-sm font-semibold shadow-sm relative overflow-hidden group transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-brand-500 hover:bg-brand-600 text-white" 
-                disabled={cart.length === 0 || isProcessing || student.balance < total} 
-                onClick={handleCheckout}
-            >
-                <span className="relative z-10 flex items-center justify-center gap-3">
-                    {isProcessing ? <Loader2 className="animate-spin w-5 h-5" /> : <><CreditCard size={20} /> Confirmar Compra</>}
-                </span>
-            </Button>
+            <div className="flex gap-2 mt-3">
+                <Button 
+                    className="flex-1 py-4 rounded-xl text-sm font-semibold shadow-sm relative overflow-hidden group transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-brand-500 hover:bg-brand-600 text-white" 
+                    disabled={cart.length === 0 || isProcessing || student.balance < total} 
+                    onClick={handleCheckout}
+                >
+                    <span className="relative z-10 flex items-center justify-center gap-3">
+                        {isProcessing ? <Loader2 className="animate-spin w-5 h-5" /> : <><CreditCard size={20} /> Confirmar Compra</>}
+                    </span>
+                </Button>
+            </div>
+            <div className="flex gap-2 mt-2">
+                <button onClick={() => setShowHistory(true)} className="flex-1 py-2.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider bg-surface-100 text-surface-500 hover:bg-surface-200 transition-all flex items-center justify-center gap-1.5">
+                    <Receipt size={14} /> Historial ({txHistory.length})
+                </button>
+                <button onClick={() => setShowCorte(true)} className="flex-1 py-2.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 transition-all flex items-center justify-center gap-1.5">
+                    <Hash size={14} /> Corte de Caja
+                </button>
+            </div>
         </div>
       </div>
+
+      {/* ═══════ RECEIPT MODAL ═══════ */}
+      {showReceipt && lastReceipt && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowReceipt(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-900 text-white p-6 text-center">
+              <Store size={32} className="mx-auto mb-2 opacity-60" />
+              <h3 className="text-lg font-black tracking-tight">{isCafeteria ? 'Cafetería MeCard' : 'Papelería MeCard'}</h3>
+              <p className="text-[9px] font-mono text-slate-400 mt-1">Folio: {lastReceipt.folio}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between text-xs text-surface-400">
+                <span>{lastReceipt.date}</span>
+                <span>Alumno: {lastReceipt.student}</span>
+              </div>
+              <div className="border-t border-dashed border-surface-200 pt-3 space-y-2">
+                {lastReceipt.items.map(item => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span className="text-surface-700">{item.quantity}× {item.name}</span>
+                    <span className="font-bold text-surface-900">${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t-2 border-surface-900 pt-3 flex justify-between">
+                <span className="text-lg font-black text-surface-900">TOTAL</span>
+                <span className="text-lg font-black text-surface-900">${lastReceipt.total.toFixed(2)}</span>
+              </div>
+              <p className="text-[9px] text-center text-surface-300 font-mono">Pago con monedero digital MeCard</p>
+            </div>
+            <button onClick={() => setShowReceipt(false)} className="w-full py-4 bg-surface-100 text-surface-500 font-bold text-xs uppercase tracking-widest hover:bg-surface-200 transition-all">
+              Cerrar Ticket
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ TRANSACTION HISTORY PANEL ═══════ */}
+      {showHistory && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={() => setShowHistory(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-surface-100 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black text-surface-900 tracking-tight">Historial de Ventas</h3>
+                <p className="text-[10px] font-semibold text-surface-400 uppercase tracking-widest mt-1">Sesión actual · {txHistory.length} transacciones</p>
+              </div>
+              <button onClick={() => setShowHistory(false)} className="p-2 rounded-xl bg-surface-100 text-surface-400 hover:text-surface-700"><X size={20} /></button>
+            </div>
+            <div className="overflow-y-auto max-h-[60vh] p-4 space-y-3">
+              {txHistory.length === 0 ? (
+                <div className="py-16 text-center text-surface-300">
+                  <Receipt size={48} className="mx-auto mb-3 opacity-30" />
+                  <p className="font-semibold text-sm">Sin transacciones en esta sesión</p>
+                </div>
+              ) : txHistory.map(tx => (
+                <div key={tx.id} className="flex items-center justify-between p-4 bg-surface-50 rounded-xl border border-surface-100">
+                  <div>
+                    <p className="font-bold text-surface-800 text-sm">{tx.student}</p>
+                    <p className="text-[10px] text-surface-400 font-mono">{tx.folio} · {tx.items} artículo{tx.items > 1 ? 's' : ''}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-surface-900">${tx.total.toFixed(2)}</p>
+                    <p className="text-[9px] text-surface-400">{tx.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ CORTE DE CAJA MODAL ═══════ */}
+      {showCorte && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowCorte(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-8 text-center">
+              <Hash size={36} className="mx-auto mb-2" />
+              <h3 className="text-2xl font-black tracking-tight">Corte de Caja</h3>
+              <p className="text-amber-100 text-xs font-semibold mt-1">{new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-surface-50 p-5 rounded-2xl text-center border border-surface-100">
+                  <p className="text-[10px] font-bold text-surface-400 uppercase tracking-widest mb-2">Transacciones</p>
+                  <p className="text-3xl font-black text-surface-900">{txHistory.length}</p>
+                </div>
+                <div className="bg-emerald-50 p-5 rounded-2xl text-center border border-emerald-100">
+                  <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Venta Total</p>
+                  <p className="text-3xl font-black text-emerald-700">${txHistory.reduce((s, t) => s + t.total, 0).toFixed(2)}</p>
+                </div>
+                <div className="bg-blue-50 p-5 rounded-2xl text-center border border-blue-100">
+                  <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-2">Artículos Vendidos</p>
+                  <p className="text-3xl font-black text-blue-700">{txHistory.reduce((s, t) => s + t.items, 0)}</p>
+                </div>
+                <div className="bg-purple-50 p-5 rounded-2xl text-center border border-purple-100">
+                  <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-2">Ticket Promedio</p>
+                  <p className="text-3xl font-black text-purple-700">${txHistory.length > 0 ? (txHistory.reduce((s, t) => s + t.total, 0) / txHistory.length).toFixed(2) : '0.00'}</p>
+                </div>
+              </div>
+              <div className="bg-surface-50 p-4 rounded-xl border border-surface-100">
+                <label className="text-[10px] font-bold text-surface-400 uppercase tracking-widest block mb-2">Notas del Corte</label>
+                <textarea
+                  placeholder="Observaciones del turno..."
+                  className="w-full px-4 py-3 bg-white border border-surface-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-200 resize-none"
+                  rows={2}
+                />
+              </div>
+              <button
+                onClick={() => {
+                  toast.success('Corte registrado', `${txHistory.length} transacciones · $${txHistory.reduce((s, t) => s + t.total, 0).toFixed(2)} total`);
+                  setShowCorte(false);
+                }}
+                className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-amber-600 transition-all"
+              >
+                Cerrar Turno y Registrar Corte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -31,6 +31,24 @@ export const MOCK_STUDENTS_LIST: StudentProfile[] = [
     parentName: 'Roberto Garcia', parentId: 'parent_02', busRoute: 'Ruta 1 - Lomas', status: 'Active', enrollmentDate: '2023-08-15',
     clabePersonal: '646180000012300028'
   },
+  {
+    id: '2024003', name: 'Diego Martínez', grade: '5° Primaria - C', group: 'C', photo: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=200', schoolId: 'mx_01',
+    balance: 180.00, dailyLimit: 150, spentToday: 30, restrictedCategories: [Category.SNACKS], restrictedProducts: [], allergies: ['Gluten'],
+    parentName: 'Laura Martínez', parentId: 'parent_03', busRoute: 'Ruta 2 - Del Valle', status: 'Active', enrollmentDate: '2022-08-20',
+    clabePersonal: '646180000012300035'
+  },
+  {
+    id: '2024004', name: 'Valentina López', grade: '3° Primaria - A', group: 'A', photo: 'https://images.unsplash.com/photo-1595454223600-91e5312e3186?w=200', schoolId: 'mx_01',
+    balance: 320.00, dailyLimit: 120, spentToday: 0, restrictedCategories: [], restrictedProducts: [], allergies: [],
+    parentName: 'Carlos López', parentId: 'parent_04', busRoute: 'Ruta 4 - Polanco', status: 'Active', enrollmentDate: '2024-01-10',
+    clabePersonal: '646180000012300042'
+  },
+  {
+    id: '2024005', name: 'Mateo Hernández', grade: '6° Primaria - B', group: 'B', photo: 'https://images.unsplash.com/photo-1560785496-3c9d27877182?w=200', schoolId: 'mx_01',
+    balance: 75.50, dailyLimit: 200, spentToday: 85, restrictedCategories: [], restrictedProducts: [], allergies: ['Dairy'],
+    parentName: 'Patricia Hernández', parentId: 'parent_05', busRoute: 'Ruta 5 - Interlomas', status: 'Active', enrollmentDate: '2021-08-15',
+    clabePersonal: '646180000012300059'
+  },
 ];
 
 export const MOCK_SCHOOLS: School[] = [
@@ -125,21 +143,102 @@ export const MOCK_UNITS: OperatingUnit[] = [
 ];
 
 export const PRODUCTS: Product[] = [
+  // ── COMBO_MEALS (Cafetería) ──
   {
     id: 'c1', name: 'Menú del Día', category: Category.COMBO_MEALS, price: 85.00,
     image: 'https://images.unsplash.com/photo-1547496502-ffa222f79634?w=500',
     calories: 750, ingredients: ['Sopa', 'Pollo', 'Arroz', 'Agua'], isCombo: true, isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
   },
   {
+    id: 'c2', name: 'Combo Hamburguesa', category: Category.COMBO_MEALS, price: 75.00,
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500',
+    calories: 680, ingredients: ['Pan', 'Carne', 'Lechuga', 'Queso', 'Papas', 'Refresco'], isCombo: true, isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  // ── HOT_MEALS (Cafetería) ──
+  {
     id: '1', name: 'Wrap de Pollo', category: Category.HOT_MEALS, price: 45.00,
     image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=500',
     calories: 450, ingredients: ['Tortilla', 'Pollo', 'Lechuga'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
   },
   {
+    id: '2', name: 'Quesadillas (3 pzas)', category: Category.HOT_MEALS, price: 40.00,
+    image: 'https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=500',
+    calories: 520, ingredients: ['Tortilla de maíz', 'Queso Oaxaca', 'Salsa'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  {
+    id: '3', name: 'Hot Dog Jumbo', category: Category.HOT_MEALS, price: 35.00,
+    image: 'https://images.unsplash.com/photo-1612392062126-3e5f3e2e2e0e?w=500',
+    calories: 380, ingredients: ['Pan', 'Salchicha', 'Catsup', 'Mostaza'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  {
+    id: '4', name: 'Sincronizada de Jamón', category: Category.HOT_MEALS, price: 38.00,
+    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500',
+    calories: 410, ingredients: ['Tortilla de harina', 'Jamón', 'Queso'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  // ── SNACKS (Cafetería) ──
+  {
+    id: 'k1', name: 'Barra de Granola', category: Category.SNACKS, price: 18.00,
+    image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500',
+    calories: 140, ingredients: ['Avena', 'Miel', 'Nueces'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  {
+    id: 'k2', name: 'Fruta Picada', category: Category.SNACKS, price: 25.00,
+    image: 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=500',
+    calories: 90, ingredients: ['Mango', 'Piña', 'Pepino', 'Chile'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  {
+    id: 'k3', name: 'Galletas Integrales', category: Category.SNACKS, price: 15.00,
+    image: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=500',
+    calories: 160, ingredients: ['Harina integral', 'Avena', 'Miel'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  // ── DRINKS (Cafetería) ──
+  {
+    id: 'd1', name: 'Agua Natural 600ml', category: Category.DRINKS, price: 12.00,
+    image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=500',
+    calories: 0, isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  {
+    id: 'd2', name: 'Jugo de Naranja', category: Category.DRINKS, price: 22.00,
+    image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500',
+    calories: 110, ingredients: ['Naranja natural'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  {
+    id: 'd3', name: 'Smoothie de Fresa', category: Category.DRINKS, price: 35.00,
+    image: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=500',
+    calories: 180, ingredients: ['Fresa', 'Yogurt', 'Miel'], isAvailable: true, ownerType: EntityOwner.CONCESSIONAIRE, unitId: 'unit_01'
+  },
+  // ── SUPPLIES (Papelería) ──
+  {
     id: 's1', name: 'Cuaderno Profesional', category: Category.SUPPLIES, price: 45.00,
     image: 'https://images.unsplash.com/photo-1531346878377-a513bc95ba0d?w=500',
     isAvailable: true, ownerType: EntityOwner.SCHOOL, unitId: 'unit_02'
-  }
+  },
+  {
+    id: 's2', name: 'Lápices de Colores (12)', category: Category.SUPPLIES, price: 65.00,
+    image: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=500',
+    isAvailable: true, ownerType: EntityOwner.SCHOOL, unitId: 'unit_02'
+  },
+  {
+    id: 's3', name: 'Plumas (Paq. 4)', category: Category.SUPPLIES, price: 28.00,
+    image: 'https://images.unsplash.com/photo-1585336261022-680e295ce3fe?w=500',
+    isAvailable: true, ownerType: EntityOwner.SCHOOL, unitId: 'unit_02'
+  },
+  {
+    id: 's4', name: 'Calculadora Científica', category: Category.SUPPLIES, price: 180.00,
+    image: 'https://images.unsplash.com/photo-1564466809058-bf4114d55352?w=500',
+    isAvailable: true, ownerType: EntityOwner.SCHOOL, unitId: 'unit_02'
+  },
+  // ── UNIFORMS (Papelería) ──
+  {
+    id: 'u1', name: 'Playera Polo Escolar', category: Category.UNIFORMS, price: 250.00,
+    image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500',
+    isAvailable: true, ownerType: EntityOwner.SCHOOL, unitId: 'unit_02'
+  },
+  {
+    id: 'u2', name: 'Pants Deportivo', category: Category.UNIFORMS, price: 320.00,
+    image: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=500',
+    isAvailable: true, ownerType: EntityOwner.SCHOOL, unitId: 'unit_02'
+  },
 ];
 
 export const MOCK_TICKETS: SupportTicket[] = [

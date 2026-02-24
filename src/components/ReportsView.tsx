@@ -4,10 +4,16 @@
  * Admins, Gerentes, Escuelas - pueden generar reportes de ventas, transacciones, etc.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BarChart3, Download, Calendar, Filter, TrendingUp } from 'lucide-react';
 import { useToast } from './ui/Toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+
+// Seed-based pseudo-random for consistent per-period data
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
 
 export default function ReportsView() {
   const toast = useToast();
@@ -15,37 +21,48 @@ export default function ReportsView() {
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // MOCK: Datos de gráficos por período
-  const salesData = [
-    { date: '01 Feb', sales: 2400, units: 240 },
-    { date: '02 Feb', sales: 3210, units: 321 },
-    { date: '03 Feb', sales: 2290, units: 229 },
-    { date: '04 Feb', sales: 2000, units: 200 },
-    { date: '05 Feb', sales: 2181, units: 218 },
-    { date: '06 Feb', sales: 2500, units: 250 },
-    { date: '07 Feb', sales: 2100, units: 210 },
-  ];
+  // Generate period-dynamic data
+  const periodMultiplier = period === 'week' ? 1 : period === 'month' ? 4.2 : period === 'quarter' ? 13 : 52;
+  const periodSeed = period === 'week' ? 7 : period === 'month' ? 28 : period === 'quarter' ? 90 : 365;
 
-  const transactionData = [
-    { name: 'Cafetería', count: 1240, revenue: 45000 },
-    { name: 'Papelería', count: 890, revenue: 28000 },
-    { name: 'Uniforme', count: 340, revenue: 18000 },
-    { name: 'Otros', count: 520, revenue: 15000 },
-  ];
+  const salesData = useMemo(() => {
+    const labels: Record<string, string[]> = {
+      week: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+      month: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+      quarter: ['Ene', 'Feb', 'Mar'],
+      year: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+    };
+    return (labels[period] || labels.month).map((date, i) => ({
+      date,
+      sales: Math.round(1800 + seededRandom(periodSeed + i) * 2200),
+      units: Math.round(150 + seededRandom(periodSeed + i + 100) * 250),
+    }));
+  }, [period, periodSeed]);
 
-  const inventoryData = [
-    { product: 'Comidas', stock: 450, sold: 240, value: 15600 },
-    { product: 'Bebidas', stock: 890, sold: 680, value: 8500 },
-    { product: 'Snacks', stock: 340, sold: 210, value: 4200 },
-    { product: 'Uniformes', stock: 120, sold: 45, value: 7200 },
-  ];
+  const transactionData = useMemo(() => [
+    { name: 'Cafetería', count: Math.round(1240 * periodMultiplier / 4.2), revenue: Math.round(45000 * periodMultiplier / 4.2) },
+    { name: 'Papelería', count: Math.round(890 * periodMultiplier / 4.2), revenue: Math.round(28000 * periodMultiplier / 4.2) },
+    { name: 'Uniforme', count: Math.round(340 * periodMultiplier / 4.2), revenue: Math.round(18000 * periodMultiplier / 4.2) },
+    { name: 'Otros', count: Math.round(520 * periodMultiplier / 4.2), revenue: Math.round(15000 * periodMultiplier / 4.2) },
+  ], [periodMultiplier]);
+
+  const inventoryData = useMemo(() => [
+    { product: 'Comidas', stock: 450, sold: Math.round(240 * periodMultiplier / 4.2), value: Math.round(15600 * periodMultiplier / 4.2) },
+    { product: 'Bebidas', stock: 890, sold: Math.round(680 * periodMultiplier / 4.2), value: Math.round(8500 * periodMultiplier / 4.2) },
+    { product: 'Snacks', stock: 340, sold: Math.round(210 * periodMultiplier / 4.2), value: Math.round(4200 * periodMultiplier / 4.2) },
+    { product: 'Uniformes', stock: 120, sold: Math.round(45 * periodMultiplier / 4.2), value: Math.round(7200 * periodMultiplier / 4.2) },
+  ], [periodMultiplier]);
+
+  const totalRevenue = useMemo(() => transactionData.reduce((s, t) => s + t.revenue, 0), [transactionData]);
+  const totalTx = useMemo(() => transactionData.reduce((s, t) => s + t.count, 0), [transactionData]);
+  const avgTicket = totalTx > 0 ? totalRevenue / totalTx : 0;
+  const totalUnits = useMemo(() => inventoryData.reduce((s, i) => s + i.sold, 0), [inventoryData]);
 
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
-      // TODO: Conectar con API para generar PDF
       await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('Reporte listo', 'Reporte generado exitosamente');
+      toast.success('Reporte listo', 'Reporte generado exitosamente — modo demo');
     } catch (error) {
       toast.error('Error', 'Error generando reporte');
     } finally {
@@ -54,7 +71,24 @@ export default function ReportsView() {
   };
 
   const handleExportCSV = () => {
-    // TODO: Exportar datos a CSV
+    const datasets: Record<string, any[]> = {
+      sales: salesData,
+      transactions: transactionData,
+      inventory: inventoryData,
+    };
+    const data = datasets[reportType] || salesData;
+    if (!data.length) return;
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(r => Object.values(r).join(','));
+    const csv = [headers, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reporte_${reportType}_${period}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV descargado', `${data.length} filas exportadas`);
   };
 
   return (
@@ -283,32 +317,32 @@ export default function ReportsView() {
             <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[2px] mb-2">
               Ingresos Totales
             </p>
-            <p className="text-3xl font-black text-cyan-600">$106,100.00</p>
-            <p className="text-[9px] text-cyan-500 font-bold mt-2">+12.5% vs mes anterior</p>
+            <p className="text-3xl font-black text-cyan-600">${totalRevenue.toLocaleString('es-MX', {minimumFractionDigits: 2})}</p>
+            <p className="text-[9px] text-cyan-500 font-bold mt-2">Período: {period === 'week' ? 'Semana' : period === 'month' ? 'Mes' : period === 'quarter' ? 'Trimestre' : 'Año'}</p>
           </div>
 
           <div className="bg-gradient-to-br from-emerald-50 to-transparent rounded-[24px] p-6 border-2 border-emerald-100">
             <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[2px] mb-2">
               Transacciones
             </p>
-            <p className="text-3xl font-black text-emerald-600">2,990</p>
-            <p className="text-[9px] text-emerald-500 font-bold mt-2">+8.3% vs mes anterior</p>
+            <p className="text-3xl font-black text-emerald-600">{totalTx.toLocaleString()}</p>
+            <p className="text-[9px] text-emerald-500 font-bold mt-2">Operaciones procesadas</p>
           </div>
 
           <div className="bg-gradient-to-br from-amber-50 to-transparent rounded-[24px] p-6 border-2 border-amber-100">
             <p className="text-[10px] font-black text-amber-400 uppercase tracking-[2px] mb-2">
               Ticket Promedio
             </p>
-            <p className="text-3xl font-black text-amber-600">$35.49</p>
-            <p className="text-[9px] text-amber-500 font-bold mt-2">-2.1% vs mes anterior</p>
+            <p className="text-3xl font-black text-amber-600">${avgTicket.toFixed(2)}</p>
+            <p className="text-[9px] text-amber-500 font-bold mt-2">Por transacción</p>
           </div>
 
           <div className="bg-gradient-to-br from-purple-50 to-transparent rounded-[24px] p-6 border-2 border-purple-100">
             <p className="text-[10px] font-black text-purple-400 uppercase tracking-[2px] mb-2">
               Unidades Vendidas
             </p>
-            <p className="text-3xl font-black text-purple-600">2,990</p>
-            <p className="text-[9px] text-purple-500 font-bold mt-2">+5.6% vs mes anterior</p>
+            <p className="text-3xl font-black text-purple-600">{totalUnits.toLocaleString()}</p>
+            <p className="text-[9px] text-purple-500 font-bold mt-2">Artículos despachados</p>
           </div>
         </div>
       </div>

@@ -81,6 +81,17 @@ function getNavSections(role: UserRole): NavSection[] {
     ];
   }
 
+  if (role === UserRole.SCHOOL_FINANCE) {
+    return [{
+      label: 'Finanzas Escuela',
+      items: [
+        { path: '/school', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+        { path: '/school/students', label: 'Estudiantes', icon: <Users size={18} /> },
+        { path: '/school/invoices', label: 'Facturas', icon: <FileText size={18} /> },
+      ],
+    }];
+  }
+
   if (role === UserRole.SCHOOL_ADMIN) {
     return [{
       label: 'Mi Escuela',
