@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { ParentPaymentStatus, AttendanceStatus } from '../types';
 import { MOCK_PARENT_PAYMENTS, MOCK_SCHOOL_FEES, MOCK_ATTENDANCE_RECORDS, MOCK_STUDENTS_LIST } from '../constants';
+import { SchoolFeeService } from '../services/SchoolFeeService';
 import { useToast } from './ui/Toast';
 
 const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
@@ -36,6 +37,15 @@ export default function SchoolReportsView() {
     const overdue = payments.filter(p => p.status === ParentPaymentStatus.OVERDUE).reduce((s, p) => s + p.amount, 0);
     const rate = totalExpected > 0 ? Math.round((totalPaid / totalExpected) * 100) : 0;
     return { totalExpected, totalPaid, pending, overdue, rate };
+  }, []);
+
+  // Aging buckets & scholarship impact (from service)
+  const agingBuckets = useMemo(() => SchoolFeeService.getAgingBuckets('mx_01'), []);
+  const scholarshipImpact = useMemo(() => SchoolFeeService.getScholarshipImpact('mx_01'), []);
+  const agingChartData = useMemo(() => agingBuckets.map(b => ({ name: b.label, monto: b.totalAmount, count: b.count })), [agingBuckets]);
+  const lateFeeRevenue = useMemo(() => {
+    const payments = SchoolFeeService.getPaymentsBySchool('mx_01');
+    return payments.reduce((s, p) => s + (p.lateFeeAmount || 0), 0);
   }, []);
 
   // Revenue by month chart data
@@ -264,6 +274,74 @@ export default function SchoolReportsView() {
                   <Bar dataKey="pendiente" fill="#f59e0b" radius={[8, 8, 0, 0]} name="Pendiente" />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+
+            {/* Aging Report */}
+            <div className="bg-white rounded-[40px] p-8 border border-rose-100 shadow-sm">
+              <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
+                <Receipt size={18} className="text-rose-500" /> Cartera Vencida (Aging)
+              </h3>
+              {agingChartData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={agingChartData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis type="number" tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} width={80} />
+                      <Tooltip formatter={(val: number) => `$${val.toLocaleString('es-MX')}`} />
+                      <Bar dataKey="monto" radius={[0, 8, 8, 0]} name="Monto Vencido">
+                        {agingChartData.map((_, i) => <Cell key={i} fill={['#f59e0b', '#f97316', '#ef4444', '#dc2626', '#991b1b'][i] || '#ef4444'} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="flex gap-4 mt-4 flex-wrap">
+                    {agingBuckets.map(b => (
+                      <div key={b.label} className="bg-rose-50/50 rounded-xl px-4 py-2">
+                        <p className="text-[9px] font-black text-rose-400 uppercase">{b.label}</p>
+                        <p className="text-sm font-black text-rose-600">${b.totalAmount.toLocaleString('es-MX')}</p>
+                        <p className="text-[9px] text-slate-400">{b.count} cobro{b.count !== 1 ? 's' : ''}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-slate-400 font-bold text-center py-8">Sin cartera vencida</p>
+              )}
+            </div>
+
+            {/* Scholarship Impact + Late Fees */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-[40px] p-8 border border-purple-100 shadow-sm">
+                <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
+                  <GraduationCap size={18} className="text-purple-500" /> Impacto de Becas
+                </h3>
+                <div className="space-y-4">
+                  <div className="bg-purple-50/50 rounded-2xl p-4">
+                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Total Descontado</p>
+                    <p className="text-2xl font-black text-purple-600">${scholarshipImpact.totalDiscount.toLocaleString('es-MX')}</p>
+                  </div>
+                  <div className="bg-purple-50/50 rounded-2xl p-4">
+                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Alumnos Becados</p>
+                    <p className="text-2xl font-black text-purple-600">{scholarshipImpact.studentsWithScholarship}</p>
+                  </div>
+                  {Object.entries(scholarshipImpact.byType).map(([type, amount]) => (
+                    <div key={type} className="flex justify-between items-center px-2">
+                      <span className="text-xs font-bold text-slate-500 capitalize">{type.toLowerCase().replace('_', ' ')}</span>
+                      <span className="text-sm font-black text-purple-600">${(amount as number).toLocaleString('es-MX')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white rounded-[40px] p-8 border border-amber-100 shadow-sm">
+                <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-amber-500" /> Recargos por Mora
+                </h3>
+                <div className="bg-amber-50/50 rounded-2xl p-6 text-center">
+                  <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-2">Recargos Acumulados</p>
+                  <p className="text-3xl font-black text-amber-600">${lateFeeRevenue.toLocaleString('es-MX')}</p>
+                  <p className="text-[10px] text-slate-400 font-bold mt-2">Ingresos por mora aplicados</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

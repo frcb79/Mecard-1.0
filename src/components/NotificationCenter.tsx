@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bell, X, Check, ShoppingCart, AlertTriangle, ShieldCheck, Landmark } from 'lucide-react';
+import { Bell, X, Check, ShoppingCart, AlertTriangle, ShieldCheck, Landmark, Receipt } from 'lucide-react';
 import { NotificationService } from '../services/notificationService';
 import { Notification, NotificationType } from '../types';
 
@@ -24,6 +24,8 @@ export const NotificationCenter: React.FC<{ userId: string }> = ({ userId }) => 
       case NotificationType.LOW_STOCK_ALERT: return <AlertTriangle size={18} className="text-amber-500"/>;
       case NotificationType.DEPOSIT_CONFIRMED: return <ShieldCheck size={18} className="text-emerald-500"/>;
       case NotificationType.SETTLEMENT_READY: return <Landmark size={18} className="text-indigo-600"/>;
+      case NotificationType.FEE_DUE: return <Receipt size={18} className="text-amber-500"/>;
+      case NotificationType.FEE_OVERDUE: return <AlertTriangle size={18} className="text-rose-600"/>;
       default: return <Bell size={18} />;
     }
   };

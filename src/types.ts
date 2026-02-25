@@ -2137,6 +2137,88 @@ export enum ParentPaymentStatus {
   CANCELLED = 'CANCELLED'
 }
 
+export enum ScholarshipType {
+  ACADEMIC = 'ACADEMIC',
+  SPORTS = 'SPORTS',
+  NEED_BASED = 'NEED_BASED',
+  SIBLING = 'SIBLING',
+  STAFF = 'STAFF',
+  OTHER = 'OTHER'
+}
+
+export enum DiscountType {
+  PERCENTAGE = 'PERCENTAGE',
+  FIXED_AMOUNT = 'FIXED_AMOUNT'
+}
+
+export enum PaymentPlanStatus {
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  DEFAULTED = 'DEFAULTED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum FeeReminderSchedule {
+  DAYS_BEFORE_7 = 'DAYS_BEFORE_7',
+  DAYS_BEFORE_3 = 'DAYS_BEFORE_3',
+  DAYS_BEFORE_1 = 'DAYS_BEFORE_1',
+  ON_DUE_DATE = 'ON_DUE_DATE',
+  DAYS_AFTER_1 = 'DAYS_AFTER_1',
+  DAYS_AFTER_3 = 'DAYS_AFTER_3',
+  DAYS_AFTER_7 = 'DAYS_AFTER_7',
+  WEEKLY_OVERDUE = 'WEEKLY_OVERDUE'
+}
+
+export interface Scholarship {
+  id: string;
+  schoolId: string;
+  studentId: string;
+  studentName: string;
+  type: ScholarshipType;
+  name: string;
+  discountType: DiscountType;
+  discountValue: number;           // % or fixed amount
+  appliesToFeeTypes: SchoolFeeType[];  // empty = all
+  validFrom: string;               // ISO date
+  validUntil: string;              // ISO date
+  approvedBy: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PaymentPlan {
+  id: string;
+  schoolId: string;
+  parentId: string;
+  studentId: string;
+  studentName: string;
+  paymentId: string;               // Original payment being split
+  feeName: string;
+  totalAmount: number;
+  installments: number;
+  installmentAmount: number;
+  paidInstallments: number;
+  nextDueDate: string;
+  status: PaymentPlanStatus;
+  createdAt: string;
+  notes?: string;
+}
+
+export interface FeeReminder {
+  id: string;
+  schoolId: string;
+  name: string;
+  schedule: FeeReminderSchedule;
+  feeTypes: SchoolFeeType[];       // empty = all
+  channel: 'notification' | 'email' | 'both';
+  messageTemplate: string;
+  isActive: boolean;
+  lastSent?: string;
+  sentCount: number;
+  createdAt: string;
+}
+
 export interface SchoolFee {
   id: string;
   schoolId: string;
@@ -2152,6 +2234,12 @@ export interface SchoolFee {
     groups?: string[];
   };
   lateFeePercent?: number;         // Recargo por mora (ej: 5 = 5%)
+  graceDays?: number;              // Días de gracia antes de recargo
+  earlyPayDiscount?: number;       // Descuento por pronto pago (%)
+  earlyPayDaysBefore?: number;     // Días antes del vencimiento para pronto pago
+  allowPaymentPlan?: boolean;      // Permitir plan de pagos
+  maxInstallments?: number;        // Máx parcialidades si aplica
+  schoolYear?: string;             // Ej: "2025-2026"
   isActive: boolean;
   createdAt: string;
 }
@@ -2163,7 +2251,8 @@ export interface ParentPayment {
   parentId: string;
   studentId: string;
   studentName: string;
-  amount: number;
+  amount: number;                  // Monto final (con descuentos/recargos aplicados)
+  originalAmount?: number;         // Monto original antes de ajustes
   paidAmount?: number;
   status: ParentPaymentStatus;
   dueDate: string;                 // ISO date
@@ -2172,6 +2261,18 @@ export interface ParentPayment {
   referenceNumber?: string;
   receiptUrl?: string;
   notes?: string;
+  // Scholarship
+  scholarshipId?: string;
+  scholarshipDiscount?: number;    // Monto descontado por beca
+  // Payment Plan
+  paymentPlanId?: string;
+  installmentNumber?: number;      // 1, 2, 3...
+  // Late fees
+  lateFeeApplied?: boolean;
+  lateFeeAmount?: number;          // Monto del recargo
+  // Early pay
+  earlyPayDiscountApplied?: boolean;
+  earlyPayDiscountAmount?: number;
 }
 
 // ============================================
