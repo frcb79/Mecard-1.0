@@ -54,13 +54,13 @@ const ATT_STATUS_CONFIG: Record<string, { label: string; color: string; bg: stri
 };
 
 const WEBHOOK_EVENT_LABELS: Record<WebhookEventType, string> = {
-  [WebhookEventType.ACCESS_GRANTED]: 'access.granted',
+  [WebhookEventType.ACCESS_ENTRY]: 'access.entry',
+  [WebhookEventType.ACCESS_EXIT]: 'access.exit',
   [WebhookEventType.ACCESS_DENIED]: 'access.denied',
-  [WebhookEventType.STUDENT_ENTRY]: 'student.entry',
-  [WebhookEventType.STUDENT_EXIT]: 'student.exit',
-  [WebhookEventType.LATE_ARRIVAL]: 'student.late',
+  [WebhookEventType.HEARTBEAT]: 'device.heartbeat',
   [WebhookEventType.DEVICE_OFFLINE]: 'device.offline',
-  [WebhookEventType.ATTENDANCE_SUMMARY]: 'attendance.summary',
+  [WebhookEventType.DEVICE_ONLINE]: 'device.online',
+  [WebhookEventType.ATTENDANCE_MARKED]: 'attendance.marked',
 };
 
 export default function SchoolAccessDashboard() {
@@ -114,7 +114,7 @@ export default function SchoolAccessDashboard() {
     setTimeout(() => {
       const success = Math.random() > 0.2;
       if (success) {
-        setWebhooks(prev => prev.map(w => w.id === id ? { ...w, lastTriggered: new Date().toISOString(), failCount: 0 } : w));
+        setWebhooks(prev => prev.map(w => w.id === id ? { ...w, lastDelivery: new Date().toISOString(), failCount: 0 } : w));
         toast.info('Webhook OK', 'Test enviado exitosamente — 200 OK');
       } else {
         toast.warning('Webhook falló', 'Error de conexión simulado');
@@ -395,12 +395,12 @@ export default function SchoolAccessDashboard() {
                         </div>
                         <div className="flex items-center gap-2">
                           <code className="text-xs font-mono text-slate-500 bg-white px-3 py-1 rounded-lg border border-slate-100">
-                            {keyVisibility[key.id] ? key.key : `${key.key.slice(0, 12)}${'•'.repeat(20)}`}
+                            {keyVisibility[key.id] ? `${key.keyPrefix}${'•'.repeat(24)}` : `${key.keyPrefix}${'•'.repeat(24)}`}
                           </code>
                           <button onClick={() => setKeyVisibility({ ...keyVisibility, [key.id]: !keyVisibility[key.id] })} className="text-slate-300 hover:text-slate-500">
                             {keyVisibility[key.id] ? <EyeOff size={14} /> : <Eye size={14} />}
                           </button>
-                          <button onClick={() => copyToClipboard(key.key)} className="text-slate-300 hover:text-indigo-600"><Copy size={14} /></button>
+                          <button onClick={() => copyToClipboard(key.keyPrefix)} className="text-slate-300 hover:text-indigo-600"><Copy size={14} /></button>
                         </div>
                         <div className="flex gap-4 mt-2 text-[10px] text-slate-400">
                           <span>Creada: {key.createdAt}</span>
@@ -429,7 +429,7 @@ export default function SchoolAccessDashboard() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-bold text-slate-700">{wh.name}</h4>
+                          <h4 className="font-bold text-slate-700">{wh.url.split('/').pop()}</h4>
                           <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${wh.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
                             {wh.isActive ? 'Activo' : 'Inactivo'}
                           </span>
@@ -444,7 +444,7 @@ export default function SchoolAccessDashboard() {
                           ))}
                         </div>
                         <div className="flex gap-4 text-[10px] text-slate-400">
-                          {wh.lastTriggered && <span>Último envío: {new Date(wh.lastTriggered).toLocaleString('es-MX')}</span>}
+                          {wh.lastDelivery && <span>Último envío: {new Date(wh.lastDelivery).toLocaleString('es-MX')}</span>}
                           <span>Creado: {wh.createdAt}</span>
                         </div>
                       </div>

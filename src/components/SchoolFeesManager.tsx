@@ -131,7 +131,7 @@ export default function SchoolFeesManager() {
     const students = MOCK_STUDENTS_LIST;
     const newPayments: ParentPayment[] = students.map((s, i) => ({
       id: `pay_gen_${Date.now()}_${i}`, feeId: fee.id, feeName: `${fee.name} — ${genMonth}`,
-      parentId: s.parentId || 'parent_01', studentId: s.id, studentName: s.fullName || s.name,
+      parentId: s.parentId || 'parent_01', studentId: s.id, studentName: s.fullName,
       amount: fee.amount, status: ParentPaymentStatus.PENDING,
       dueDate: `${genMonth}-${String(fee.dueDay).padStart(2, '0')}`,
     }));
