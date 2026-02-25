@@ -4,17 +4,20 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { UserRole } from '../types';
+import { UserRole, AppPermission } from '../types';
+import { RoleService } from '../services/RoleService';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
+  requiredPermissions?: AppPermission[];
   requireAuth?: boolean;
 }
 
 export function ProtectedRoute({ 
   children, 
   allowedRoles,
+  requiredPermissions,
   requireAuth = true 
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -34,8 +37,13 @@ export function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Verificar roles permitidos
+  // Verificar roles permitidos (legacy)
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  // Verificar permisos granulares (new RBAC)
+  if (requiredPermissions && user && !RoleService.hasAllPermissions(user, requiredPermissions)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

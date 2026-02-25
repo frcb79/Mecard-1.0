@@ -48,6 +48,7 @@ const SchoolFeesManager = React.lazy(() => import('../components/SchoolFeesManag
 const SchoolAnnouncementsView = React.lazy(() => import('../components/SchoolAnnouncementsView'));
 const SchoolReportsView = React.lazy(() => import('../components/SchoolReportsView'));
 const SchoolAccessDashboard = React.lazy(() => import('../components/SchoolAccessDashboard'));
+const CustomRolesManager = React.lazy(() => import('../components/CustomRolesManager'));
 
 // Unit Manager
 const ConcessionaireDashboard = React.lazy(() => import('../components/ConcessionaireDashboard'));
@@ -298,6 +299,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
             <RoleBasedLayout>
               <BusinessModelConfiguration onSave={() => {}} />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/school/roles"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
+            <RoleBasedLayout>
+              <CustomRolesManager />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

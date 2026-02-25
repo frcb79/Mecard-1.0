@@ -104,6 +104,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
         { path: '/school/students', label: 'Estudiantes', icon: <Users size={18} /> },
         { path: '/school/staff', label: 'Personal', icon: <UserCircle size={18} /> },
+        { path: '/school/roles', label: 'Roles', icon: <Shield size={18} /> },
         { path: '/school/fees', label: 'Colegiaturas', icon: <Receipt size={18} /> },
         { path: '/school/announcements', label: 'Circulares', icon: <Megaphone size={18} /> },
         { path: '/school/reports', label: 'Reportes', icon: <BarChart3 size={18} /> },

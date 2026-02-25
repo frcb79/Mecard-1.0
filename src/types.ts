@@ -230,6 +230,8 @@ export interface AuthUser {
   campusId?: string;
   unitId?: string;
   photo?: string;
+  customRoleId?: string;
+  permissions?: AppPermission[];
 }
 
 // ============================================
@@ -2451,3 +2453,106 @@ export interface AccessApiKey {
   expiresAt?: string;
   isActive: boolean;
 }
+
+// ============================================
+// RBAC — Custom Roles & Permissions
+// ============================================
+
+export enum AppPermission {
+  // Dashboard
+  DASHBOARD_VIEW = 'DASHBOARD_VIEW',
+
+  // POS
+  POS_ACCESS = 'POS_ACCESS',
+  POS_VOID_TRANSACTION = 'POS_VOID_TRANSACTION',
+  POS_APPLY_DISCOUNT = 'POS_APPLY_DISCOUNT',
+
+  // Inventory
+  INVENTORY_VIEW = 'INVENTORY_VIEW',
+  INVENTORY_MANAGE = 'INVENTORY_MANAGE',
+
+  // Students
+  STUDENTS_VIEW = 'STUDENTS_VIEW',
+  STUDENTS_MANAGE = 'STUDENTS_MANAGE',
+  STUDENTS_IMPORT = 'STUDENTS_IMPORT',
+
+  // Financial
+  FEES_VIEW = 'FEES_VIEW',
+  FEES_MANAGE = 'FEES_MANAGE',
+  PAYMENTS_VIEW = 'PAYMENTS_VIEW',
+  PAYMENTS_PROCESS = 'PAYMENTS_PROCESS',
+  SCHOLARSHIPS_MANAGE = 'SCHOLARSHIPS_MANAGE',
+  SETTLEMENTS_VIEW = 'SETTLEMENTS_VIEW',
+  SETTLEMENTS_MANAGE = 'SETTLEMENTS_MANAGE',
+  REPORTS_VIEW = 'REPORTS_VIEW',
+
+  // School config
+  SCHOOL_CONFIG = 'SCHOOL_CONFIG',
+  STAFF_MANAGE = 'STAFF_MANAGE',
+  ROLES_MANAGE = 'ROLES_MANAGE',
+  ANNOUNCEMENTS_MANAGE = 'ANNOUNCEMENTS_MANAGE',
+
+  // Access & Security
+  ACCESS_DASHBOARD = 'ACCESS_DASHBOARD',
+  PERMISSIONS_MANAGE = 'PERMISSIONS_MANAGE',
+
+  // Parent-specific
+  PARENT_WALLET = 'PARENT_WALLET',
+  PARENT_LIMITS = 'PARENT_LIMITS',
+  PARENT_TRIPS = 'PARENT_TRIPS',
+
+  // Platform (Super Admin)
+  PLATFORM_SCHOOLS_MANAGE = 'PLATFORM_SCHOOLS_MANAGE',
+  PLATFORM_BILLING = 'PLATFORM_BILLING',
+  PLATFORM_GLOBAL_REPORTS = 'PLATFORM_GLOBAL_REPORTS',
+
+  // Concessions
+  UNIT_MANAGE = 'UNIT_MANAGE',
+}
+
+export interface CustomRole {
+  id: string;
+  schoolId: string;
+  name: string;
+  description: string;
+  baseRole: UserRole;            // which built-in role this extends
+  permissions: AppPermission[];
+  isSystem: boolean;             // true = default role, can't delete
+  color: string;                 // badge color hex
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Default permission map for built-in roles
+export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
+  [UserRole.SUPER_ADMIN]: Object.values(AppPermission),
+  [UserRole.SCHOOL_ADMIN]: [
+    AppPermission.DASHBOARD_VIEW, AppPermission.STUDENTS_VIEW, AppPermission.STUDENTS_MANAGE,
+    AppPermission.STUDENTS_IMPORT, AppPermission.FEES_VIEW, AppPermission.FEES_MANAGE,
+    AppPermission.PAYMENTS_VIEW, AppPermission.PAYMENTS_PROCESS, AppPermission.SCHOLARSHIPS_MANAGE,
+    AppPermission.SETTLEMENTS_VIEW, AppPermission.SETTLEMENTS_MANAGE, AppPermission.REPORTS_VIEW,
+    AppPermission.SCHOOL_CONFIG, AppPermission.STAFF_MANAGE, AppPermission.ROLES_MANAGE,
+    AppPermission.ANNOUNCEMENTS_MANAGE, AppPermission.ACCESS_DASHBOARD, AppPermission.PERMISSIONS_MANAGE,
+    AppPermission.INVENTORY_VIEW, AppPermission.INVENTORY_MANAGE,
+  ],
+  [UserRole.SCHOOL_FINANCE]: [
+    AppPermission.DASHBOARD_VIEW, AppPermission.FEES_VIEW, AppPermission.FEES_MANAGE,
+    AppPermission.PAYMENTS_VIEW, AppPermission.PAYMENTS_PROCESS, AppPermission.SCHOLARSHIPS_MANAGE,
+    AppPermission.SETTLEMENTS_VIEW, AppPermission.SETTLEMENTS_MANAGE, AppPermission.REPORTS_VIEW,
+  ],
+  [UserRole.UNIT_MANAGER]: [
+    AppPermission.DASHBOARD_VIEW, AppPermission.POS_ACCESS, AppPermission.POS_VOID_TRANSACTION,
+    AppPermission.POS_APPLY_DISCOUNT, AppPermission.INVENTORY_VIEW, AppPermission.INVENTORY_MANAGE,
+    AppPermission.REPORTS_VIEW, AppPermission.UNIT_MANAGE, AppPermission.STAFF_MANAGE,
+  ],
+  [UserRole.CAFETERIA_STAFF]: [AppPermission.POS_ACCESS, AppPermission.INVENTORY_VIEW],
+  [UserRole.STATIONERY_STAFF]: [AppPermission.POS_ACCESS, AppPermission.INVENTORY_VIEW],
+  [UserRole.CASHIER]: [AppPermission.POS_ACCESS, AppPermission.POS_VOID_TRANSACTION],
+  [UserRole.POS_OPERATOR]: [AppPermission.POS_ACCESS],
+  [UserRole.PARENT]: [
+    AppPermission.DASHBOARD_VIEW, AppPermission.PARENT_WALLET, AppPermission.PARENT_LIMITS,
+    AppPermission.PARENT_TRIPS, AppPermission.FEES_VIEW, AppPermission.PAYMENTS_VIEW,
+    AppPermission.PAYMENTS_PROCESS,
+  ],
+  [UserRole.STUDENT]: [AppPermission.DASHBOARD_VIEW],
+};
