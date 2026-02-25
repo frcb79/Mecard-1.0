@@ -144,7 +144,20 @@ export enum NotificationType {
   TRIP_CREATED = 'TRIP_CREATED',
   TRIP_PAYMENT_DUE = 'TRIP_PAYMENT_DUE',
   TRIP_PAYMENT_CONFIRMED = 'TRIP_PAYMENT_CONFIRMED',
-  TRIP_REMINDER = 'TRIP_REMINDER'
+  TRIP_REMINDER = 'TRIP_REMINDER',
+  // Access Control
+  CHILD_ENTERED = 'CHILD_ENTERED',
+  CHILD_EXITED = 'CHILD_EXITED',
+  ACCESS_DENIED = 'ACCESS_DENIED',
+  CHILD_LATE = 'CHILD_LATE',
+  CHILD_ABSENT = 'CHILD_ABSENT',
+  ATTENDANCE_REPORT = 'ATTENDANCE_REPORT',
+  // Announcements
+  ANNOUNCEMENT_RECEIVED = 'ANNOUNCEMENT_RECEIVED',
+  // Fees / Colegiaturas
+  FEE_DUE = 'FEE_DUE',
+  FEE_OVERDUE = 'FEE_OVERDUE',
+  FEE_PAID = 'FEE_PAID'
 }
 
 export enum SettlementStatus {
@@ -2090,4 +2103,250 @@ export interface PreOrder {
   updatedAt: string;
   preparedBy?: string;
   cancelledReason?: string;
+}
+
+// ============================================
+// 28. SCHOOL FEES / COLEGIATURAS
+// ============================================
+
+export enum SchoolFeeType {
+  TUITION = 'TUITION',
+  ENROLLMENT = 'ENROLLMENT',
+  UNIFORM = 'UNIFORM',
+  EVENT = 'EVENT',
+  MATERIAL = 'MATERIAL',
+  TRANSPORT = 'TRANSPORT',
+  INSURANCE = 'INSURANCE',
+  OTHER = 'OTHER'
+}
+
+export enum FeeRecurrence {
+  ONE_TIME = 'ONE_TIME',
+  MONTHLY = 'MONTHLY',
+  BIMONTHLY = 'BIMONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  SEMESTER = 'SEMESTER',
+  ANNUAL = 'ANNUAL'
+}
+
+export enum ParentPaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+  PARTIAL = 'PARTIAL',
+  CANCELLED = 'CANCELLED'
+}
+
+export interface SchoolFee {
+  id: string;
+  schoolId: string;
+  name: string;
+  description?: string;
+  type: SchoolFeeType;
+  amount: number;
+  recurrence: FeeRecurrence;
+  dueDay: number;                  // 1-28
+  appliesTo: {
+    all: boolean;
+    grades?: string[];
+    groups?: string[];
+  };
+  lateFeePercent?: number;         // Recargo por mora (ej: 5 = 5%)
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ParentPayment {
+  id: string;
+  feeId: string;
+  feeName: string;
+  parentId: string;
+  studentId: string;
+  studentName: string;
+  amount: number;
+  paidAmount?: number;
+  status: ParentPaymentStatus;
+  dueDate: string;                 // ISO date
+  paidAt?: string;
+  paymentMethod?: string;          // 'SPEI' | 'CARD' | 'CASH' | 'OXXO'
+  referenceNumber?: string;
+  receiptUrl?: string;
+  notes?: string;
+}
+
+// ============================================
+// 29. SCHOOL ANNOUNCEMENTS / CIRCULARES
+// ============================================
+
+export enum AnnouncementPriority {
+  INFO = 'INFO',
+  URGENT = 'URGENT',
+  EMERGENCY = 'EMERGENCY'
+}
+
+export interface SchoolAnnouncement {
+  id: string;
+  schoolId: string;
+  title: string;
+  body: string;
+  priority: AnnouncementPriority;
+  audience: {
+    type: 'all' | 'grades' | 'groups';
+    targets?: string[];
+  };
+  attachmentUrls?: string[];
+  publishedAt: string;
+  expiresAt?: string;
+  createdBy: string;
+  readByCount: number;
+  totalRecipients: number;
+}
+
+// ============================================
+// 30. ACCESS CONTROL / SISTEMA DE ACCESOS
+// ============================================
+
+export enum AccessPointType {
+  MAIN_GATE = 'MAIN_GATE',
+  SECONDARY_GATE = 'SECONDARY_GATE',
+  PARKING = 'PARKING',
+  BUS_ZONE = 'BUS_ZONE',
+  CAFETERIA = 'CAFETERIA',
+  LIBRARY = 'LIBRARY',
+  LAB = 'LAB',
+  GYM = 'GYM',
+  CUSTOM = 'CUSTOM'
+}
+
+export enum AccessDirection {
+  ENTRY = 'ENTRY',
+  EXIT = 'EXIT',
+  BIDIRECTIONAL = 'BIDIRECTIONAL'
+}
+
+export enum ScanMethod {
+  QR_CODE = 'QR_CODE',
+  BARCODE = 'BARCODE',
+  NFC = 'NFC',
+  FACIAL = 'FACIAL',
+  FINGERPRINT = 'FINGERPRINT',
+  PIN = 'PIN',
+  MANUAL = 'MANUAL'
+}
+
+export enum AccessPointStatus {
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+  MAINTENANCE = 'MAINTENANCE'
+}
+
+export enum AttendanceStatus {
+  PRESENT = 'PRESENT',
+  LATE = 'LATE',
+  ABSENT = 'ABSENT',
+  EXCUSED = 'EXCUSED',
+  EARLY_EXIT = 'EARLY_EXIT'
+}
+
+export enum WebhookEventType {
+  ACCESS_ENTRY = 'ACCESS_ENTRY',
+  ACCESS_EXIT = 'ACCESS_EXIT',
+  ACCESS_DENIED = 'ACCESS_DENIED',
+  HEARTBEAT = 'HEARTBEAT',
+  DEVICE_OFFLINE = 'DEVICE_OFFLINE',
+  DEVICE_ONLINE = 'DEVICE_ONLINE',
+  ATTENDANCE_MARKED = 'ATTENDANCE_MARKED'
+}
+
+export interface AccessPoint {
+  id: string;
+  schoolId: string;
+  campusId?: string;
+  name: string;
+  type: AccessPointType;
+  direction: AccessDirection;
+  supportedMethods: ScanMethod[];
+  status: AccessPointStatus;
+  hardwareModel?: string;
+  ipAddress?: string;
+  lastHeartbeat?: string;
+  scansToday: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AccessEvent {
+  id: string;
+  accessPointId: string;
+  accessPointName: string;
+  studentId: string;
+  studentName: string;
+  studentGrade: string;
+  credentialUsed: ScanMethod;
+  direction: AccessDirection;
+  timestamp: string;
+  authorized: boolean;
+  deniedReason?: string;
+  photo?: string;
+  verifiedBy?: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  grade: string;
+  date: string;                    // YYYY-MM-DD
+  entryTime?: string;              // HH:mm
+  exitTime?: string;               // HH:mm
+  status: AttendanceStatus;
+  entryEventId?: string;
+  exitEventId?: string;
+  notes?: string;
+}
+
+export interface AttendanceSummary {
+  studentId: string;
+  studentName: string;
+  period: string;
+  totalDays: number;
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+  attendancePercent: number;
+}
+
+export interface WebhookPayload<T = unknown> {
+  eventType: WebhookEventType;
+  timestamp: string;
+  deviceId: string;
+  schoolId: string;
+  signature: string;               // HMAC-SHA256
+  data: T;
+}
+
+export interface WebhookConfig {
+  id: string;
+  schoolId: string;
+  url: string;
+  secret: string;
+  events: WebhookEventType[];
+  isActive: boolean;
+  lastDelivery?: string;
+  failCount: number;
+  createdAt: string;
+}
+
+export interface AccessApiKey {
+  id: string;
+  schoolId: string;
+  name: string;
+  keyPrefix: string;               // First 8 chars shown
+  keyHash: string;
+  permissions: string[];
+  lastUsed?: string;
+  createdAt: string;
+  expiresAt?: string;
+  isActive: boolean;
 }

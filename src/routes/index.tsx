@@ -44,6 +44,10 @@ const StudentImportWizard = React.lazy(() => import('../components/StudentImport
 const SchoolPermissionsView = React.lazy(() => import('../components/SchoolPermissionsView'));
 const SchoolTripsView = React.lazy(() => import('../components/SchoolTripsView'));
 const SchoolInvoiceDashboard = React.lazy(() => import('../components/SchoolInvoiceDashboard'));
+const SchoolFeesManager = React.lazy(() => import('../components/SchoolFeesManager'));
+const SchoolAnnouncementsView = React.lazy(() => import('../components/SchoolAnnouncementsView'));
+const SchoolReportsView = React.lazy(() => import('../components/SchoolReportsView'));
+const SchoolAccessDashboard = React.lazy(() => import('../components/SchoolAccessDashboard'));
 
 // Unit Manager
 const ConcessionaireDashboard = React.lazy(() => import('../components/ConcessionaireDashboard'));
@@ -64,6 +68,7 @@ const ParentGiftsView = React.lazy(() => import('../components/ParentGiftsView')
 const ParentRewardsView = React.lazy(() => import('../components/ParentRewardsView'));
 const ParentTripsView = React.lazy(() => import('../components/ParentTripsView'));
 const ParentSettingsView = React.lazy(() => import('../components/ParentSettingsView'));
+const ParentFeesView = React.lazy(() => import('../components/ParentFeesView'));
 
 // Student
 const StudentDashboard = React.lazy(() => import('../components/StudentDashboard'));
@@ -327,6 +332,46 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/school/fees"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolFeesManager />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/school/announcements"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
+            <RoleBasedLayout>
+              <SchoolAnnouncementsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/school/reports"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolReportsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/school/access"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
+            <RoleBasedLayout>
+              <SchoolAccessDashboard />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ====== UNIT MANAGER ROUTES ====== */}
       <Route
@@ -469,6 +514,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
             <RoleBasedLayout>
               <ParentGiftsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/parent/fees"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <ParentFeesView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

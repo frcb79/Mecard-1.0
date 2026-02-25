@@ -7,7 +7,8 @@ import {
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
   ChevronRight, Gift, Star, Menu, X, MapPin, Briefcase,
-  Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText
+  Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText,
+  Shield, Megaphone
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -88,6 +89,8 @@ function getNavSections(role: UserRole): NavSection[] {
       items: [
         { path: '/school', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
         { path: '/school/students', label: 'Estudiantes', icon: <Users size={18} /> },
+        { path: '/school/fees', label: 'Colegiaturas', icon: <Receipt size={18} /> },
+        { path: '/school/reports', label: 'Reportes', icon: <BarChart3 size={18} /> },
         { path: '/school/invoices', label: 'Facturas', icon: <FileText size={18} /> },
       ],
     }];
@@ -101,6 +104,10 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
         { path: '/school/students', label: 'Estudiantes', icon: <Users size={18} /> },
         { path: '/school/staff', label: 'Personal', icon: <UserCircle size={18} /> },
+        { path: '/school/fees', label: 'Colegiaturas', icon: <Receipt size={18} /> },
+        { path: '/school/announcements', label: 'Circulares', icon: <Megaphone size={18} /> },
+        { path: '/school/reports', label: 'Reportes', icon: <BarChart3 size={18} /> },
+        { path: '/school/access', label: 'Accesos', icon: <Shield size={18} /> },
         { path: '/school/import', label: 'Importar', icon: <Layers size={18} /> },
         { path: '/school/config', label: 'Configuración', icon: <Settings size={18} /> },
         { path: '/school/permissions', label: 'Permisos Salida', icon: <ShieldCheck size={18} /> },
@@ -139,6 +146,7 @@ function getNavSections(role: UserRole): NavSection[] {
       items: [
         { path: '/parent', label: 'Mi Familia', icon: <UserCircle size={18} /> },
         { path: '/parent/wallet', label: 'Billetera', icon: <Wallet size={18} /> },
+        { path: '/parent/fees', label: 'Colegiaturas', icon: <Receipt size={18} /> },
         { path: '/parent/limits', label: 'Límites', icon: <Zap size={18} /> },
         { path: '/parent/reports', label: 'Reportes', icon: <PieChart size={18} /> },
         { path: '/parent/notifications', label: 'Notificaciones', icon: <MessageSquare size={18} /> },

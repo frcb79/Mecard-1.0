@@ -1,5 +1,5 @@
 
-import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, TripReminder, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus } from './types';
+import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, TripReminder, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus, SchoolFee, SchoolFeeType, FeeRecurrence, ParentPayment, ParentPaymentStatus, SchoolAnnouncement, AnnouncementPriority, AccessPoint, AccessPointType, AccessDirection, ScanMethod, AccessPointStatus, AccessEvent, AttendanceRecord, AttendanceStatus, WebhookConfig, WebhookEventType, AccessApiKey } from './types';
 
 // Add missing clabePersonal property
 export const MOCK_STUDENT: StudentProfile = {
@@ -867,4 +867,117 @@ export const MOCK_PRE_ORDERS: PreOrder[] = [
     total: 40.00, status: PreOrderStatus.PICKED_UP, pickupTime: '09:30', pickupDate: today,
     createdAt: new Date(Date.now() - 14400000).toISOString(), updatedAt: new Date(Date.now() - 10800000).toISOString(), preparedBy: 'Cajero 1',
   },
+];
+
+// ============================================
+// SCHOOL FEES / COLEGIATURAS
+// ============================================
+
+export const MOCK_SCHOOL_FEES: SchoolFee[] = [
+  { id: 'fee_01', schoolId: 'mx_01', name: 'Colegiatura Mensual', description: 'Pago mensual de colegiatura', type: SchoolFeeType.TUITION, amount: 8500, recurrence: FeeRecurrence.MONTHLY, dueDay: 5, appliesTo: { all: true }, lateFeePercent: 5, isActive: true, createdAt: '2026-01-01' },
+  { id: 'fee_02', schoolId: 'mx_01', name: 'Inscripción 2026-2027', description: 'Cuota de inscripción anual', type: SchoolFeeType.ENROLLMENT, amount: 15000, recurrence: FeeRecurrence.ANNUAL, dueDay: 15, appliesTo: { all: true }, isActive: true, createdAt: '2026-01-01' },
+  { id: 'fee_03', schoolId: 'mx_01', name: 'Uniforme Completo', description: 'Kit de uniformes (diario + deportivo)', type: SchoolFeeType.UNIFORM, amount: 3200, recurrence: FeeRecurrence.ONE_TIME, dueDay: 10, appliesTo: { all: false, grades: ['1° Primaria'] }, isActive: true, createdAt: '2026-01-15' },
+  { id: 'fee_04', schoolId: 'mx_01', name: 'Seguro Escolar', description: 'Seguro de accidentes y cobertura médica', type: SchoolFeeType.INSURANCE, amount: 1800, recurrence: FeeRecurrence.ANNUAL, dueDay: 20, appliesTo: { all: true }, isActive: true, createdAt: '2026-01-01' },
+  { id: 'fee_05', schoolId: 'mx_01', name: 'Material Didáctico', description: 'Paquete de material y libros del semestre', type: SchoolFeeType.MATERIAL, amount: 2500, recurrence: FeeRecurrence.SEMESTER, dueDay: 1, appliesTo: { all: true }, isActive: false, createdAt: '2026-01-01' },
+];
+
+export const MOCK_PARENT_PAYMENTS: ParentPayment[] = [
+  { id: 'pay_01', feeId: 'fee_01', feeName: 'Colegiatura Enero', parentId: 'parent_01', studentId: '2024001', studentName: 'Santiago Gonzalez', amount: 8500, status: ParentPaymentStatus.PAID, dueDate: '2026-01-05', paidAt: '2026-01-03', paidAmount: 8500, paymentMethod: 'SPEI', referenceNumber: 'REF-20260103-001' },
+  { id: 'pay_02', feeId: 'fee_01', feeName: 'Colegiatura Febrero', parentId: 'parent_01', studentId: '2024001', studentName: 'Santiago Gonzalez', amount: 8500, status: ParentPaymentStatus.PAID, dueDate: '2026-02-05', paidAt: '2026-02-04', paidAmount: 8500, paymentMethod: 'SPEI', referenceNumber: 'REF-20260204-001' },
+  { id: 'pay_03', feeId: 'fee_01', feeName: 'Colegiatura Marzo', parentId: 'parent_01', studentId: '2024001', studentName: 'Santiago Gonzalez', amount: 8500, status: ParentPaymentStatus.PENDING, dueDate: '2026-03-05' },
+  { id: 'pay_04', feeId: 'fee_02', feeName: 'Inscripción 2026-2027', parentId: 'parent_01', studentId: '2024001', studentName: 'Santiago Gonzalez', amount: 15000, status: ParentPaymentStatus.PENDING, dueDate: '2026-06-15' },
+  { id: 'pay_05', feeId: 'fee_04', feeName: 'Seguro Escolar', parentId: 'parent_01', studentId: '2024001', studentName: 'Santiago Gonzalez', amount: 1800, status: ParentPaymentStatus.PAID, dueDate: '2026-01-20', paidAt: '2026-01-18', paidAmount: 1800, paymentMethod: 'CARD' },
+  { id: 'pay_06', feeId: 'fee_01', feeName: 'Colegiatura Enero', parentId: 'parent_02', studentId: '2024002', studentName: 'Valentina Torres', amount: 8500, status: ParentPaymentStatus.PAID, dueDate: '2026-01-05', paidAt: '2026-01-05', paidAmount: 8500, paymentMethod: 'SPEI', referenceNumber: 'REF-20260105-002' },
+  { id: 'pay_07', feeId: 'fee_01', feeName: 'Colegiatura Febrero', parentId: 'parent_02', studentId: '2024002', studentName: 'Valentina Torres', amount: 8500, status: ParentPaymentStatus.OVERDUE, dueDate: '2026-02-05' },
+  { id: 'pay_08', feeId: 'fee_01', feeName: 'Colegiatura Marzo', parentId: 'parent_02', studentId: '2024002', studentName: 'Valentina Torres', amount: 8500, status: ParentPaymentStatus.PENDING, dueDate: '2026-03-05' },
+  { id: 'pay_09', feeId: 'fee_03', feeName: 'Uniforme Completo', parentId: 'parent_03', studentId: '2024003', studentName: 'Mateo Ramírez', amount: 3200, status: ParentPaymentStatus.PARTIAL, dueDate: '2026-02-10', paidAmount: 1600, paymentMethod: 'CASH' },
+  { id: 'pay_10', feeId: 'fee_01', feeName: 'Colegiatura Enero', parentId: 'parent_03', studentId: '2024003', studentName: 'Mateo Ramírez', amount: 8500, status: ParentPaymentStatus.PAID, dueDate: '2026-01-05', paidAt: '2026-01-04', paidAmount: 8500, paymentMethod: 'SPEI', referenceNumber: 'REF-20260104-003' },
+  { id: 'pay_11', feeId: 'fee_01', feeName: 'Colegiatura Febrero', parentId: 'parent_03', studentId: '2024003', studentName: 'Mateo Ramírez', amount: 8500, status: ParentPaymentStatus.PAID, dueDate: '2026-02-05', paidAt: '2026-02-03', paidAmount: 8500, paymentMethod: 'OXXO', referenceNumber: 'REF-20260203-003' },
+  { id: 'pay_12', feeId: 'fee_01', feeName: 'Colegiatura Marzo', parentId: 'parent_03', studentId: '2024003', studentName: 'Mateo Ramírez', amount: 8500, status: ParentPaymentStatus.PENDING, dueDate: '2026-03-05' },
+];
+
+// ============================================
+// SCHOOL ANNOUNCEMENTS / CIRCULARES
+// ============================================
+
+export const MOCK_ANNOUNCEMENTS: SchoolAnnouncement[] = [
+  { id: 'ann_01', schoolId: 'mx_01', title: 'Junta de Padres de Familia', body: 'Se convoca a todos los padres de familia a la junta general del bimestre. Se tratarán temas importantes sobre el calendario escolar, actividades extracurriculares y mejoras en las instalaciones. La junta se realizará en el auditorio principal.\n\nFecha: Viernes 7 de marzo, 5:00 PM\nLugar: Auditorio Principal\n\nSe solicita puntualidad.', priority: AnnouncementPriority.INFO, audience: { type: 'all' }, publishedAt: '2026-02-20T10:00:00Z', expiresAt: '2026-03-08T00:00:00Z', createdBy: 'Dirección', readByCount: 78, totalRecipients: 120 },
+  { id: 'ann_02', schoolId: 'mx_01', title: '⚠️ Recordatorio: Pago de Colegiatura Marzo', body: 'Les recordamos que el plazo para el pago de la colegiatura del mes de marzo vence el próximo 5 de marzo. Los pagos pueden realizarse por SPEI, tarjeta o en ventanilla.\n\nEvite recargos realizando su pago a tiempo. Si tiene alguna duda, comuníquese a la oficina de administración.', priority: AnnouncementPriority.URGENT, audience: { type: 'all' }, publishedAt: '2026-02-24T08:00:00Z', expiresAt: '2026-03-06T00:00:00Z', createdBy: 'Administración', readByCount: 45, totalRecipients: 120 },
+  { id: 'ann_03', schoolId: 'mx_01', title: 'Festival de Primavera 2026', body: 'Con gusto les informamos que nuestro Festival de Primavera se realizará el 21 de marzo. Los alumnos prepararán presentaciones por grado. Se solicita apoyo con vestuario según las indicaciones de cada maestro titular.\n\nHorario: 9:00 AM - 1:00 PM\nEntrada libre para familiares.', priority: AnnouncementPriority.INFO, audience: { type: 'grades', targets: ['1° Primaria', '2° Primaria', '3° Primaria'] }, publishedAt: '2026-02-18T14:00:00Z', createdBy: 'Coordinación Académica', readByCount: 32, totalRecipients: 60 },
+  { id: 'ann_04', schoolId: 'mx_01', title: '🚨 Suspensión de Clases - Emergencia Climática', body: 'Debido a las condiciones climáticas adversas reportadas por Protección Civil, se suspenden las actividades escolares el día de mañana. Las clases se reanudarán cuando las autoridades confirmen que es seguro. Se enviarán actualizaciones por este medio.\n\nPor favor manténganse seguros.', priority: AnnouncementPriority.EMERGENCY, audience: { type: 'all' }, publishedAt: '2026-02-23T18:30:00Z', createdBy: 'Dirección General', readByCount: 110, totalRecipients: 120 },
+];
+
+// ============================================
+// ACCESS CONTROL - MOCK DATA
+// ============================================
+
+export const MOCK_ACCESS_POINTS: AccessPoint[] = [
+  { id: 'ap_01', schoolId: 'mx_01', name: 'Entrada Principal', type: AccessPointType.MAIN_GATE, direction: AccessDirection.ENTRY, supportedMethods: [ScanMethod.QR_CODE, ScanMethod.NFC, ScanMethod.FACIAL], status: AccessPointStatus.ONLINE, hardwareModel: 'ZKTeco SpeedFace V5L', ipAddress: '192.168.1.101', lastHeartbeat: new Date(Date.now() - 30000).toISOString(), scansToday: 186, isActive: true, createdAt: '2026-01-10' },
+  { id: 'ap_02', schoolId: 'mx_01', name: 'Salida Principal', type: AccessPointType.MAIN_GATE, direction: AccessDirection.EXIT, supportedMethods: [ScanMethod.QR_CODE, ScanMethod.NFC], status: AccessPointStatus.ONLINE, hardwareModel: 'ZKTeco SpeedFace V5L', ipAddress: '192.168.1.102', lastHeartbeat: new Date(Date.now() - 45000).toISOString(), scansToday: 42, isActive: true, createdAt: '2026-01-10' },
+  { id: 'ap_03', schoolId: 'mx_01', name: 'Estacionamiento', type: AccessPointType.PARKING, direction: AccessDirection.BIDIRECTIONAL, supportedMethods: [ScanMethod.NFC, ScanMethod.BARCODE], status: AccessPointStatus.ONLINE, hardwareModel: 'HID iCLASS SE R40', ipAddress: '192.168.1.110', lastHeartbeat: new Date(Date.now() - 120000).toISOString(), scansToday: 24, isActive: true, createdAt: '2026-01-15' },
+  { id: 'ap_04', schoolId: 'mx_01', name: 'Zona de Camiones', type: AccessPointType.BUS_ZONE, direction: AccessDirection.BIDIRECTIONAL, supportedMethods: [ScanMethod.QR_CODE, ScanMethod.MANUAL], status: AccessPointStatus.MAINTENANCE, hardwareModel: 'Suprema BioStation 2', ipAddress: '192.168.1.120', lastHeartbeat: new Date(Date.now() - 3600000).toISOString(), scansToday: 0, isActive: true, createdAt: '2026-01-20' },
+];
+
+const todayISO = new Date().toISOString().slice(0, 10);
+const makeTime = (h: number, m: number) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+const makeTS = (h: number, m: number) => `${todayISO}T${makeTime(h, m)}:00`;
+
+export const MOCK_ACCESS_EVENTS: AccessEvent[] = [
+  { id: 'ae_01', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: '2024001', studentName: 'Santiago Gonzalez', studentGrade: '4° Primaria - B', credentialUsed: ScanMethod.QR_CODE, direction: AccessDirection.ENTRY, timestamp: makeTS(7, 15), authorized: true },
+  { id: 'ae_02', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: '2024002', studentName: 'Valentina Torres', studentGrade: '3° Primaria - A', credentialUsed: ScanMethod.NFC, direction: AccessDirection.ENTRY, timestamp: makeTS(7, 18), authorized: true },
+  { id: 'ae_03', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: '2024003', studentName: 'Mateo Ramírez', studentGrade: '5° Primaria - A', credentialUsed: ScanMethod.FACIAL, direction: AccessDirection.ENTRY, timestamp: makeTS(7, 22), authorized: true },
+  { id: 'ae_04', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: '2024004', studentName: 'Isabella Morales', studentGrade: '2° Primaria - C', credentialUsed: ScanMethod.QR_CODE, direction: AccessDirection.ENTRY, timestamp: makeTS(7, 35), authorized: true },
+  { id: 'ae_05', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: '2024005', studentName: 'Diego Hernández', studentGrade: '6° Primaria - A', credentialUsed: ScanMethod.NFC, direction: AccessDirection.ENTRY, timestamp: makeTS(7, 52), authorized: true },
+  { id: 'ae_06', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: 'unknown_01', studentName: 'Desconocido', studentGrade: '', credentialUsed: ScanMethod.QR_CODE, direction: AccessDirection.ENTRY, timestamp: makeTS(8, 5), authorized: false, deniedReason: 'Credencial no reconocida' },
+  { id: 'ae_07', accessPointId: 'ap_03', accessPointName: 'Estacionamiento', studentId: '2024001', studentName: 'Santiago Gonzalez', studentGrade: '4° Primaria - B', credentialUsed: ScanMethod.NFC, direction: AccessDirection.ENTRY, timestamp: makeTS(7, 14), authorized: true },
+  { id: 'ae_08', accessPointId: 'ap_02', accessPointName: 'Salida Principal', studentId: '2024001', studentName: 'Santiago Gonzalez', studentGrade: '4° Primaria - B', credentialUsed: ScanMethod.QR_CODE, direction: AccessDirection.EXIT, timestamp: makeTS(14, 30), authorized: true },
+  { id: 'ae_09', accessPointId: 'ap_02', accessPointName: 'Salida Principal', studentId: '2024002', studentName: 'Valentina Torres', studentGrade: '3° Primaria - A', credentialUsed: ScanMethod.NFC, direction: AccessDirection.EXIT, timestamp: makeTS(14, 32), authorized: true },
+  { id: 'ae_10', accessPointId: 'ap_02', accessPointName: 'Salida Principal', studentId: '2024003', studentName: 'Mateo Ramírez', studentGrade: '5° Primaria - A', credentialUsed: ScanMethod.FACIAL, direction: AccessDirection.EXIT, timestamp: makeTS(14, 35), authorized: true },
+  { id: 'ae_11', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: '2024006', studentName: 'Camila Vargas', studentGrade: '1° Primaria - A', credentialUsed: ScanMethod.QR_CODE, direction: AccessDirection.ENTRY, timestamp: makeTS(8, 15), authorized: true },
+  { id: 'ae_12', accessPointId: 'ap_02', accessPointName: 'Salida Principal', studentId: '2024004', studentName: 'Isabella Morales', studentGrade: '2° Primaria - C', credentialUsed: ScanMethod.QR_CODE, direction: AccessDirection.EXIT, timestamp: makeTS(13, 0), authorized: true },
+  { id: 'ae_13', accessPointId: 'ap_01', accessPointName: 'Entrada Principal', studentId: '2024007', studentName: 'Emiliano Ruiz', studentGrade: '4° Primaria - A', credentialUsed: ScanMethod.NFC, direction: AccessDirection.ENTRY, timestamp: makeTS(7, 45), authorized: true },
+  { id: 'ae_14', accessPointId: 'ap_02', accessPointName: 'Salida Principal', studentId: '2024005', studentName: 'Diego Hernández', studentGrade: '6° Primaria - A', credentialUsed: ScanMethod.NFC, direction: AccessDirection.EXIT, timestamp: makeTS(14, 40), authorized: true },
+  { id: 'ae_15', accessPointId: 'ap_02', accessPointName: 'Salida Principal', studentId: '2024006', studentName: 'Camila Vargas', studentGrade: '1° Primaria - A', credentialUsed: ScanMethod.QR_CODE, direction: AccessDirection.EXIT, timestamp: makeTS(14, 45), authorized: true },
+];
+
+const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+const twoDaysAgo = new Date(Date.now() - 172800000).toISOString().slice(0, 10);
+const threeDaysAgo = new Date(Date.now() - 259200000).toISOString().slice(0, 10);
+
+export const MOCK_ATTENDANCE_RECORDS: AttendanceRecord[] = [
+  // Today
+  { id: 'att_01', studentId: '2024001', studentName: 'Santiago Gonzalez', grade: '4° Primaria - B', date: todayISO, entryTime: '07:15', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_02', studentId: '2024002', studentName: 'Valentina Torres', grade: '3° Primaria - A', date: todayISO, entryTime: '07:18', exitTime: '14:32', status: AttendanceStatus.PRESENT },
+  { id: 'att_03', studentId: '2024003', studentName: 'Mateo Ramírez', grade: '5° Primaria - A', date: todayISO, entryTime: '07:22', exitTime: '14:35', status: AttendanceStatus.PRESENT },
+  { id: 'att_04', studentId: '2024004', studentName: 'Isabella Morales', grade: '2° Primaria - C', date: todayISO, entryTime: '07:35', exitTime: '13:00', status: AttendanceStatus.EARLY_EXIT, notes: 'Cita médica' },
+  { id: 'att_05', studentId: '2024005', studentName: 'Diego Hernández', grade: '6° Primaria - A', date: todayISO, entryTime: '07:52', status: AttendanceStatus.LATE, notes: 'Llegó 22 min tarde' },
+  { id: 'att_06', studentId: '2024006', studentName: 'Camila Vargas', grade: '1° Primaria - A', date: todayISO, entryTime: '08:15', status: AttendanceStatus.LATE },
+  { id: 'att_07', studentId: '2024007', studentName: 'Emiliano Ruiz', grade: '4° Primaria - A', date: todayISO, status: AttendanceStatus.ABSENT },
+  // Yesterday
+  { id: 'att_08', studentId: '2024001', studentName: 'Santiago Gonzalez', grade: '4° Primaria - B', date: yesterday, entryTime: '07:10', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_09', studentId: '2024002', studentName: 'Valentina Torres', grade: '3° Primaria - A', date: yesterday, entryTime: '07:20', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_10', studentId: '2024003', studentName: 'Mateo Ramírez', grade: '5° Primaria - A', date: yesterday, status: AttendanceStatus.EXCUSED, notes: 'Permiso médico' },
+  { id: 'att_11', studentId: '2024004', studentName: 'Isabella Morales', grade: '2° Primaria - C', date: yesterday, entryTime: '07:25', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_12', studentId: '2024005', studentName: 'Diego Hernández', grade: '6° Primaria - A', date: yesterday, entryTime: '07:30', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  // Two days ago
+  { id: 'att_13', studentId: '2024001', studentName: 'Santiago Gonzalez', grade: '4° Primaria - B', date: twoDaysAgo, entryTime: '07:12', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_14', studentId: '2024002', studentName: 'Valentina Torres', grade: '3° Primaria - A', date: twoDaysAgo, entryTime: '07:50', exitTime: '14:30', status: AttendanceStatus.LATE },
+  { id: 'att_15', studentId: '2024005', studentName: 'Diego Hernández', grade: '6° Primaria - A', date: twoDaysAgo, entryTime: '07:28', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  // Three days ago
+  { id: 'att_16', studentId: '2024001', studentName: 'Santiago Gonzalez', grade: '4° Primaria - B', date: threeDaysAgo, entryTime: '07:08', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_17', studentId: '2024002', studentName: 'Valentina Torres', grade: '3° Primaria - A', date: threeDaysAgo, entryTime: '07:15', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_18', studentId: '2024003', studentName: 'Mateo Ramírez', grade: '5° Primaria - A', date: threeDaysAgo, entryTime: '07:20', exitTime: '14:30', status: AttendanceStatus.PRESENT },
+  { id: 'att_19', studentId: '2024004', studentName: 'Isabella Morales', grade: '2° Primaria - C', date: threeDaysAgo, status: AttendanceStatus.ABSENT },
+  { id: 'att_20', studentId: '2024005', studentName: 'Diego Hernández', grade: '6° Primaria - A', date: threeDaysAgo, entryTime: '07:55', exitTime: '14:30', status: AttendanceStatus.LATE },
+];
+
+export const MOCK_WEBHOOK_CONFIGS: WebhookConfig[] = [
+  { id: 'wh_01', schoolId: 'mx_01', url: 'https://erp.colegiocumbres.mx/api/webhooks/mecard', secret: 'whsec_a1b2c3d4e5f6g7h8i9j0', events: [WebhookEventType.ACCESS_ENTRY, WebhookEventType.ACCESS_EXIT, WebhookEventType.ATTENDANCE_MARKED], isActive: true, lastDelivery: new Date(Date.now() - 60000).toISOString(), failCount: 0, createdAt: '2026-01-15' },
+  { id: 'wh_02', schoolId: 'mx_01', url: 'https://sistema-asistencia.example.com/hooks/mecard', secret: 'whsec_x9y8z7w6v5u4t3s2r1q0', events: [WebhookEventType.ATTENDANCE_MARKED, WebhookEventType.DEVICE_OFFLINE], isActive: true, lastDelivery: new Date(Date.now() - 7200000).toISOString(), failCount: 3, createdAt: '2026-02-01' },
+];
+
+export const MOCK_API_KEYS: AccessApiKey[] = [
+  { id: 'key_01', schoolId: 'mx_01', name: 'ERP Principal', keyPrefix: 'mk_live_', keyHash: 'sha256_abc123...', permissions: ['access:read', 'access:write', 'attendance:read', 'students:read'], lastUsed: new Date(Date.now() - 300000).toISOString(), createdAt: '2026-01-10', isActive: true },
+  { id: 'key_02', schoolId: 'mx_01', name: 'Torniquetes ZKTeco', keyPrefix: 'mk_dev_', keyHash: 'sha256_def456...', permissions: ['access:write', 'heartbeat'], lastUsed: new Date(Date.now() - 60000).toISOString(), createdAt: '2026-01-20', isActive: true },
+  { id: 'key_03', schoolId: 'mx_01', name: 'App Padres (Legacy)', keyPrefix: 'mk_test_', keyHash: 'sha256_ghi789...', permissions: ['attendance:read'], createdAt: '2025-11-01', expiresAt: '2026-06-30', isActive: false },
 ];
