@@ -6,7 +6,8 @@ import {
   ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Zap, ShoppingCart, ChefHat
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { MOCK_STUDENT, MOCK_STUDENT_TRANSACTIONS, MOCK_STUDENT_NOTIFICATIONS, MOCK_STUDENT_GIFTS_RECEIVED } from '../constants';
+import { MOCK_STUDENT_TRANSACTIONS, MOCK_STUDENT_NOTIFICATIONS, MOCK_STUDENT_GIFTS_RECEIVED } from '../constants';
+import { useStudent } from '../hooks/useStudents';
 import { getFinancialEducation, getHealthChallenges } from '../services/geminiService';
 import { getActivePreOrdersByStudent } from '../services/PreOrderService';
 import { PreOrderStatus } from '../types';
@@ -14,6 +15,7 @@ import { PreOrderStatus } from '../types';
 export default function StudentDashboard() {
   const { user, isAuthenticated, isStudent } = useAuth();
   const navigate = useNavigate();
+  const { student: hookStudent } = useStudent(user?.id);
   const [dailyLesson, setDailyLesson] = useState('');
   const [dailyChallenge, setDailyChallenge] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -42,7 +44,7 @@ export default function StudentDashboard() {
     }
   };
 
-  const student = MOCK_STUDENT;
+  const student = hookStudent!;
   const recentTxns = MOCK_STUDENT_TRANSACTIONS.slice(0, 4);
   const unreadNotifs = MOCK_STUDENT_NOTIFICATIONS.filter(n => !n.read).length;
   const pendingGifts = MOCK_STUDENT_GIFTS_RECEIVED.filter(g => g.status === 'PENDING').length;

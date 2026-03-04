@@ -3,7 +3,7 @@
  * KPIs reales, gráficas, tabla de campus, actividad reciente
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2, Users, DollarSign, Zap, ShieldCheck, Landmark,
   TrendingUp, ArrowUpRight, Activity, AlertTriangle,
@@ -15,9 +15,7 @@ import {
 } from 'recharts';
 import { usePlatform } from '../contexts/PlatformContext';
 import { SchoolManagement } from './SchoolManagement';
-import { SchoolFeeService } from '../services/SchoolFeeService';
-import { MOCK_STUDENTS_LIST, MOCK_TRANSACTIONS, MOCK_PARENT_PAYMENTS, MOCK_UNITS, MOCK_ACTIVITY_LOG } from '../constants';
-import { ParentPaymentStatus } from '../types';
+import { useDashboard } from '../hooks/useDashboard';
 
 const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
@@ -29,56 +27,21 @@ export const SuperAdminDashboard: React.FC = () => {
 
   const fmt = (v: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v);
 
-  // ===== Aggregate KPIs from real mock data =====
-  const kpis = useMemo(() => {
-    const totalStudents = MOCK_STUDENTS_LIST.length;
-    const totalUnits = MOCK_UNITS.length;
-    const totalBalance = schools.reduce((s, sc) => s + sc.balance, 0);
-    const totalTransactions = MOCK_TRANSACTIONS.length;
+  // ===== Use dashboard hook for all data =====
+  const {
+    metrics: kpis,
+    revenueByMonth,
+    campusData,
+    statusPie,
+    recentActivity,
+    loading,
+    fetchMetrics,
+  } = useDashboard('mx_01');
 
-    const paid = MOCK_PARENT_PAYMENTS.filter(p => p.status === ParentPaymentStatus.PAID);
-    const totalCollected = paid.reduce((s, p) => s + (p.paidAmount || p.amount), 0);
-    const pending = MOCK_PARENT_PAYMENTS.filter(p => p.status === ParentPaymentStatus.PENDING || p.status === ParentPaymentStatus.OVERDUE);
-    const totalPending = pending.reduce((s, p) => s + (p.amount - (p.paidAmount || 0)), 0);
-    const overdueCount = MOCK_PARENT_PAYMENTS.filter(p => p.status === ParentPaymentStatus.OVERDUE).length;
-
-    const feeStats = SchoolFeeService.getStats('mx_01');
-
-    return { totalStudents, totalUnits, totalBalance, totalTransactions, totalCollected, totalPending, overdueCount, feeStats };
-  }, [schools]);
-
-  // ===== Revenue by month chart =====
-  const revenueByMonth = useMemo(() => {
-    const months: Record<string, { month: string; cobrado: number; pendiente: number }> = {};
-    MOCK_PARENT_PAYMENTS.forEach(p => {
-      const m = p.dueDate.slice(0, 7);
-      if (!months[m]) months[m] = { month: m, cobrado: 0, pendiente: 0 };
-      if (p.status === ParentPaymentStatus.PAID) months[m].cobrado += p.paidAmount || p.amount;
-      else months[m].pendiente += p.amount - (p.paidAmount || 0);
-    });
-    return Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
-  }, []);
-
-  // ===== Campus table data =====
-  const campusData = useMemo(() =>
-    schools.map(s => ({
-      id: s.id, name: s.name, students: MOCK_STUDENTS_LIST.filter(st => st.schoolId === s.id).length || Math.floor(Math.random() * 400 + 100),
-      balance: s.balance, status: s.status,
-    })),
-  [schools]);
-
-  // ===== Payment status pie =====
-  const statusPie = useMemo(() => {
-    const counts: Record<string, number> = {};
-    MOCK_PARENT_PAYMENTS.forEach(p => {
-      const label = p.status === ParentPaymentStatus.PAID ? 'Pagado' : p.status === ParentPaymentStatus.PENDING ? 'Pendiente' : p.status === ParentPaymentStatus.OVERDUE ? 'Vencido' : 'Parcial';
-      counts[label] = (counts[label] || 0) + 1;
-    });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, []);
-
-  // ===== Activity log =====
-  const recentActivity = useMemo(() => MOCK_ACTIVITY_LOG.slice(0, 8), []);
+  // Trigger fetch when schools change
+  useEffect(() => {
+    if (schools.length > 0) fetchMetrics(schools);
+  }, [schools, fetchMetrics]);
 
   return (
     <div className="h-full bg-gradient-to-br from-slate-50 to-indigo-50/30 flex flex-col overflow-hidden">
@@ -119,14 +82,14 @@ export const SuperAdminDashboard: React.FC = () => {
 
             {/* KPI Grid — 2 rows */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <KPICard label="Campus" value={schools.length} icon={<Building2 size={18} />} color="indigo" />
+              <KPICard label="Campus" value={kpis.totalSchools} icon={<Building2 size={18} />} color="indigo" />
               <KPICard label="Alumnos" value={kpis.totalStudents} icon={<GraduationCap size={18} />} color="purple" />
               <KPICard label="Fondeo Global" value={fmt(kpis.totalBalance)} icon={<Landmark size={18} />} color="emerald" />
               <KPICard label="Unidades Op." value={kpis.totalUnits} icon={<Building2 size={18} />} color="blue" />
               <KPICard label="Cobrado" value={fmt(kpis.totalCollected)} icon={<DollarSign size={18} />} color="emerald" sub="colegiaturas" />
               <KPICard label="Pendiente" value={fmt(kpis.totalPending)} icon={<CreditCard size={18} />} color="amber" />
               <KPICard label="Vencidos" value={kpis.overdueCount} icon={<AlertTriangle size={18} />} color="rose" sub="cobros atrasados" />
-              <KPICard label="Tasa Cobranza" value={`${kpis.feeStats.collectionRate}%`} icon={<TrendingUp size={18} />} color="indigo" sub={kpis.feeStats.collectionRate >= 80 ? 'Saludable' : 'Atención'} />
+              <KPICard label="Tasa Cobranza" value={`${kpis.collectionRate}%`} icon={<TrendingUp size={18} />} color="indigo" sub={kpis.collectionRate >= 80 ? 'Saludable' : 'Atención'} />
             </div>
 
             {/* Charts Row */}

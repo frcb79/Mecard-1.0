@@ -8,7 +8,8 @@ import {
   ChefHat, Package, Plus, Minus, Hash, Tag, Store, CheckCircle2
 } from 'lucide-react';
 import { Product, CartItem, Category, StudentProfile } from '../types';
-import { PRODUCTS, MOCK_STUDENT, MOCK_STUDENTS_LIST } from '../constants';
+import { PRODUCTS } from '../constants';
+import { useStudent, useStudents } from '../hooks/useStudents';
 import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { useToast } from './ui/Toast';
@@ -37,6 +38,10 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   const toast = useToast();
   const paymentService = usePaymentService();
   const inventoryService = useInventoryService();
+
+  // Hook-based student data
+  const { student: defaultStudentData } = useStudent(user?.id);
+  const { students: allStudentsList } = useStudents();
   
   // Local cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -71,7 +76,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   
   // Default student (for when no search is done)
   const defaultStudent: StudentProfile = {
-    ...MOCK_STUDENT,
+    ...(defaultStudentData || {} as StudentProfile),
     ...(user?.id && { id: user.id, name: user.name || 'Estudiante' }),
   };
 
@@ -149,7 +154,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
     const term = studentIdInput.toLowerCase().trim();
-    const found = MOCK_STUDENTS_LIST.find(s =>
+    const found = allStudentsList.find(s =>
       s.id.toLowerCase() === term ||
       s.name.toLowerCase().includes(term)
     );

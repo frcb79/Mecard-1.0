@@ -3,7 +3,7 @@
  * 4 Tabs: Monitor en Vivo | Asistencia | Puntos de Acceso | Integraciones API
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Shield, Activity, Users, Radio, Settings, Key, Webhook, Plus, Edit2, Trash2, X,
   CheckCircle2, XCircle, Clock, AlertTriangle, ArrowRight, ArrowLeft, Eye, EyeOff,
@@ -15,10 +15,7 @@ import {
   AccessPointStatus, ScanMethod, AttendanceStatus, WebhookConfig, AccessApiKey,
   WebhookEventType
 } from '../types';
-import {
-  MOCK_ACCESS_POINTS, MOCK_ACCESS_EVENTS, MOCK_ATTENDANCE_RECORDS,
-  MOCK_WEBHOOK_CONFIGS, MOCK_API_KEYS
-} from '../constants';
+import { useAccess } from '../hooks/useAccess';
 import { useToast } from './ui/Toast';
 
 type Tab = 'live' | 'attendance' | 'points' | 'api';
@@ -66,11 +63,22 @@ const WEBHOOK_EVENT_LABELS: Record<WebhookEventType, string> = {
 export default function SchoolAccessDashboard() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('live');
-  const [events] = useState<AccessEvent[]>(MOCK_ACCESS_EVENTS);
-  const [attendance] = useState<AttendanceRecord[]>(MOCK_ATTENDANCE_RECORDS);
-  const [accessPoints] = useState<AccessPoint[]>(MOCK_ACCESS_POINTS);
-  const [webhooks, setWebhooks] = useState<WebhookConfig[]>(MOCK_WEBHOOK_CONFIGS);
-  const [apiKeys, setApiKeys] = useState<AccessApiKey[]>(MOCK_API_KEYS);
+
+  // Use the access hook for all data
+  const {
+    accessPoints, accessEvents, attendanceRecords, dailyStats,
+    webhooks: hookWebhooks, apiKeys: hookApiKeys,
+    loading: accessLoading,
+    createWebhook: hookCreateWebhook, deleteWebhook: hookDeleteWebhook,
+    sendTestWebhook: hookSendTestWebhook,
+    createApiKey: hookCreateApiKey, revokeApiKey: hookRevokeApiKey,
+    refresh: refreshAccess,
+  } = useAccess('mx_01');
+
+  const [events] = useState<AccessEvent[]>(accessEvents);
+  const [attendance] = useState<AttendanceRecord[]>(attendanceRecords);
+  const [webhooks, setWebhooks] = useState<WebhookConfig[]>(hookWebhooks);
+  const [apiKeys, setApiKeys] = useState<AccessApiKey[]>(hookApiKeys);
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().slice(0, 10));
   const [searchQuery, setSearchQuery] = useState('');
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -78,6 +86,14 @@ export default function SchoolAccessDashboard() {
   const [keyVisibility, setKeyVisibility] = useState<Record<string, boolean>>({});
   const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
   const [showApiDocs, setShowApiDocs] = useState(false);
+
+  // Sync hook data to local state when it changes
+  useEffect(() => {
+    if (!accessLoading) {
+      setWebhooks(hookWebhooks);
+      setApiKeys(hookApiKeys);
+    }
+  }, [accessLoading, hookWebhooks, hookApiKeys]);
 
   // Live Monitor Stats
   const liveStats = useMemo(() => {

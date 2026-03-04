@@ -6,13 +6,16 @@
 
 import React, { useState } from 'react';
 import { ParentPortal } from './ParentPortal';
-import { MOCK_STUDENTS_LIST } from '../constants';
+import { useStudents } from '../hooks/useStudents';
 import { AppView, StudentProfile, Transaction } from '../types';
 
 export const ParentPortalContainer: React.FC = () => {
+  // Hook-based student data
+  const { students: hookStudents } = useStudents();
+
   // State management
   const [view, setView] = useState<AppView>(AppView.PARENT_DASHBOARD);
-  const [students, setStudents] = useState<StudentProfile[]>(MOCK_STUDENTS_LIST.slice(0, 2));
+  const [students, setStudents] = useState<StudentProfile[]>(hookStudents.slice(0, 2));
   const [activeStudentIndex, setActiveStudentIndex] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
