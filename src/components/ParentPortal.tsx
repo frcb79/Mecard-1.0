@@ -10,15 +10,13 @@ import {
   Fingerprint, Key, GraduationCap, Eye, EyeOff, Lock, Bell, Star,
   TrendingUp, Clock, MapPin, Users
 } from 'lucide-react';
-import { Category, AppView, StudentProfile, Transaction, Product, EntityOwner, School } from '../types';
+import { Category, StudentProfile, Transaction, Product, EntityOwner, School } from '../types';
 import { PRODUCTS, MOCK_SCHOOLS, MOCK_STUDENTS_LIST } from '../constants';
 import { Button } from './Button';
 import { ToggleSwitch } from './ToggleSwitch';
 import { useToast } from './ui/Toast';
 
 interface ParentPortalProps {
-  view: AppView;
-  onNavigate: (view: AppView) => void;
   students: StudentProfile[];
   activeStudentIndex: number;
   onSwitchStudent: (index: number) => void;
@@ -29,7 +27,7 @@ interface ParentPortalProps {
 }
 
 export const ParentPortal: React.FC<ParentPortalProps> = ({
-  view, onNavigate, students, activeStudentIndex, onSwitchStudent, onLinkStudent,
+  students, activeStudentIndex, onSwitchStudent, onLinkStudent,
   transactions, onUpdateStudent, onDeposit
 }) => {
   const navigate = useNavigate();
@@ -70,13 +68,7 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
     setAllergies(student.restrictions?.allergens || []);
   }, [student.id, student.dailyLimit, student.restrictions]);
 
-  useEffect(() => {
-    if (view === AppView.PARENT_WALLET) {
-        setDepositStep('amount');
-        setSelectedAmount('');
-        setPaymentMethod(null);
-    }
-  }, [view]);
+
 
   const [productSearch, setProductSearch] = useState('');
   const foodCategories = [Category.HOT_MEALS, Category.COMBO_MEALS, Category.SNACKS, Category.DRINKS];
@@ -154,8 +146,7 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
       }
   };
 
-  if (view === AppView.PARENT_DASHBOARD) {
-    return (
+  return (
         <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto h-full overflow-y-auto pb-40 font-sans">
             <header className="mb-6 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 animate-in slide-in-from-top-4 duration-500">
                 <div>
@@ -369,10 +360,6 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
             )}
         </div>
     );
-  }
-
-  // Any non-dashboard view is handled by React Router — redirect to dashboard
-  return null;
 };
 
 interface ActionCardProps { onClick: () => void; icon: React.ReactNode; title: string; desc: string; color: string; }

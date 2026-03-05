@@ -6,7 +6,7 @@ import {
   X, Upload, Download, Copy, ExternalLink, Info, Database,
   Plus
 } from 'lucide-react';
-import { School, AppView, StudentProfile, OperatingUnit } from '../types';
+import { School, StudentProfile, OperatingUnit } from '../types';
 import { MOCK_SCHOOLS, MOCK_STUDENTS_LIST } from '../constants';
 import { Button } from './Button';
 import { StudentImportWizard } from './StudentImportWizard';

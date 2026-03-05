@@ -1,44 +1,38 @@
 /**
  * SchoolAdminContainer
  * Wrapper que proporciona estado y props a SchoolAdminView
- * Maneja la lógica de estado para que SchoolAdminView sea un componente presentacional
+ * Consumes useStudents() and useSchoolData() hooks as single source of truth
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SchoolAdminView } from './SchoolAdminView';
-import { MOCK_STUDENTS_LIST } from '../constants';
+import { useStudents } from '../hooks/useStudents';
+import { useSchoolData } from '../hooks/useSchoolData';
 import { StudentProfile, OperatingUnit, EntityOwner } from '../types';
 
-// Mock operating units — aligned with OperatingUnit type definition
-const MOCK_OPERATING_UNITS: OperatingUnit[] = [
-  {
-    id: 'unit-001',
-    name: 'Cafetería Principal',
-    type: 'CAFETERIA',
-    schoolId: 'school-001',
-    ownerType: EntityOwner.SCHOOL,
-    managerId: 'mgr-001',
-    isActive: true,
-    createdAt: '2026-01-01',
-    updatedAt: '2026-01-01'
-  },
-  {
-    id: 'unit-002',
-    name: 'Tienda Escolar',
-    type: 'STATIONERY',
-    schoolId: 'school-001',
-    ownerType: EntityOwner.SCHOOL,
-    managerId: 'mgr-002',
-    isActive: true,
-    createdAt: '2026-01-01',
-    updatedAt: '2026-01-01'
-  }
-];
+const DEFAULT_SCHOOL_ID = 'school-001';
 
 export const SchoolAdminContainer: React.FC = () => {
-  // State management
-  const [students, setStudents] = useState<StudentProfile[]>(MOCK_STUDENTS_LIST);
-  const [operatingUnits, setOperatingUnits] = useState<OperatingUnit[]>(MOCK_OPERATING_UNITS);
+  // Hook-based data — single source of truth
+  const { students: hookStudents, loading: studentsLoading } = useStudents({ schoolId: DEFAULT_SCHOOL_ID });
+  const { units: hookUnits, currentSchool, loading: schoolLoading } = useSchoolData(DEFAULT_SCHOOL_ID);
+
+  // Local state seeded from hooks (allows in-session mutations)
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [operatingUnits, setOperatingUnits] = useState<OperatingUnit[]>([]);
+
+  // Sync hook data into local state when loaded
+  useEffect(() => {
+    if (!studentsLoading && hookStudents.length > 0) {
+      setStudents(hookStudents);
+    }
+  }, [studentsLoading, hookStudents]);
+
+  useEffect(() => {
+    if (!schoolLoading && hookUnits.length > 0) {
+      setOperatingUnits(hookUnits);
+    }
+  }, [schoolLoading, hookUnits]);
 
   const handleUpdateStudent = (id: string, data: Partial<StudentProfile>) => {
     setStudents(
@@ -67,6 +61,17 @@ export const SchoolAdminContainer: React.FC = () => {
   const handleDeleteUnit = (id: string) => {
     setOperatingUnits(operatingUnits.filter(unit => unit.id !== id));
   };
+
+  if (studentsLoading || schoolLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Cargando datos institucionales...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SchoolAdminView

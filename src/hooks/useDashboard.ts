@@ -183,7 +183,7 @@ function buildCampusData(schools: School[]): CampusRow[] {
     name: s.name,
     students:
       MOCK_STUDENTS_LIST.filter(st => st.schoolId === s.id).length ||
-      Math.floor(Math.random() * 400 + 100),
+      s.studentCount || 0,
     balance: s.balance,
     status: s.status,
   }));

@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { PRODUCTS } from '../constants';
 import type { Product, Category } from '../types';
 

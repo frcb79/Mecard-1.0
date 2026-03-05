@@ -106,46 +106,44 @@ export class MockSettlementService implements SettlementServiceInterface {
     const settlementId = this.generateSettlementId();
     const disbursements: Disbursement[] = [];
 
-    // Group transactions by school (for simplicity, assume all go to first school)
-    // In real scenario, would aggregate by multiple schools/units
-    const totalTransactionAmount = request.transactions.reduce(
-      (sum, txn) => sum + (txn.newBalance !== undefined ? 0 : 0), // Simplified
+    // Calculate gross revenue from actual transaction amounts
+    const grossRevenue = request.transactions.reduce(
+      (sum, txn) => sum + Math.abs(txn.amount ?? 0),
       0
     );
 
-    // Calculate amount per school based on their proportion
-    // For now, split evenly among schools with 30% commission
-    const commissionRate = 0.30; // MeCard takes 30%
-    const disbursementAmount = request.transactions.length * 10; // Simplified: $10 per transaction to school
+    // MeCard platform fee: 4.5% (matches SettlementService.calculate)
+    const PLATFORM_FEE_RATE = 0.045;
+    const platformFee = grossRevenue * PLATFORM_FEE_RATE;
+    const netAfterPlatform = grossRevenue - platformFee;
 
-    // Create disbursements for each school
-    MOCK_SCHOOLS.forEach((school) => {
-      if (!school.settlementCLABE) {
-        return; // Skip schools without settlement CLABE
-      }
+    // Split net amount among schools with valid CLABEs
+    const eligibleSchools = MOCK_SCHOOLS.filter((s) => s.settlementCLABE);
 
-      const disbursement: Disbursement = {
-        id: `DISB_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        recipientId: school.id,
-        recipientName: school.name,
-        recipientCLABE: school.settlementCLABE,
-        amount: Math.round(disbursementAmount * 100) / 100, // Round to 2 decimals
-        status: 'pending',
-        createdAt: new Date(),
-      };
+    if (eligibleSchools.length > 0) {
+      // Distribute proportionally (equal split among eligible schools for mock)
+      const perSchool = Math.round((netAfterPlatform / eligibleSchools.length) * 100) / 100;
 
-      disbursements.push(disbursement);
-    });
-
-    // If no schools, create a default unit disbursement
-    if (disbursements.length === 0 && MOCK_UNITS.length > 0) {
+      eligibleSchools.forEach((school) => {
+        disbursements.push({
+          id: `DISB_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          recipientId: school.id,
+          recipientName: school.name,
+          recipientCLABE: school.settlementCLABE,
+          amount: perSchool,
+          status: 'pending',
+          createdAt: new Date(),
+        });
+      });
+    } else if (MOCK_UNITS.length > 0) {
+      // Fallback: disburse to first unit
       const unit = MOCK_UNITS[0];
       disbursements.push({
         id: `DISB_${Date.now()}`,
         recipientId: unit.id,
         recipientName: unit.name,
         recipientCLABE: unit.vendorCLABE || '646180000000000000',
-        amount: disbursementAmount,
+        amount: Math.round(netAfterPlatform * 100) / 100,
         status: 'pending',
         createdAt: new Date(),
       });
@@ -156,10 +154,7 @@ export class MockSettlementService implements SettlementServiceInterface {
       periodStart: request.period.start,
       periodEnd: request.period.end,
       totalTransactions: request.transactions.length,
-      totalAmount: request.transactions.reduce(
-        (sum, txn) => sum + (txn.newBalance || 0),
-        0
-      ),
+      totalAmount: Math.round(grossRevenue * 100) / 100,
       disbursements,
       status: 'pending',
       createdAt: new Date(),

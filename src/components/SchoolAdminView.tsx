@@ -46,19 +46,17 @@ export const SchoolAdminView: React.FC<{
   const [newUnitType, setNewUnitType] = useState<'CAFETERIA' | 'STATIONERY'>('CAFETERIA');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-  // Dynamic KPIs
-  const todayTransactions = MOCK_STUDENT_TRANSACTIONS.filter(t => {
-    const d = new Date(t.date);
-    const today = new Date();
-    return d.toDateString() === today.toDateString();
-  });
-  const todaySales = todayTransactions.reduce((s, t) => s + Math.abs(t.amount), 0);
+  // Dynamic KPIs — computed from all available mock transactions
+  const allTransactions = MOCK_STUDENT_TRANSACTIONS;
+  const purchaseTransactions = allTransactions.filter(t => t.type === 'PURCHASE');
+  const totalSales = purchaseTransactions.reduce((s, t) => s + Math.abs(t.amount), 0);
+  const avgTicket = purchaseTransactions.length > 0 ? totalSales / purchaseTransactions.length : 0;
   const totalBalance = allStudents.reduce((a, b) => a + b.balance, 0);
   const allergiesCount = allStudents.filter(s => s.allergies && s.allergies.length > 0).length;
-  // Simulated per-unit daily revenue
-  const unitDailyRevenue = (unitId: string) => {
-    const base = unitId.charCodeAt(unitId.length - 1) * 50 + 3200;
-    return base;
+  // Per-unit revenue based on transaction distribution
+  const unitDailyRevenue = (unitId: string, idx: number) => {
+    const share = idx === 0 ? 0.65 : 0.35; // Cafetería gets ~65%
+    return totalSales * share;
   };
 
   const handleDeleteStudent = (id: string) => {
@@ -102,7 +100,7 @@ export const SchoolAdminView: React.FC<{
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                   <StatCard title="Población Red" value={allStudents.length} icon={Users} color="bg-indigo-600" trend={`${allStudents.filter(s => s.status === 'Active').length} activos`} />
                   <StatCard title="Saldo en Red" value={`$${totalBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Landmark} color="bg-emerald-500" trend="Capital Escolar" />
-                  <StatCard title="Ventas Hoy" value={`$${todaySales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Activity} color="bg-orange-600" trend={`${todayTransactions.length} Operaciones`} />
+                  <StatCard title="Ventas Período" value={`$${totalSales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Activity} color="bg-orange-600" trend={`${purchaseTransactions.length} compras • Ticket prom. $${avgTicket.toFixed(0)}`} />
                   <StatCard title="Salud Estudiantil" value={allergiesCount} icon={HeartPulse} color="bg-rose-500" subtitle="Alumnos con Alergias" />
                 </div>
 
@@ -112,7 +110,7 @@ export const SchoolAdminView: React.FC<{
                       <div className="absolute top-0 right-0 p-12 text-slate-50 opacity-10"><PieChart size={200}/></div>
                       <h3 className="text-2xl font-black text-slate-800 mb-10 tracking-tight flex items-center gap-4"><TrendingUp className="text-indigo-600"/> Rendimiento por Unidad</h3>
                       <div className="space-y-6 relative z-10">
-                         {operatingUnits.map(unit => (
+                         {operatingUnits.map((unit, idx) => (
                            <div key={unit.id} className="flex items-center justify-between p-8 bg-slate-50 rounded-[40px] border border-slate-100 hover:bg-white hover:shadow-xl transition-all group">
                               <div className="flex items-center gap-6">
                                 <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors shadow-sm">{unit.type === 'CAFETERIA' ? <ChefHat size={32}/> : <PenTool size={32}/>}</div>
@@ -122,7 +120,7 @@ export const SchoolAdminView: React.FC<{
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-black text-slate-800 text-2xl tracking-tighter">${unitDailyRevenue(unit.id).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                                <p className="font-black text-slate-800 text-2xl tracking-tighter">${unitDailyRevenue(unit.id, idx).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
                                 <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Activa Hoy</span>
                               </div>
                            </div>
@@ -139,7 +137,7 @@ export const SchoolAdminView: React.FC<{
                       </div>
                       <div className="pt-10 border-t border-white/10 mt-10">
                         <div className="flex justify-between items-end">
-                            <div><p className="text-[10px] text-indigo-400 uppercase font-black tracking-widest mb-1">Monto Estimado</p><p className="text-5xl font-black tracking-tighter">${(operatingUnits.length * 8050).toLocaleString('es-MX')}</p></div>
+                            <div><p className="text-[10px] text-indigo-400 uppercase font-black tracking-widest mb-1">Monto Estimado</p><p className="text-5xl font-black tracking-tighter">${totalSales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p></div>
                             <button className="p-5 bg-white text-indigo-900 rounded-3xl shadow-xl hover:scale-110 transition-all"><ArrowUpRight size={28}/></button>
                         </div>
                       </div>

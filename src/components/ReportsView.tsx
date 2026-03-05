@@ -8,11 +8,19 @@ import React, { useState, useMemo } from 'react';
 import { BarChart3, Download, Calendar, Filter, TrendingUp } from 'lucide-react';
 import { useToast } from './ui/Toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { MOCK_STUDENT_TRANSACTIONS, PRODUCTS } from '../constants';
+import { Category } from '../types';
 
-// Seed-based pseudo-random for consistent per-period data
-const seededRandom = (seed: number) => {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
+// Category labels for Spanish display
+const CATEGORY_LABELS: Record<string, string> = {
+  [Category.HOT_MEALS]: 'Comidas',
+  [Category.COMBO_MEALS]: 'Combos',
+  [Category.SNACKS]: 'Snacks',
+  [Category.DRINKS]: 'Bebidas',
+  [Category.SCHOOL_SUPPLIES]: 'Papelería',
+  [Category.UNIFORMS]: 'Uniformes',
+  [Category.ACCESSORIES]: 'Accesorios',
+  [Category.HEALTHY]: 'Saludable',
 };
 
 export default function ReportsView() {
@@ -21,37 +29,92 @@ export default function ReportsView() {
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Generate period-dynamic data
-  const periodMultiplier = period === 'week' ? 1 : period === 'month' ? 4.2 : period === 'quarter' ? 13 : 52;
-  const periodSeed = period === 'week' ? 7 : period === 'month' ? 28 : period === 'quarter' ? 90 : 365;
+  // ── Derived data from real mock transactions ──
+  const purchases = useMemo(() =>
+    MOCK_STUDENT_TRANSACTIONS.filter(t => t.type === 'PURCHASE'),
+    []
+  );
 
+  const totalPurchaseAmount = useMemo(() =>
+    purchases.reduce((s, t) => s + Math.abs(t.amount), 0),
+    [purchases]
+  );
+
+  // Average daily spend (base for scaling to other periods)
+  const uniqueDays = useMemo(() => {
+    const days = new Set(purchases.map(t => t.date.slice(0, 10)));
+    return Math.max(days.size, 1);
+  }, [purchases]);
+
+  const dailyAvg = totalPurchaseAmount / uniqueDays;
+
+  // Period multiplier: how many school-days in the period
+  const periodDays = period === 'week' ? 5 : period === 'month' ? 22 : period === 'quarter' ? 66 : 220;
+
+  // Sales trend data — group by the period's time units
   const salesData = useMemo(() => {
     const labels: Record<string, string[]> = {
-      week: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+      week: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'],
       month: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
       quarter: ['Ene', 'Feb', 'Mar'],
       year: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
     };
-    return (labels[period] || labels.month).map((date, i) => ({
-      date,
-      sales: Math.round(1800 + seededRandom(periodSeed + i) * 2200),
-      units: Math.round(150 + seededRandom(periodSeed + i + 100) * 250),
+    const slots = labels[period] || labels.month;
+    const daysPerSlot = periodDays / slots.length;
+
+    return slots.map((date, i) => {
+      // Distribute total proportionally with slight variance per slot
+      const variance = 0.85 + (((i * 7 + 3) % 5) / 5) * 0.3; // 0.85–1.15
+      const slotSales = Math.round(dailyAvg * daysPerSlot * variance);
+      const slotUnits = Math.round((purchases.length / uniqueDays) * daysPerSlot * variance);
+      return { date, sales: slotSales, units: slotUnits };
+    });
+  }, [period, periodDays, dailyAvg, purchases.length, uniqueDays]);
+
+  // Transaction breakdown by product category
+  const transactionData = useMemo(() => {
+    // Map product descriptions to categories using PRODUCTS
+    const catTotals: Record<string, { count: number; revenue: number }> = {};
+    purchases.forEach(tx => {
+      // Match by description substring to find the product
+      const product = PRODUCTS.find(p => tx.description.toLowerCase().includes(p.name.toLowerCase().split(' ')[0]));
+      const catKey = product ? (CATEGORY_LABELS[product.category] || product.category) : 'Otros';
+      if (!catTotals[catKey]) catTotals[catKey] = { count: 0, revenue: 0 };
+      catTotals[catKey].count += 1;
+      catTotals[catKey].revenue += Math.abs(tx.amount);
+    });
+
+    // Scale to the selected period
+    const scale = periodDays / uniqueDays;
+    return Object.entries(catTotals).map(([name, data]) => ({
+      name,
+      count: Math.round(data.count * scale),
+      revenue: Math.round(data.revenue * scale),
     }));
-  }, [period, periodSeed]);
+  }, [purchases, periodDays, uniqueDays]);
 
-  const transactionData = useMemo(() => [
-    { name: 'Cafetería', count: Math.round(1240 * periodMultiplier / 4.2), revenue: Math.round(45000 * periodMultiplier / 4.2) },
-    { name: 'Papelería', count: Math.round(890 * periodMultiplier / 4.2), revenue: Math.round(28000 * periodMultiplier / 4.2) },
-    { name: 'Uniforme', count: Math.round(340 * periodMultiplier / 4.2), revenue: Math.round(18000 * periodMultiplier / 4.2) },
-    { name: 'Otros', count: Math.round(520 * periodMultiplier / 4.2), revenue: Math.round(15000 * periodMultiplier / 4.2) },
-  ], [periodMultiplier]);
-
-  const inventoryData = useMemo(() => [
-    { product: 'Comidas', stock: 450, sold: Math.round(240 * periodMultiplier / 4.2), value: Math.round(15600 * periodMultiplier / 4.2) },
-    { product: 'Bebidas', stock: 890, sold: Math.round(680 * periodMultiplier / 4.2), value: Math.round(8500 * periodMultiplier / 4.2) },
-    { product: 'Snacks', stock: 340, sold: Math.round(210 * periodMultiplier / 4.2), value: Math.round(4200 * periodMultiplier / 4.2) },
-    { product: 'Uniformes', stock: 120, sold: Math.round(45 * periodMultiplier / 4.2), value: Math.round(7200 * periodMultiplier / 4.2) },
-  ], [periodMultiplier]);
+  // Inventory data from PRODUCTS catalog
+  const inventoryData = useMemo(() => {
+    const categories = ['HOT_MEALS', 'DRINKS', 'SNACKS', 'UNIFORMS'] as const;
+    return categories.map(cat => {
+      const categoryProducts = PRODUCTS.filter(p => p.category === cat);
+      const label = CATEGORY_LABELS[cat] || cat;
+      const totalStock = categoryProducts.length * 50; // Simulated base stock per item
+      const sold = Math.round((purchases.filter(tx => {
+        const prod = PRODUCTS.find(p => tx.description.toLowerCase().includes(p.name.toLowerCase().split(' ')[0]));
+        return prod?.category === cat;
+      }).length / uniqueDays) * periodDays);
+      const avgPrice = categoryProducts.length > 0
+        ? categoryProducts.reduce((s, p) => s + p.price, 0) / categoryProducts.length
+        : 40;
+      return {
+        product: label,
+        stock: totalStock,
+        sold,
+        value: Math.round(sold * avgPrice),
+      };
+    });
+  }, [purchases, periodDays, uniqueDays]);
 
   const totalRevenue = useMemo(() => transactionData.reduce((s, t) => s + t.revenue, 0), [transactionData]);
   const totalTx = useMemo(() => transactionData.reduce((s, t) => s + t.count, 0), [transactionData]);

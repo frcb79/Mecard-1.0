@@ -6,9 +6,8 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
-import { supabase } from '../lib/supabaseClient';
 import { MOCK_STUDENT, MOCK_STUDENTS_LIST } from '../constants';
+import { UserStatus } from '../types';
 import type { StudentProfile } from '../types';
 
 // ─── Types ────────────────────────────────────────────
@@ -35,32 +34,19 @@ export function useStudents(options?: { schoolId?: string; parentId?: string }) 
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      if (isSupabaseConfigured) {
-        // For now, use mock data even when configured — Supabase table
-        // will be wired when migration is deployed.
-        // TODO: Replace with supabase.from('students').select('*')
-        let filtered = [...MOCK_STUDENTS_LIST];
-        if (options?.schoolId) {
-          filtered = filtered.filter(s => s.schoolId === options.schoolId);
-        }
-        if (options?.parentId) {
-          filtered = filtered.filter(
-            s => s.parentId === options.parentId || s.parentIds?.includes(options.parentId!),
-          );
-        }
-        setState({ students: filtered, loading: false, error: null });
-      } else {
-        let filtered = [...MOCK_STUDENTS_LIST];
-        if (options?.schoolId) {
-          filtered = filtered.filter(s => s.schoolId === options.schoolId);
-        }
-        if (options?.parentId) {
-          filtered = filtered.filter(
-            s => s.parentId === options.parentId || s.parentIds?.includes(options.parentId!),
-          );
-        }
-        setState({ students: filtered, loading: false, error: null });
+      // For now, use mock data even when configured — Supabase table
+      // will be wired when migration is deployed.
+      // TODO: Replace with supabase.from('students').select('*')
+      let filtered = [...MOCK_STUDENTS_LIST];
+      if (options?.schoolId) {
+        filtered = filtered.filter(s => s.schoolId === options.schoolId);
       }
+      if (options?.parentId) {
+        filtered = filtered.filter(
+          s => s.parentId === options.parentId || s.parentIds?.includes(options.parentId!),
+        );
+      }
+      setState({ students: filtered, loading: false, error: null });
     } catch (err) {
       console.error('[useStudents] Error loading students:', err);
       setState(prev => ({
@@ -87,7 +73,7 @@ export function useStudents(options?: { schoolId?: string; parentId?: string }) 
   );
 
   const activeStudents = useMemo(
-    () => state.students.filter(s => s.status === 'active'),
+    () => state.students.filter(s => s.status === UserStatus.ACTIVE),
     [state.students],
   );
 

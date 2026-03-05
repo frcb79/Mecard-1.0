@@ -6,8 +6,8 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { MOCK_SCHOOLS, MOCK_UNITS } from '../constants';
+import { SchoolStatus } from '../types';
 import type { School, OperatingUnit } from '../types';
 
 // ─── Types ────────────────────────────────────────────
@@ -68,7 +68,7 @@ export function useSchoolData(schoolId?: string) {
   );
 
   const activeSchools = useMemo(
-    () => state.schools.filter(s => s.status === 'active'),
+    () => state.schools.filter(s => s.status === SchoolStatus.ACTIVE),
     [state.schools],
   );
 
