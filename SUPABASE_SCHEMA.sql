@@ -693,14 +693,13 @@ DROP POLICY IF EXISTS student_rewards_own ON student_rewards_points;
 CREATE POLICY student_rewards_own 
 ON student_rewards_points
 FOR SELECT
-USING ((SELECT auth.uid()::uuid) = (SELECT user_id FROM students WHERE id = student_id));
+USING ((SELECT auth.uid()::uuid) = (SELECT user_id FROM students WHERE students.id = student_rewards_points.student_id));
 
 DROP POLICY IF EXISTS student_points_transactions_own ON points_transactions;
 CREATE POLICY student_points_transactions_own 
 ON points_transactions
 FOR SELECT
-USING ((SELECT auth.uid()::uuid) = (SELECT user_id FROM students WHERE id = student_id));
-
+USING ((SELECT auth.uid()::uuid) = (SELECT user_id FROM students WHERE students.id = points_transactions.student_id));
 -- Policy: School admins can see rewards for their school
 DROP POLICY IF EXISTS school_admin_rewards_config ON school_rewards_config;
 CREATE POLICY school_admin_rewards_config 
