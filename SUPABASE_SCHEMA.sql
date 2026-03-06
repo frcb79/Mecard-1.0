@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS schools (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_schools_status ON schools(status);
+CREATE INDEX IF NOT EXISTS idx_schools_status ON schools(status);
 
 -- 0.2 CAMPUSES — Campus/sedes de una escuela
 CREATE TABLE IF NOT EXISTS campuses (
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS campuses (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_campuses_school ON campuses(school_id);
+CREATE INDEX IF NOT EXISTS idx_campuses_school ON campuses(school_id);
 
 -- 0.3 OPERATING UNITS — Cafeterías, papelerías, etc.
 CREATE TABLE IF NOT EXISTS operating_units (
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS operating_units (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_units_school ON operating_units(school_id);
+CREATE INDEX IF NOT EXISTS idx_units_school ON operating_units(school_id);
 
 -- 0.4 USER ROLES — Mapeo de usuarios a roles por escuela/unidad
 CREATE TABLE IF NOT EXISTS user_roles (
@@ -109,8 +109,8 @@ CREATE TABLE IF NOT EXISTS user_roles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX idx_user_roles_unique ON user_roles(user_id, role, COALESCE(school_id, '00000000-0000-0000-0000-000000000000'::UUID));
-CREATE INDEX idx_user_roles_user ON user_roles(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_unique ON user_roles(user_id, role, COALESCE(school_id, '00000000-0000-0000-0000-000000000000'::UUID));
+CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
 
 -- 0.5 STUDENTS — Tabla base de estudiantes
 CREATE TABLE IF NOT EXISTS students (
@@ -161,9 +161,9 @@ CREATE TABLE IF NOT EXISTS students (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX idx_students_student_id ON students(student_id, school_id);
-CREATE INDEX idx_students_school ON students(school_id);
-CREATE INDEX idx_students_parent ON students(parent_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_students_student_id ON students(student_id, school_id);
+CREATE INDEX IF NOT EXISTS idx_students_school ON students(school_id);
+CREATE INDEX IF NOT EXISTS idx_students_parent ON students(parent_id);
 
 -- 0.6 PRODUCTS — Catálogo de productos POS
 CREATE TABLE IF NOT EXISTS products (
@@ -208,8 +208,8 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_products_unit ON products(unit_id);
-CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_unit ON products(unit_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 
 -- 0.7 WALLET TRANSACTIONS — Movimientos financieros de estudiantes
 CREATE TABLE IF NOT EXISTS wallet_transactions (
@@ -236,9 +236,9 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_wallet_tx_student ON wallet_transactions(student_id);
-CREATE INDEX idx_wallet_tx_date ON wallet_transactions(created_at DESC);
-CREATE INDEX idx_wallet_tx_type ON wallet_transactions(type);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_student ON wallet_transactions(student_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_date ON wallet_transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_type ON wallet_transactions(type);
 
 -- 0.8 GIFTS — Regalos entre estudiantes
 CREATE TABLE IF NOT EXISTS gifts (
@@ -277,9 +277,9 @@ CREATE TABLE IF NOT EXISTS gifts (
   metadata JSONB
 );
 
-CREATE INDEX idx_gifts_sender ON gifts(sender_id);
-CREATE INDEX idx_gifts_receiver ON gifts(receiver_id);
-CREATE INDEX idx_gifts_status ON gifts(status);
+CREATE INDEX IF NOT EXISTS idx_gifts_sender ON gifts(sender_id);
+CREATE INDEX IF NOT EXISTS idx_gifts_receiver ON gifts(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_gifts_status ON gifts(status);
 
 -- 0.9 CATEGORIES — Categorías de productos (extensible)
 CREATE TABLE IF NOT EXISTS categories (
@@ -312,36 +312,44 @@ ALTER TABLE gifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 -- Super admins can see everything
+DROP POLICY IF EXISTS "super_admin_all_schools" ON schools;
 CREATE POLICY "super_admin_all_schools" ON schools FOR ALL
-  USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'SUPER_ADMIN'));
+  USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()::uuid) AND role = 'SUPER_ADMIN'));
 
+DROP POLICY IF EXISTS "super_admin_all_students" ON students;
 CREATE POLICY "super_admin_all_students" ON students FOR ALL
-  USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'SUPER_ADMIN'));
+  USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()::uuid) AND role = 'SUPER_ADMIN'));
 
 -- School admins can see their school's data
+DROP POLICY IF EXISTS "school_admin_own_students" ON students;
 CREATE POLICY "school_admin_own_students" ON students FOR ALL
-  USING (school_id IN (SELECT school_id FROM user_roles WHERE user_id = auth.uid() AND role IN ('SCHOOL_ADMIN', 'SCHOOL_FINANCE')));
+  USING (school_id IN (SELECT school_id FROM user_roles WHERE user_id = (SELECT auth.uid()::uuid) AND role IN ('SCHOOL_ADMIN', 'SCHOOL_FINANCE')));
 
 -- Students can see their own data
+DROP POLICY IF EXISTS "student_own_profile" ON students;
 CREATE POLICY "student_own_profile" ON students FOR SELECT
-  USING (user_id = auth.uid());
+  USING ((SELECT auth.uid()::uuid) = user_id);
 
 -- Parents can see their children's data
+DROP POLICY IF EXISTS "parent_children" ON students;
 CREATE POLICY "parent_children" ON students FOR SELECT
-  USING (parent_id = auth.uid());
+  USING ((SELECT auth.uid()::uuid) = parent_id);
 
 -- Students can see their own transactions
+DROP POLICY IF EXISTS "student_own_transactions" ON wallet_transactions;
 CREATE POLICY "student_own_transactions" ON wallet_transactions FOR SELECT
-  USING (student_id IN (SELECT id FROM students WHERE user_id = auth.uid()));
+  USING (student_id IN (SELECT id FROM students WHERE user_id = (SELECT auth.uid()::uuid)));
 
 -- Students can see their own gifts (sent or received)
+DROP POLICY IF EXISTS "student_own_gifts" ON gifts;
 CREATE POLICY "student_own_gifts" ON gifts FOR SELECT
   USING (
-    sender_id IN (SELECT id FROM students WHERE user_id = auth.uid()) OR
-    receiver_id IN (SELECT id FROM students WHERE user_id = auth.uid())
+    sender_id IN (SELECT id FROM students WHERE user_id = (SELECT auth.uid()::uuid)) OR
+    receiver_id IN (SELECT id FROM students WHERE user_id = (SELECT auth.uid()::uuid))
   );
 
 -- Products visible to all authenticated users
+DROP POLICY IF EXISTS "products_visible" ON products;
 CREATE POLICY "products_visible" ON products FOR SELECT
   USING (auth.role() = 'authenticated');
 
@@ -376,7 +384,7 @@ CREATE TABLE IF NOT EXISTS school_rewards_config (
     FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_school_rewards_config_school_id ON school_rewards_config(school_id);
+CREATE INDEX IF NOT EXISTS idx_school_rewards_config_school_id ON school_rewards_config(school_id);
 
 
 -- ============================================
@@ -408,9 +416,9 @@ CREATE TABLE IF NOT EXISTS student_rewards_points (
     CHECK (tier IN ('BRONZE', 'SILVER', 'GOLD', 'PLATINUM'))
 );
 
-CREATE INDEX idx_student_rewards_points_student_id ON student_rewards_points(student_id);
-CREATE INDEX idx_student_rewards_points_school_id ON student_rewards_points(school_id);
-CREATE UNIQUE INDEX idx_student_rewards_points_unique 
+CREATE INDEX IF NOT EXISTS idx_student_rewards_points_student_id ON student_rewards_points(student_id);
+CREATE INDEX IF NOT EXISTS idx_student_rewards_points_school_id ON student_rewards_points(school_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_student_rewards_points_unique 
   ON student_rewards_points(student_id, school_id);
 
 
@@ -444,10 +452,10 @@ CREATE TABLE IF NOT EXISTS points_transactions (
     CHECK (transaction_type IN ('EARN', 'REDEEM', 'EXPIRE', 'ADJUST'))
 );
 
-CREATE INDEX idx_points_transactions_student_id ON points_transactions(student_id);
-CREATE INDEX idx_points_transactions_school_id ON points_transactions(school_id);
-CREATE INDEX idx_points_transactions_created_at ON points_transactions(created_at);
-CREATE INDEX idx_points_transactions_type ON points_transactions(transaction_type);
+CREATE INDEX IF NOT EXISTS idx_points_transactions_student_id ON points_transactions(student_id);
+CREATE INDEX IF NOT EXISTS idx_points_transactions_school_id ON points_transactions(school_id);
+CREATE INDEX IF NOT EXISTS idx_points_transactions_created_at ON points_transactions(created_at);
+CREATE INDEX IF NOT EXISTS idx_points_transactions_type ON points_transactions(transaction_type);
 
 
 -- ============================================
@@ -489,10 +497,10 @@ CREATE TABLE IF NOT EXISTS marketplace_products (
     FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_marketplace_products_category ON marketplace_products(category);
-CREATE INDEX idx_marketplace_products_school_id ON marketplace_products(school_id);
-CREATE INDEX idx_marketplace_products_available ON marketplace_products(available);
-CREATE INDEX idx_marketplace_products_featured ON marketplace_products(featured);
+CREATE INDEX IF NOT EXISTS idx_marketplace_products_category ON marketplace_products(category);
+CREATE INDEX IF NOT EXISTS idx_marketplace_products_school_id ON marketplace_products(school_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_products_available ON marketplace_products(available);
+CREATE INDEX IF NOT EXISTS idx_marketplace_products_featured ON marketplace_products(featured);
 
 
 -- ============================================
@@ -526,11 +534,11 @@ CREATE TABLE IF NOT EXISTS student_redemptions (
     CHECK (status IN ('PENDING', 'APPROVED', 'DELIVERED', 'CANCELLED'))
 );
 
-CREATE INDEX idx_student_redemptions_student_id ON student_redemptions(student_id);
-CREATE INDEX idx_student_redemptions_school_id ON student_redemptions(school_id);
-CREATE INDEX idx_student_redemptions_product_id ON student_redemptions(product_id);
-CREATE INDEX idx_student_redemptions_status ON student_redemptions(status);
-CREATE INDEX idx_student_redemptions_created_at ON student_redemptions(created_at);
+CREATE INDEX IF NOT EXISTS idx_student_redemptions_student_id ON student_redemptions(student_id);
+CREATE INDEX IF NOT EXISTS idx_student_redemptions_school_id ON student_redemptions(school_id);
+CREATE INDEX IF NOT EXISTS idx_student_redemptions_product_id ON student_redemptions(product_id);
+CREATE INDEX IF NOT EXISTS idx_student_redemptions_status ON student_redemptions(status);
+CREATE INDEX IF NOT EXISTS idx_student_redemptions_created_at ON student_redemptions(created_at);
 
 
 -- ============================================
@@ -564,9 +572,9 @@ CREATE TABLE IF NOT EXISTS pos_transactions_with_rewards (
     FOREIGN KEY (unit_id) REFERENCES operating_units(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_pos_transactions_rewards_student_id ON pos_transactions_with_rewards(student_id);
-CREATE INDEX idx_pos_transactions_rewards_school_id ON pos_transactions_with_rewards(school_id);
-CREATE INDEX idx_pos_transactions_rewards_created_at ON pos_transactions_with_rewards(created_at);
+CREATE INDEX IF NOT EXISTS idx_pos_transactions_rewards_student_id ON pos_transactions_with_rewards(student_id);
+CREATE INDEX IF NOT EXISTS idx_pos_transactions_rewards_school_id ON pos_transactions_with_rewards(school_id);
+CREATE INDEX IF NOT EXISTS idx_pos_transactions_rewards_created_at ON pos_transactions_with_rewards(created_at);
 
 
 -- ============================================
@@ -591,7 +599,7 @@ SELECT
 FROM student_rewards_points srp
 LEFT JOIN school_rewards_config src ON srp.school_id = src.school_id;
 
-CREATE INDEX idx_student_tier_progress_student_id 
+CREATE INDEX IF NOT EXISTS idx_student_tier_progress_student_id 
   ON student_tier_progress(student_id);
 
 
@@ -616,6 +624,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_update_student_tier ON student_rewards_points;
 CREATE TRIGGER trg_update_student_tier
 AFTER UPDATE ON student_rewards_points
 FOR EACH ROW
@@ -631,7 +640,7 @@ CREATE OR REPLACE FUNCTION record_points_transaction(
   p_type VARCHAR,
   p_amount INT,
   p_reference_id VARCHAR DEFAULT NULL,
-  p_description TEXT DEFAULT NULL
+  p_description TEXT DEFAULT 'Transacción de puntos'
 )
 RETURNS UUID AS $$
 DECLARE
@@ -680,24 +689,27 @@ ALTER TABLE marketplace_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE student_redemptions ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Students can only see their own rewards
+DROP POLICY IF EXISTS student_rewards_own ON student_rewards_points;
 CREATE POLICY student_rewards_own 
 ON student_rewards_points
 FOR SELECT
-USING (auth.uid() = (SELECT user_id FROM students WHERE id = student_id));
+USING ((SELECT auth.uid()::uuid) = (SELECT user_id FROM students WHERE id = student_id));
 
+DROP POLICY IF EXISTS student_points_transactions_own ON points_transactions;
 CREATE POLICY student_points_transactions_own 
 ON points_transactions
 FOR SELECT
-USING (auth.uid() = (SELECT user_id FROM students WHERE id = student_id));
+USING ((SELECT auth.uid()::uuid) = (SELECT user_id FROM students WHERE id = student_id));
 
 -- Policy: School admins can see rewards for their school
+DROP POLICY IF EXISTS school_admin_rewards_config ON school_rewards_config;
 CREATE POLICY school_admin_rewards_config 
 ON school_rewards_config
 FOR SELECT
 USING (
   school_id IN (
-    SELECT school_id FROM user_school_roles 
-    WHERE user_id = auth.uid() 
+    SELECT school_id FROM user_roles 
+    WHERE user_id = (SELECT auth.uid()::uuid) 
     AND role IN ('SCHOOL_ADMIN', 'SUPER_ADMIN')
   )
 );
@@ -775,7 +787,7 @@ CREATE TABLE IF NOT EXISTS school_billing_config (
     FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_school_billing_config_school_id ON school_billing_config(school_id);
+CREATE INDEX IF NOT EXISTS idx_school_billing_config_school_id ON school_billing_config(school_id);
 
 
 -- ============================================
@@ -810,9 +822,9 @@ CREATE TABLE IF NOT EXISTS invoices (
     CHECK (status IN ('DRAFT', 'ISSUED', 'PAID', 'OVERDUE', 'CANCELLED'))
 );
 
-CREATE INDEX idx_invoices_school_id ON invoices(school_id);
-CREATE INDEX idx_invoices_status ON invoices(status);
-CREATE INDEX idx_invoices_due_date ON invoices(due_date);
+CREATE INDEX IF NOT EXISTS idx_invoices_school_id ON invoices(school_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+CREATE INDEX IF NOT EXISTS idx_invoices_due_date ON invoices(due_date);
 
 
 -- ============================================
@@ -840,8 +852,8 @@ CREATE TABLE IF NOT EXISTS school_blocking_rules (
     CHECK (blocked_reason IN ('OVERDUE_INVOICE', 'MANUAL_SUSPENSION', 'POLICY_VIOLATION'))
 );
 
-CREATE INDEX idx_school_blocking_rules_school_id ON school_blocking_rules(school_id);
-CREATE INDEX idx_school_blocking_rules_blocked_until_payment ON school_blocking_rules(blocked_until_payment);
+CREATE INDEX IF NOT EXISTS idx_school_blocking_rules_school_id ON school_blocking_rules(school_id);
+CREATE INDEX IF NOT EXISTS idx_school_blocking_rules_blocked_until_payment ON school_blocking_rules(blocked_until_payment);
 
 
 -- ============================================
@@ -863,9 +875,9 @@ CREATE TABLE IF NOT EXISTS revenue_tracking (
     FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_revenue_tracking_school_id ON revenue_tracking(school_id);
-CREATE INDEX idx_revenue_tracking_period ON revenue_tracking(period);
-CREATE INDEX idx_revenue_tracking_category ON revenue_tracking(revenue_category);
+CREATE INDEX IF NOT EXISTS idx_revenue_tracking_school_id ON revenue_tracking(school_id);
+CREATE INDEX IF NOT EXISTS idx_revenue_tracking_period ON revenue_tracking(period);
+CREATE INDEX IF NOT EXISTS idx_revenue_tracking_category ON revenue_tracking(revenue_category);
 
 
 -- ============================================
@@ -891,7 +903,7 @@ CREATE TABLE IF NOT EXISTS student_favorites (
 
   -- Constraints
   CONSTRAINT fk_student_favorites_student
-    FOREIGN KEY (student_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   CONSTRAINT fk_student_favorites_school
     FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
   CONSTRAINT fk_student_favorites_product
@@ -902,41 +914,13 @@ CREATE TABLE IF NOT EXISTS student_favorites (
     UNIQUE(student_id, product_id)
 );
 
-CREATE INDEX idx_student_favorites_student_id ON student_favorites(student_id);
-CREATE INDEX idx_student_favorites_school_id ON student_favorites(school_id);
-CREATE INDEX idx_student_favorites_is_public ON student_favorites(is_public);
+CREATE INDEX IF NOT EXISTS idx_student_favorites_student_id ON student_favorites(student_id);
+CREATE INDEX IF NOT EXISTS idx_student_favorites_school_id ON student_favorites(school_id);
+CREATE INDEX IF NOT EXISTS idx_student_favorites_is_public ON student_favorites(is_public);
 
 
 -- ============================================
--- 12. NOTAS IMPORTANTES
--- ============================================
-/*
-
-PRÓXIMOS PASOS:
-
-1. Crear tablas base si no existen:
-   - users
-   - schools
-   - students
-   - operating_units
-   - user_school_roles
-
-2. Agregar campos a StudentProfile (en types.ts):
-   - rewardsPoints?: StudentRewardsPoints
-   - school_id: UUID
-
-3. Integración en ServiceContext:
-   - rewardsService llamará a estas funciones SQL
-   - Mock functions → Real Supabase queries
-
-4. Ciclo de Cierre (Automático):
-   - Trigger: Al cambiar cycle_end_date, expirar puntos
-   - Backup de puntos remanentes en tabla histórica
-
-*/
-
--- ============================================
--- 13. MULTI-PARENT: PARENT-STUDENT LINKS
+-- MULTI-PARENT: PARENT-STUDENT LINKS
 -- ============================================
 CREATE TABLE IF NOT EXISTS parent_student_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -953,11 +937,11 @@ CREATE TABLE IF NOT EXISTS parent_student_links (
   UNIQUE(parent_id, student_id)
 );
 
-CREATE INDEX idx_psl_parent ON parent_student_links(parent_id);
-CREATE INDEX idx_psl_student ON parent_student_links(student_id);
+CREATE INDEX IF NOT EXISTS idx_psl_parent ON parent_student_links(parent_id);
+CREATE INDEX IF NOT EXISTS idx_psl_student ON parent_student_links(student_id);
 
 -- ============================================
--- 14. AUTHORIZED CONTACTS (family level)
+-- AUTHORIZED CONTACTS (family level)
 -- ============================================
 CREATE TABLE IF NOT EXISTS authorized_contacts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -976,10 +960,10 @@ CREATE TABLE IF NOT EXISTS authorized_contacts (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_ac_family ON authorized_contacts(family_id);
+CREATE INDEX IF NOT EXISTS idx_ac_family ON authorized_contacts(family_id);
 
 -- ============================================
--- 15. EXIT PERMISSIONS
+-- EXIT PERMISSIONS
 -- ============================================
 CREATE TABLE IF NOT EXISTS exit_permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1034,13 +1018,13 @@ CREATE TABLE IF NOT EXISTS exit_permissions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_ep_school ON exit_permissions(school_id);
-CREATE INDEX idx_ep_child ON exit_permissions(child_id);
-CREATE INDEX idx_ep_date ON exit_permissions(fecha);
-CREATE INDEX idx_ep_status ON exit_permissions(status);
+CREATE INDEX IF NOT EXISTS idx_ep_school ON exit_permissions(school_id);
+CREATE INDEX IF NOT EXISTS idx_ep_child ON exit_permissions(child_id);
+CREATE INDEX IF NOT EXISTS idx_ep_date ON exit_permissions(fecha);
+CREATE INDEX IF NOT EXISTS idx_ep_status ON exit_permissions(status);
 
 -- ============================================
--- 16. PERMISSION APPROVALS (multi-parent)
+-- PERMISSION APPROVALS (multi-parent)
 -- ============================================
 CREATE TABLE IF NOT EXISTS permission_approvals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1054,10 +1038,10 @@ CREATE TABLE IF NOT EXISTS permission_approvals (
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_pa_permission ON permission_approvals(permission_id);
+CREATE INDEX IF NOT EXISTS idx_pa_permission ON permission_approvals(permission_id);
 
 -- ============================================
--- 17. SCHOOL PERMISSION CONFIG
+-- SCHOOL PERMISSION CONFIG
 -- ============================================
 CREATE TABLE IF NOT EXISTS school_permission_config (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1082,7 +1066,7 @@ CREATE TABLE IF NOT EXISTS school_permission_config (
 );
 
 -- ============================================
--- 18. SCHOOL TRIPS
+-- SCHOOL TRIPS
 -- ============================================
 CREATE TABLE IF NOT EXISTS school_trips (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1124,11 +1108,11 @@ CREATE TABLE IF NOT EXISTS school_trips (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_st_school ON school_trips(school_id);
-CREATE INDEX idx_st_status ON school_trips(status);
+CREATE INDEX IF NOT EXISTS idx_st_school ON school_trips(school_id);
+CREATE INDEX IF NOT EXISTS idx_st_status ON school_trips(status);
 
 -- ============================================
--- 19. TRIP ENROLLMENTS
+-- TRIP ENROLLMENTS
 -- ============================================
 CREATE TABLE IF NOT EXISTS trip_enrollments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1155,11 +1139,11 @@ CREATE TABLE IF NOT EXISTS trip_enrollments (
   UNIQUE(trip_id, student_id)
 );
 
-CREATE INDEX idx_te_trip ON trip_enrollments(trip_id);
-CREATE INDEX idx_te_student ON trip_enrollments(student_id);
+CREATE INDEX IF NOT EXISTS idx_te_trip ON trip_enrollments(trip_id);
+CREATE INDEX IF NOT EXISTS idx_te_student ON trip_enrollments(student_id);
 
 -- ============================================
--- 20. TRIP PAYMENTS
+-- TRIP PAYMENTS
 -- ============================================
 CREATE TABLE IF NOT EXISTS trip_payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1184,11 +1168,11 @@ CREATE TABLE IF NOT EXISTS trip_payments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_tp_enrollment ON trip_payments(enrollment_id);
-CREATE INDEX idx_tp_trip ON trip_payments(trip_id);
+CREATE INDEX IF NOT EXISTS idx_tp_enrollment ON trip_payments(enrollment_id);
+CREATE INDEX IF NOT EXISTS idx_tp_trip ON trip_payments(trip_id);
 
 -- ============================================
--- 21. TRIP REMINDERS
+-- TRIP REMINDERS
 -- ============================================
 CREATE TABLE IF NOT EXISTS trip_reminders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1207,7 +1191,7 @@ CREATE TABLE IF NOT EXISTS trip_reminders (
 );
 
 -- ============================================
--- 22. ACTIVITY LOG (multi-parent audit trail)
+-- ACTIVITY LOG (multi-parent audit trail)
 -- ============================================
 CREATE TABLE IF NOT EXISTS activity_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1227,12 +1211,12 @@ CREATE TABLE IF NOT EXISTS activity_log (
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_al_user ON activity_log(user_id);
-CREATE INDEX idx_al_entity ON activity_log(entity_type, entity_id);
-CREATE INDEX idx_al_timestamp ON activity_log(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_al_user ON activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_al_entity ON activity_log(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_al_timestamp ON activity_log(timestamp DESC);
 
 -- ============================================
--- 23. NOTIFICATIONS (referenced in code, now defined)
+-- NOTIFICATIONS (referenced in code, now defined)
 -- ============================================
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1253,5 +1237,5 @@ CREATE TABLE IF NOT EXISTS notifications (
   expires_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_notif_recipient ON notifications(recipient_id);
-CREATE INDEX idx_notif_unread ON notifications(recipient_id) WHERE read_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_notif_recipient ON notifications(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_notif_unread ON notifications(recipient_id) WHERE read_at IS NULL;
