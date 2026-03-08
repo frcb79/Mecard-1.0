@@ -4,12 +4,13 @@
  * Usa MockPaymentService para procesamiento
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2, Sparkles, TrendingDown, Info } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { usePaymentService } from '../contexts/ServiceContext';
 import { Button } from './Button';
-import { MOCK_STUDENTS_LIST } from '../constants';
+import { useParentStudents } from '../hooks/useParentStudents';
+import ParentNoStudentsState from './ParentNoStudentsState';
 import { getSpendingAnalysis, getSmartAlerts } from '../services/geminiService';
 import { calculateDepositFee, getBillingConfig, formatCurrency } from '../services/BillingService';
 import { DepositMethod, DepositWithFeeCalculation, SchoolBillingConfig } from '../types';
@@ -17,6 +18,7 @@ import { DepositMethod, DepositWithFeeCalculation, SchoolBillingConfig } from '.
 export default function ParentWalletView() {
   const { user } = useAuth();
   const paymentService = usePaymentService();
+  const { students: parentStudents, loading: studentsLoading } = useParentStudents();
   
   const [activeTab, setActiveTab] = useState<'deposit' | 'manage' | 'insights'>('deposit');
   const [depositAmount, setDepositAmount] = useState('');
@@ -39,14 +41,31 @@ export default function ParentWalletView() {
   const [aiAlerts, setAiAlerts] = useState<string[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
 
-  // Mock parent's children (in real scenario: get from API with parent ID)
-  const children = MOCK_STUDENTS_LIST.slice(0, 2).map(student => ({
-    id: student.id,
-    name: (student as any).name || student.fullName || 'Estudiante',
-    balance: student.balance || 0,
-    photo: student.photo,
-    grade: student.grade,
-  }));
+  const children = useMemo(() => {
+    return parentStudents.map(student => ({
+      id: student.id,
+      name: (student as any).name || student.fullName || 'Estudiante',
+      balance: student.balance || 0,
+      photo: student.photo,
+      grade: student.grade,
+    }));
+  }, [parentStudents]);
+
+  useEffect(() => {
+    if (children.length === 0) {
+      setSelectedChild('');
+      setDepositChild('');
+      return;
+    }
+
+    if (!selectedChild) {
+      setSelectedChild(children[0].id);
+    }
+
+    if (!depositChild) {
+      setDepositChild(children[0].id);
+    }
+  }, [children, depositChild, selectedChild]);
 
   useEffect(() => {
     // Simulate fetching current balances
@@ -64,7 +83,7 @@ export default function ParentWalletView() {
 
     // Load AI Insights on mount
     loadAIInsights();
-  }, []);
+  }, [children, paymentService]);
 
   // ========================================
   // BILLING FEATURES
@@ -213,6 +232,23 @@ export default function ParentWalletView() {
   };
 
   const currentBalance = 2450.50; // In real app, sum of all children's balances
+
+  if (studentsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 p-4 md:p-8 flex items-center justify-center">
+        <p className="text-slate-500 font-bold">Cargando estudiantes...</p>
+      </div>
+    );
+  }
+
+  if (children.length === 0) {
+    return (
+      <ParentNoStudentsState
+        title="Mi Billetera"
+        description="Necesitas vincular al menos un estudiante para hacer depositos y asignar saldo."
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 p-4 md:p-8">

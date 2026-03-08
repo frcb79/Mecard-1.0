@@ -24,37 +24,27 @@ interface ParentPortalProps {
   transactions: Transaction[];
   onUpdateStudent: (data: Partial<StudentProfile>) => void;
   onDeposit?: (amount: number, method: string) => void;
+  forceOpenLinking?: boolean;
 }
 
 export const ParentPortal: React.FC<ParentPortalProps> = ({
   students, activeStudentIndex, onSwitchStudent, onLinkStudent,
-  transactions, onUpdateStudent, onDeposit
+  transactions, onUpdateStudent, onDeposit, forceOpenLinking = false
 }) => {
   const navigate = useNavigate();
   const student = students[activeStudentIndex];
-
-  // Guard: If no student, return empty state
-  if (!student) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 text-lg">No hay estudiante seleccionado</p>
-          <p className="text-gray-400 text-sm mt-2">Por favor, vincula un estudiante para continuar</p>
-        </div>
-      </div>
-    );
-  }
+  const hasStudents = students.length > 0;
 
   const toast = useToast();
-  const [dailyLimit, setDailyLimit] = useState<number | string>(student.dailyLimit);
+  const [dailyLimit, setDailyLimit] = useState<number | string>(student?.dailyLimit ?? '');
   const [restrictions, setRestrictions] = useState<Category[]>(
-    student.restrictions?.restrictedCategories || []
+    student?.restrictions?.restrictedCategories || []
   );
   const [restrictedProducts, setRestrictedProducts] = useState<string[]>(
-    student.restrictions?.restrictedProducts || []
+    student?.restrictions?.restrictedProducts || []
   );
   const [allergies, setAllergies] = useState<string[]>(
-    student.restrictions?.allergens || []
+    student?.restrictions?.allergens || []
   );
   
   const [depositStep, setDepositStep] = useState<'amount' | 'method' | 'summary' | 'processing' | 'success' | 'spei_instructions'>('amount');
@@ -62,11 +52,12 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'spei' | null>(null);
 
   useEffect(() => {
+    if (!student) return;
     setDailyLimit(student.dailyLimit);
     setRestrictions(student.restrictions?.restrictedCategories || []);
     setRestrictedProducts(student.restrictions?.restrictedProducts || []);
     setAllergies(student.restrictions?.allergens || []);
-  }, [student.id, student.dailyLimit, student.restrictions]);
+  }, [student]);
 
 
 
@@ -74,14 +65,21 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
   const foodCategories = [Category.HOT_MEALS, Category.COMBO_MEALS, Category.SNACKS, Category.DRINKS];
 
   const [isLinking, setIsLinking] = useState(false);
+    useEffect(() => {
+      if (!hasStudents || forceOpenLinking) {
+        setIsLinking(true);
+      }
+    }, [forceOpenLinking, hasStudents]);
+
   const [linkStep, setLinkStep] = useState<'form' | 'confirm'>('form');
   const [linkForm, setLinkForm] = useState({ fullName: '', schoolKey: '' });
   const [foundStudent, setFoundStudent] = useState<StudentProfile | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
   const activeSchool = useMemo(() => {
+    if (!student) return MOCK_SCHOOLS[0];
     return MOCK_SCHOOLS.find(s => s.id === student.schoolId) || MOCK_SCHOOLS[0];
-  }, [student.schoolId]);
+  }, [student]);
 
   const schoolModel = activeSchool.businessModel;
 
@@ -101,6 +99,7 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
   };
 
   const handleSaveSettings = () => {
+    if (!student) return;
     const finalLimit = dailyLimit === '' ? student.dailyLimit : Number(dailyLimit);
     onUpdateStudent({
       dailyLimit: finalLimit,
@@ -145,6 +144,97 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
           setDepositStep('spei_instructions');
       }
   };
+
+  const linkingModal = isLinking && (
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-md p-0 sm:p-6">
+          <div role="dialog" aria-modal="true" aria-label="Vincular estudiante" className="bg-white rounded-t-3xl sm:rounded-3xl md:rounded-[64px] shadow-2xl w-full max-w-xl p-6 md:p-16 relative animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setIsLinking(false)} className="absolute top-4 right-4 md:top-12 md:right-12 text-slate-300 hover:text-slate-800 transition-all" aria-label="Cerrar vinculación"><X size={24}/></button>
+              {linkStep === 'form' ? (
+                  <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                      <div className="text-center mb-6 md:mb-12">
+                        <div className="w-16 h-16 md:w-24 md:h-24 bg-indigo-50 rounded-2xl md:rounded-[40px] flex items-center justify-center text-indigo-600 mx-auto mb-4 md:mb-8"><UserPlus size={32}/></div>
+                        <h3 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tighter">Vincular Estudiante</h3>
+                        <p className="text-slate-400 font-medium mt-2 md:mt-3 text-sm">Ingresa los datos escolares para localizar el registro.</p>
+                      </div>
+                      <div className="space-y-5 md:space-y-10 my-6 md:my-12">
+                          <div className="space-y-2 md:space-y-3">
+                            <label htmlFor="link-fullname" className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">Nombre Completo</label>
+                            <input id="link-fullname" type="text" value={linkForm.fullName} onChange={e => setLinkForm({...linkForm, fullName: e.target.value})} placeholder="Ej. Ana García" className="w-full p-4 md:p-8 bg-slate-50 border-none rounded-2xl md:rounded-[32px] font-black text-base md:text-xl text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-inner"/>
+                          </div>
+                          <div className="space-y-2 md:space-y-3">
+                            <label htmlFor="link-schoolkey" className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">Clave Colegio</label>
+                            <input id="link-schoolkey" type="text" value={linkForm.schoolKey} onChange={e => setLinkForm({...linkForm, schoolKey: e.target.value.toUpperCase()})} placeholder="CUMBRES24" className="w-full p-4 md:p-8 bg-slate-50 border-none rounded-2xl md:rounded-[32px] font-black text-base md:text-xl text-indigo-600 tracking-[4px] md:tracking-[8px] outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-inner text-center"/>
+                          </div>
+                      </div>
+                      <Button disabled={!linkForm.fullName || !linkForm.schoolKey || isSearching} onClick={handleSearchStudent} className="w-full py-4 md:py-8 rounded-2xl md:rounded-[40px] bg-indigo-600 font-black uppercase tracking-widest md:tracking-[5px] text-xs shadow-2xl">
+                        {isSearching ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Localizar en la Red'}
+                      </Button>
+                  </div>
+              ) : (
+                  <div className="animate-in zoom-in duration-500 text-center">
+                      <h3 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tighter mb-6 md:mb-12 italic uppercase">¡Encontrado!</h3>
+                      <div className="bg-slate-50 p-6 md:p-12 rounded-2xl md:rounded-[56px] mb-6 md:mb-12 flex flex-col items-center border border-slate-100">
+                          <img src={foundStudent?.photo} alt={`Foto de ${foundStudent?.name}`} className="w-24 h-24 md:w-40 md:h-40 rounded-2xl md:rounded-[48px] object-cover mb-4 md:mb-8 border-4 md:border-8 border-white shadow-2xl" />
+                          <h4 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">{foundStudent?.name}</h4>
+                          <p className="text-xs md:text-sm font-bold text-indigo-600 uppercase tracking-widest mt-2">{foundStudent?.grade}</p>
+                      </div>
+                      <div className="flex gap-3 md:gap-4">
+                        <button onClick={() => setLinkStep('form')} className="flex-1 py-4 md:py-7 rounded-2xl md:rounded-[32px] bg-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">Es otro</button>
+                        <Button onClick={finalizeLinking} className="flex-[2] py-4 md:py-7 rounded-2xl md:rounded-[40px] bg-emerald-600 text-white font-black uppercase tracking-widest md:tracking-[4px] shadow-2xl shadow-emerald-100">Confirmar</Button>
+                      </div>
+                  </div>
+              )}
+          </div>
+      </div>
+  );
+
+  if (!hasStudents) {
+    return (
+      <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto h-full overflow-y-auto pb-40 font-sans">
+        <header className="mb-6 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 animate-in slide-in-from-top-4 duration-500">
+          <div>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tighter">Mi Familia</h1>
+            <p className="text-slate-400 font-bold uppercase text-[10px] md:text-[11px] tracking-[3px] md:tracking-[4px] mt-1 md:mt-2 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-emerald-500" /> Control Parental MeCard Network
+            </p>
+          </div>
+        </header>
+
+        <div className="bg-white rounded-3xl md:rounded-[56px] p-8 md:p-12 border border-slate-100 shadow-xl text-center">
+          <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-600">
+            <UserPlus size={36} />
+          </div>
+          <h2 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight">Aun no tienes estudiantes vinculados</h2>
+          <p className="text-slate-500 mt-3 max-w-xl mx-auto">
+            Vincula tu primer estudiante para activar monedero, limites y reportes familiares.
+          </p>
+          <button
+            onClick={() => setIsLinking(true)}
+            className="mt-8 bg-indigo-600 px-8 py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 inline-flex items-center gap-3"
+          >
+            <UserPlus size={16} /> Vincular Estudiante
+          </button>
+        </div>
+        {linkingModal}
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg">No hay estudiante seleccionado</p>
+          <button
+            onClick={() => onSwitchStudent(0)}
+            className="mt-4 px-6 py-3 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-widest"
+          >
+            Restablecer Seleccion
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
         <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto h-full overflow-y-auto pb-40 font-sans">
@@ -315,49 +405,7 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                </div>
             </div>
 
-            {/* MODAL VINCULACIÓN */}
-            {isLinking && (
-                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-md p-0 sm:p-6">
-                    <div role="dialog" aria-modal="true" aria-label="Vincular estudiante" className="bg-white rounded-t-3xl sm:rounded-3xl md:rounded-[64px] shadow-2xl w-full max-w-xl p-6 md:p-16 relative animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
-                        <button onClick={() => setIsLinking(false)} className="absolute top-4 right-4 md:top-12 md:right-12 text-slate-300 hover:text-slate-800 transition-all" aria-label="Cerrar vinculación"><X size={24}/></button>
-                        {linkStep === 'form' ? (
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                <div className="text-center mb-6 md:mb-12">
-                                  <div className="w-16 h-16 md:w-24 md:h-24 bg-indigo-50 rounded-2xl md:rounded-[40px] flex items-center justify-center text-indigo-600 mx-auto mb-4 md:mb-8"><UserPlus size={32}/></div>
-                                  <h3 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tighter">Vincular Estudiante</h3>
-                                  <p className="text-slate-400 font-medium mt-2 md:mt-3 text-sm">Ingresa los datos escolares para localizar el registro.</p>
-                                </div>
-                                <div className="space-y-5 md:space-y-10 my-6 md:my-12">
-                                    <div className="space-y-2 md:space-y-3">
-                                      <label htmlFor="link-fullname" className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">Nombre Completo</label>
-                                      <input id="link-fullname" type="text" value={linkForm.fullName} onChange={e => setLinkForm({...linkForm, fullName: e.target.value})} placeholder="Ej. Ana García" className="w-full p-4 md:p-8 bg-slate-50 border-none rounded-2xl md:rounded-[32px] font-black text-base md:text-xl text-slate-700 outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-inner"/>
-                                    </div>
-                                    <div className="space-y-2 md:space-y-3">
-                                      <label htmlFor="link-schoolkey" className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">Clave Colegio</label>
-                                      <input id="link-schoolkey" type="text" value={linkForm.schoolKey} onChange={e => setLinkForm({...linkForm, schoolKey: e.target.value.toUpperCase()})} placeholder="CUMBRES24" className="w-full p-4 md:p-8 bg-slate-50 border-none rounded-2xl md:rounded-[32px] font-black text-base md:text-xl text-indigo-600 tracking-[4px] md:tracking-[8px] outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-inner text-center"/>
-                                    </div>
-                                </div>
-                                <Button disabled={!linkForm.fullName || !linkForm.schoolKey || isSearching} onClick={handleSearchStudent} className="w-full py-4 md:py-8 rounded-2xl md:rounded-[40px] bg-indigo-600 font-black uppercase tracking-widest md:tracking-[5px] text-xs shadow-2xl">
-                                  {isSearching ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Localizar en la Red'}
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="animate-in zoom-in duration-500 text-center">
-                                <h3 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tighter mb-6 md:mb-12 italic uppercase">¡Encontrado!</h3>
-                                <div className="bg-slate-50 p-6 md:p-12 rounded-2xl md:rounded-[56px] mb-6 md:mb-12 flex flex-col items-center border border-slate-100">
-                                    <img src={foundStudent?.photo} alt={`Foto de ${foundStudent?.name}`} className="w-24 h-24 md:w-40 md:h-40 rounded-2xl md:rounded-[48px] object-cover mb-4 md:mb-8 border-4 md:border-8 border-white shadow-2xl" />
-                                    <h4 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">{foundStudent?.name}</h4>
-                                    <p className="text-xs md:text-sm font-bold text-indigo-600 uppercase tracking-widest mt-2">{foundStudent?.grade}</p>
-                                </div>
-                                <div className="flex gap-3 md:gap-4">
-                                  <button onClick={() => setLinkStep('form')} className="flex-1 py-4 md:py-7 rounded-2xl md:rounded-[32px] bg-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest">Es otro</button>
-                                  <Button onClick={finalizeLinking} className="flex-[2] py-4 md:py-7 rounded-2xl md:rounded-[40px] bg-emerald-600 text-white font-black uppercase tracking-widest md:tracking-[4px] shadow-2xl shadow-emerald-100">Confirmar</Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+            {linkingModal}
         </div>
     );
 };

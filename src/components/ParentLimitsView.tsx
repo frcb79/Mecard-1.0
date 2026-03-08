@@ -8,7 +8,7 @@
  *  • Alertas de saldo bajo y gasto
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sliders, Save, AlertCircle, ChevronRight, User,
@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import { Button } from './Button';
 import { useToast } from './ui/Toast';
-import { MOCK_STUDENTS_LIST, PRODUCTS } from '../constants';
+import { PRODUCTS } from '../constants';
 import { Category } from '../types';
+import { useParentStudents } from '../hooks/useParentStudents';
+import ParentNoStudentsState from './ParentNoStudentsState';
 
 // ─── Types ───────────────────────────────────────
 
@@ -86,22 +88,40 @@ function buildDefaultLimits(studentId: string): ChildLimits {
 export default function ParentLimitsView() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { students, loading: studentsLoading } = useParentStudents();
 
-  const students = MOCK_STUDENTS_LIST.slice(0, 2);
-
-  const [limitsMap, setLimitsMap] = useState<Record<string, ChildLimits>>(() => {
-    const m: Record<string, ChildLimits> = {};
-    students.forEach(s => { m[s.id] = buildDefaultLimits(s.id); });
-    return m;
-  });
-
-  const [activeChildId, setActiveChildId] = useState(students[0]?.id || '');
+  const [limitsMap, setLimitsMap] = useState<Record<string, ChildLimits>>({});
+  const [activeChildId, setActiveChildId] = useState('');
   const [activeDay, setActiveDay] = useState<DayKey | 'ALL'>('ALL');
+
+  useEffect(() => {
+    if (students.length === 0) {
+      setActiveChildId('');
+      return;
+    }
+
+    setLimitsMap(prev => {
+      const next = { ...prev };
+      students.forEach(student => {
+        if (!next[student.id]) {
+          next[student.id] = buildDefaultLimits(student.id);
+        }
+      });
+
+      return next;
+    });
+
+    setActiveChildId(prev => {
+      if (!prev) return students[0].id;
+      return students.some(student => student.id === prev) ? prev : students[0].id;
+    });
+  }, [students]);
 
   const limits = limitsMap[activeChildId];
   const activeStudent = students.find(s => s.id === activeChildId);
 
   const updateLimits = (patch: Partial<ChildLimits>) => {
+    if (!activeChildId) return;
     setLimitsMap(prev => ({
       ...prev,
       [activeChildId]: { ...prev[activeChildId], ...patch },
@@ -109,6 +129,7 @@ export default function ParentLimitsView() {
   };
 
   const updateDay = (day: DayKey, patch: Partial<DayConfig>) => {
+    if (!activeChildId) return;
     setLimitsMap(prev => {
       const child = { ...prev[activeChildId] };
       child.days = { ...child.days, [day]: { ...child.days[day], ...patch } };
@@ -117,6 +138,7 @@ export default function ParentLimitsView() {
   };
 
   const updateMultipleDays = (days: DayKey[], patch: Partial<DayConfig>) => {
+    if (!activeChildId) return;
     setLimitsMap(prev => {
       const child = { ...prev[activeChildId] };
       const newDays = { ...child.days };
@@ -169,6 +191,23 @@ export default function ParentLimitsView() {
     const foodCats = [Category.HOT_MEALS, Category.COMBO_MEALS, Category.SNACKS, Category.DRINKS];
     return PRODUCTS.filter(p => foodCats.includes(p.category));
   }, []);
+
+  if (studentsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-sky-50 p-4 md:p-8 flex items-center justify-center">
+        <p className="text-slate-500 font-bold">Cargando estudiantes...</p>
+      </div>
+    );
+  }
+
+  if (students.length === 0) {
+    return (
+      <ParentNoStudentsState
+        title="Control Parental"
+        description="Primero vincula un estudiante en Mi Familia para configurar limites, categorias y alertas."
+      />
+    );
+  }
 
   if (!limits || !activeStudent) return null;
 

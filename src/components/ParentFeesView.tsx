@@ -12,6 +12,7 @@ import {
 import { ParentPayment, ParentPaymentStatus, PaymentPlanStatus } from '../types';
 import { SchoolFeeService } from '../services/SchoolFeeService';
 import { useToast } from './ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 const STATUS_CONFIG: Record<ParentPaymentStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
   [ParentPaymentStatus.PAID]: { label: 'Pagado', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <CheckCircle2 size={14} /> },
@@ -29,12 +30,17 @@ const PAYMENT_METHODS = [
 
 export default function ParentFeesView() {
   const toast = useToast();
-  const parentId = 'parent_01'; // Demo: logged-in parent
+  const { user, isDemoMode } = useAuth();
+  const parentId = user?.id?.startsWith('parent_')
+    ? user.id
+    : isDemoMode
+      ? 'parent_01'
+      : (user?.id || 'parent_01');
 
-  const familyStatement = useMemo(() => SchoolFeeService.getFamilyStatement(parentId), []);
+  const familyStatement = useMemo(() => SchoolFeeService.getFamilyStatement(parentId), [parentId]);
   const paymentPlans = useMemo(() =>
     SchoolFeeService.getPaymentPlans('mx_01').filter(p => p.parentId === parentId),
-  []);
+  [parentId]);
   const scholarships = useMemo(() =>
     SchoolFeeService.getScholarships('mx_01').filter(s =>
       familyStatement.children.some(c => c.studentId === s.studentId) && s.isActive
@@ -42,6 +48,10 @@ export default function ParentFeesView() {
   [familyStatement]);
 
   const [payments, setPayments] = useState<ParentPayment[]>(() => SchoolFeeService.getPaymentsByParent(parentId));
+
+  React.useEffect(() => {
+    setPayments(SchoolFeeService.getPaymentsByParent(parentId));
+  }, [parentId]);
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
   const [payModal, setPayModal] = useState<ParentPayment | null>(null);
   const [selectedMethod, setSelectedMethod] = useState('SPEI');

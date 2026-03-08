@@ -6,6 +6,8 @@ import {
   Ban, CheckCircle2, Clock, Info
 } from 'lucide-react';
 import { useToast } from './ui/Toast';
+import { useParentStudents } from '../hooks/useParentStudents';
+import ParentNoStudentsState from './ParentNoStudentsState';
 
 // ===== TYPES =====
 
@@ -29,11 +31,6 @@ interface ReceivedGift {
 }
 
 // ===== MOCK DATA =====
-
-const MOCK_CHILDREN = [
-  { id: '2024001', name: 'Santiago González', photo: '👦', grade: '4° Primaria' },
-  { id: '2024002', name: 'Ana García', photo: '👧', grade: '2° Primaria' },
-];
 
 const MOCK_GIFTS: ReceivedGift[] = [
   {
@@ -120,6 +117,16 @@ const MOCK_GIFTS: ReceivedGift[] = [
 export default function ParentGiftsView() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { students: parentStudents, loading: studentsLoading } = useParentStudents();
+
+  const children = parentStudents.map((student, idx) => ({
+    id: student.id,
+    name: (student as any).name || student.fullName || 'Estudiante',
+    photo: student.photo ? '👤' : idx % 2 === 0 ? '👦' : '👧',
+    grade: student.grade,
+    schoolId: student.schoolId,
+    points: Number((student as any)?.rewardsPoints?.availablePoints || (student as any)?.rewardsPoints?.points || 0),
+  }));
 
   const [gifts, setGifts] = useState<ReceivedGift[]>(MOCK_GIFTS);
   const [selectedChild, setSelectedChild] = useState<string>('all');
@@ -145,6 +152,26 @@ export default function ParentGiftsView() {
   const totalGiftValue = gifts.reduce((sum, g) => sum + g.productPrice, 0);
   const thisWeekGifts = gifts.filter(g => g.date >= '2026-02-17');
 
+  const pooledPoints = children.reduce((sum, child) => sum + child.points, 0);
+  const pooledStudentsCount = children.length;
+
+  if (studentsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50 to-sky-50 p-4 md:p-8 flex items-center justify-center">
+        <p className="text-slate-500 font-bold">Cargando estudiantes...</p>
+      </div>
+    );
+  }
+
+  if (children.length === 0) {
+    return (
+      <ParentNoStudentsState
+        title="Regalos Recibidos"
+        description="Vincula estudiantes para ver y filtrar los regalos que reciben en la escuela."
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50 to-sky-50 pb-40">
       {/* Header */}
@@ -169,7 +196,7 @@ export default function ParentGiftsView() {
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm text-slate-700 focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all"
             >
               <option value="all">Todos los hijos</option>
-              {MOCK_CHILDREN.map(c => (
+              {children.map(c => (
                 <option key={c.id} value={c.id}>{c.photo} {c.name}</option>
               ))}
             </select>
@@ -222,6 +249,25 @@ export default function ParentGiftsView() {
           <div className="parent-card parent-card--featured">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Alertas Salud</p>
             <p className={`text-2xl md:text-3xl font-black ${healthConcernCount > 0 ? 'text-red-500' : 'text-slate-300'}`}>{healthConcernCount}</p>
+          </div>
+        </div>
+
+        {/* Shared points helper */}
+        <div className="parent-card border border-indigo-100 bg-indigo-50/50">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-sm font-black text-slate-900">Bolsa de Puntos para Regalos y Rewards</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {`Puntos familiares disponibles: ${pooledPoints} pts (${pooledStudentsCount} alumno(s)).`}
+                {' '}Operacion unificada con el mismo valor de puntos para todos los colegios.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/parent/rewards', { state: { openPointsTopUp: true } })}
+              className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors"
+            >
+              Comprar con Puntos
+            </button>
           </div>
         </div>
 

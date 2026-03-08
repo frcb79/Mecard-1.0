@@ -5,17 +5,15 @@ import {
   CreditCard, Download, Star, Bus, ChevronRight, X
 } from 'lucide-react';
 import { useToast } from './ui/Toast';
+import { useAuth } from '../hooks/useAuth';
+import { useParentStudents } from '../hooks/useParentStudents';
+import ParentNoStudentsState from './ParentNoStudentsState';
 import {
   MOCK_TRIPS, MOCK_TRIP_ENROLLMENTS, MOCK_TRIP_PAYMENTS
 } from '../constants';
 import type { SchoolTrip, TripEnrollment, TripPayment, EnrollmentStatus, TripPaymentStatus } from '../types';
 
 type TabView = 'available' | 'enrolled' | 'payments';
-
-const MOCK_CHILDREN = [
-  { id: '2024001', name: 'Santiago González', photo: '👦', grade: '4° Primaria' },
-  { id: '2024002', name: 'Ana García', photo: '👧', grade: '2° Primaria' },
-];
 
 function getTripStatusConfig(status: string) {
   switch (status) {
@@ -58,6 +56,8 @@ function formatMoney(n: number) {
 
 export default function ParentTripsView() {
   const { showToast } = useToast();
+  const { user, isDemoMode } = useAuth();
+  const { students: parentStudents, loading: studentsLoading } = useParentStudents();
   const [tabView, setTabView] = useState<TabView>('available');
   const [trips] = useState<SchoolTrip[]>(MOCK_TRIPS);
   const [enrollments, setEnrollments] = useState<TripEnrollment[]>(MOCK_TRIP_ENROLLMENTS);
@@ -68,17 +68,58 @@ export default function ParentTripsView() {
   const [showPayModal, setShowPayModal] = useState<string | null>(null);
   const [payMethod, setPayMethod] = useState('SPEI');
 
-  const myEnrollments = useMemo(() => enrollments.filter(e => e.parentId === 'parent_01'), [enrollments]);
+  const currentParentId = useMemo(() => {
+    if (!user) return 'parent_01';
+    if (user.id.startsWith('parent_')) return user.id;
+    return isDemoMode ? 'parent_01' : user.id;
+  }, [isDemoMode, user]);
+
+  const currentParentName = user?.fullName || 'Padre de familia';
+
+  const children = useMemo(() => {
+    return parentStudents.map((student, idx) => ({
+      id: student.id,
+      name: (student as any).name || student.fullName || 'Estudiante',
+      photo: student.photo ? '👤' : idx % 2 === 0 ? '👦' : '👧',
+      grade: student.grade,
+    }));
+  }, [parentStudents]);
+
+  const myEnrollments = useMemo(
+    () => enrollments.filter(e => e.parentId === currentParentId),
+    [currentParentId, enrollments],
+  );
   const enrolledTripIds = useMemo(() => new Set(myEnrollments.map(e => e.tripId)), [myEnrollments]);
 
   const availableTrips = useMemo(() => trips.filter(t => t.status === 'abierto' || t.status === 'borrador'), [trips]);
 
   const pendingPayments = useMemo(() => payments.filter(p => p.status === 'pendiente'), [payments]);
 
+  if (studentsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8 flex items-center justify-center">
+        <p className="text-slate-500 font-bold">Cargando estudiantes...</p>
+      </div>
+    );
+  }
+
+  if (children.length === 0) {
+    return (
+      <ParentNoStudentsState
+        title="Viajes y Excursiones"
+        description="Vincula un estudiante para inscribirlo en viajes, gestionar pagos y documentos."
+      />
+    );
+  }
+
   function handleEnroll(tripId: string) {
     if (!enrollChild) { showToast('Selecciona un alumno', 'error'); return; }
     const trip = trips.find(t => t.id === tripId)!;
-    const child = MOCK_CHILDREN.find(c => c.id === enrollChild)!;
+    const child = children.find(c => c.id === enrollChild);
+    if (!child) {
+      showToast('Alumno no encontrado', 'error');
+      return;
+    }
 
     if (!trip.gradosPermitidos.includes(child.grade)) {
       showToast(`${child.name} no está en los grados permitidos`, 'error'); return;
@@ -87,7 +128,7 @@ export default function ParentTripsView() {
     const enrollment: TripEnrollment = {
       id: `enroll_${Date.now()}`,
       tripId, studentId: child.id, studentName: child.name, studentGrade: child.grade,
-      parentId: 'parent_01', parentName: 'María González',
+      parentId: currentParentId, parentName: currentParentName,
       status: 'inscrito', totalPagado: 0, saldoPendiente: trip.costoPorAlumno,
       documentosEntregados: [], approvedByParent: true, approvalDate: new Date().toISOString(),
       inscritoEn: new Date().toISOString(), actualizadoEn: new Date().toISOString(),
@@ -284,7 +325,7 @@ export default function ParentTripsView() {
                             <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl space-y-3">
                               <p className="font-bold text-sm text-teal-800">Inscribir alumno</p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {MOCK_CHILDREN.map(c => (
+                                {children.map(c => (
                                   <button key={c.id} onClick={() => setEnrollChild(c.id)}
                                     className={`p-3 rounded-xl border-2 text-left flex items-center gap-2 transition-all ${enrollChild === c.id ? 'border-teal-500 bg-teal-100' : 'border-slate-200 hover:border-slate-300 bg-white'} ${!trip.gradosPermitidos.includes(c.grade) ? 'opacity-40 cursor-not-allowed' : ''}`}
                                     disabled={!trip.gradosPermitidos.includes(c.grade)}>

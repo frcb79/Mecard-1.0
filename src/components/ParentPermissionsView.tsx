@@ -6,6 +6,9 @@ import {
   Save, Star
 } from 'lucide-react';
 import { useToast } from './ui/Toast';
+import { useAuth } from '../hooks/useAuth';
+import { useParentStudents } from '../hooks/useParentStudents';
+import ParentNoStudentsState from './ParentNoStudentsState';
 import {
   MOCK_EXIT_PERMISSIONS, MOCK_AUTHORIZED_CONTACTS, MOCK_SCHOOL_PERMISSION_CONFIG, MOCK_COPARENT
 } from '../constants';
@@ -22,11 +25,6 @@ const TRANSPORT_OPTIONS: { value: PermissionTransportType; label: string; icon: 
   { value: 'a_pie', label: 'A Pie / Acompañado', icon: <Users size={18} />, desc: 'Se irá caminando con otra familia' },
   { value: 'no_asiste', label: 'No Asiste', icon: <UserX size={18} />, desc: 'El alumno no asistirá a clases' },
   { value: 'otro', label: 'Otro', icon: <MapPin size={18} />, desc: 'Otro medio de transporte' },
-];
-
-const MOCK_CHILDREN = [
-  { id: '2024001', name: 'Santiago González', photo: '👦', grade: '4° Primaria', group: 'B', busRoute: 'Ruta 3 - Satélite' },
-  { id: '2024002', name: 'Ana García', photo: '👧', grade: '2° Primaria', group: 'A', busRoute: 'Ruta 1 - Lomas' },
 ];
 
 const QUICK_SCENARIOS = [
@@ -59,6 +57,20 @@ function getTransportIcon(type: PermissionTransportType) {
 
 export default function ParentPermissionsView() {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const { students: parentStudents, loading: studentsLoading } = useParentStudents();
+
+  const children = useMemo(() => {
+    return parentStudents.map((student, idx) => ({
+      id: student.id,
+      name: (student as any).name || student.fullName || 'Estudiante',
+      photo: student.photo ? '👤' : idx % 2 === 0 ? '👦' : '👧',
+      grade: student.grade,
+      group: student.group || 'A',
+      busRoute: student.busRoute || 'Ruta escolar',
+    }));
+  }, [parentStudents]);
+
   const [tabView, setTabView] = useState<TabView>('list');
   const [permissions, setPermissions] = useState<ExitPermission[]>(MOCK_EXIT_PERMISSIONS);
   const [contacts, setContacts] = useState<AuthorizedContact[]>(MOCK_AUTHORIZED_CONTACTS);
@@ -82,7 +94,7 @@ export default function ParentPermissionsView() {
   const [newContact, setNewContact] = useState({ nombre: '', parentesco: '', telefono: '', email: '', identificacion: '' });
   const [showContactForm, setShowContactForm] = useState(false);
 
-  const child = MOCK_CHILDREN.find(c => c.id === selectedChild);
+  const child = children.find(c => c.id === selectedChild);
   const isNoAsiste = transporte === 'no_asiste';
 
   const activePermissions = useMemo(() =>
@@ -108,7 +120,7 @@ export default function ParentPermissionsView() {
       showToast('Ingresa los datos de la persona autorizada', 'error'); return;
     }
 
-    const c = MOCK_CHILDREN.find(ch => ch.id === selectedChild)!;
+    const c = children.find(ch => ch.id === selectedChild)!;
     const contact = useContact === 'saved' ? contacts.find(ct => ct.id === selectedContactId) : null;
 
     const perm: ExitPermission = {
@@ -131,10 +143,10 @@ export default function ParentPermissionsView() {
         nombre: contact.nombre, parentesco: contact.parentesco,
         telefono: contact.telefono, email: contact.email, identificacion: contact.identificacion,
       } : { ...newPerson }),
-      createdBy: 'parent_01',
+      createdBy: user?.id || 'parent_01',
       createdByName: 'María González',
       approvals: [
-        { parentId: 'parent_01', parentName: 'María González', status: 'aprobado', timestamp: new Date().toISOString() },
+        { parentId: user?.id || 'parent_01', parentName: 'María González', status: 'aprobado', timestamp: new Date().toISOString() },
         ...(config.requiereDosAprobaciones ? [{ parentId: MOCK_COPARENT.parentId, parentName: MOCK_COPARENT.name, status: 'pendiente' as const, timestamp: '' }] : []),
       ],
       status: 'pendiente',
@@ -176,12 +188,29 @@ export default function ParentPermissionsView() {
     } else {
       setContacts(prev => [...prev, {
         id: `contact_${Date.now()}`, familyId: 'family_01', ...newContact,
-        isDefault: contacts.length === 0, createdBy: 'parent_01', createdAt: new Date().toISOString(),
+        isDefault: contacts.length === 0, createdBy: user?.id || 'parent_01', createdAt: new Date().toISOString(),
       }]);
       showToast('Contacto agregado', 'success');
     }
     setNewContact({ nombre: '', parentesco: '', telefono: '', email: '', identificacion: '' });
     setEditingContact(null); setShowContactForm(false);
+  }
+
+  if (studentsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8 flex items-center justify-center">
+        <p className="text-slate-500 font-bold">Cargando estudiantes...</p>
+      </div>
+    );
+  }
+
+  if (children.length === 0) {
+    return (
+      <ParentNoStudentsState
+        title="Permisos de Salida"
+        description="Para emitir permisos necesitas vincular al menos un estudiante en Mi Familia."
+      />
+    );
   }
 
   return (
@@ -359,7 +388,7 @@ export default function ParentPermissionsView() {
             <div className="parent-card">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">1. Selecciona alumno</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {MOCK_CHILDREN.map(c => (
+                {children.map(c => (
                   <button key={c.id} onClick={() => setSelectedChild(c.id)}
                     className={`p-3 rounded-xl border-2 transition-all text-left ${selectedChild === c.id ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-300'}`}>
                     <div className="flex items-center gap-3">
