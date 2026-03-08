@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS marketplace_suggestions (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 
   CONSTRAINT fk_marketplace_suggestions_parent
-    FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES auth.users(id) ON DELETE CASCADE,
   CONSTRAINT ck_marketplace_suggestions_status
     CHECK (status IN ('NEW', 'REVIEWED', 'APPROVED', 'REJECTED'))
 );
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS parent_rewards_preferences (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 
   CONSTRAINT fk_parent_rewards_preferences_parent
-    FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (parent_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_parent_rewards_preferences_parent_id ON parent_rewards_preferences(parent_id);
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS family_points_topups (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 
   CONSTRAINT fk_family_points_topups_parent
-    FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES auth.users(id) ON DELETE CASCADE,
   CONSTRAINT ck_family_points_topups_points_positive
     CHECK (points_amount > 0)
 );
