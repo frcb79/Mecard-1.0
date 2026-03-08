@@ -14,6 +14,438 @@ import {
   POSTransactionWithRewards,
   RedemptionStatus
 } from '../types';
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+
+export interface MarketplaceSuggestion {
+  id: string;
+  parentId: string;
+  parentName?: string;
+  category: string;
+  suggestion: string;
+  status: 'NEW' | 'REVIEWED' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+}
+
+export interface ParentRewardsPreferences {
+  parentId: string;
+  studentPurchasesEnabled: boolean;
+  useFamilyPool: boolean;
+  updatedAt: string;
+}
+
+interface FamilyPointsTopup {
+  id: string;
+  parentId: string;
+  pointsAmount: number;
+  source: 'MANUAL_TOPUP';
+  note?: string;
+  createdAt: string;
+}
+
+interface CreateMarketplaceProductInput {
+  name: string;
+  description: string;
+  category: string;
+  pointsCost: number;
+  stockQuantity: number;
+  currentStock?: number;
+  imageUrl?: string;
+  featured?: boolean;
+  available?: boolean;
+  schoolId?: string;
+  popularityScore?: number;
+}
+
+const STORAGE_KEYS = {
+  products: 'mecard_marketplace_products',
+  suggestions: 'mecard_marketplace_suggestions',
+  parentPrefs: 'mecard_parent_rewards_preferences',
+  topups: 'mecard_family_points_topups'
+} as const;
+
+const readStorage = <T,>(key: string, fallback: T): T => {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeStorage = <T,>(key: string, value: T): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore storage write failures to avoid blocking UI flows.
+  }
+};
+
+const toMarketplaceProduct = (row: any): MarketplaceProduct => ({
+  id: String(row.id),
+  name: String(row.name),
+  description: String(row.description || ''),
+  category: row.category as any,
+  pointsCost: Number(row.points_cost || 0),
+  stockQuantity: Number(row.stock_quantity || 0),
+  currentStock: Number(row.current_stock || 0),
+  imageUrl: row.image_url || undefined,
+  featured: Boolean(row.featured),
+  available: Boolean(row.available),
+  schoolId: row.school_id || undefined,
+  popularityScore: Number(row.popularity_score || 0),
+  createdAt: row.created_at || new Date().toISOString(),
+  updatedAt: row.updated_at || new Date().toISOString()
+});
+
+const nowIso = () => new Date().toISOString();
+
+const getLocalProducts = (): MarketplaceProduct[] =>
+  readStorage<MarketplaceProduct[]>(STORAGE_KEYS.products, []);
+
+const setLocalProducts = (products: MarketplaceProduct[]) => {
+  writeStorage(STORAGE_KEYS.products, products);
+};
+
+const getLocalSuggestions = (): MarketplaceSuggestion[] =>
+  readStorage<MarketplaceSuggestion[]>(STORAGE_KEYS.suggestions, []);
+
+const setLocalSuggestions = (suggestions: MarketplaceSuggestion[]) => {
+  writeStorage(STORAGE_KEYS.suggestions, suggestions);
+};
+
+const getLocalParentPrefs = (): ParentRewardsPreferences[] =>
+  readStorage<ParentRewardsPreferences[]>(STORAGE_KEYS.parentPrefs, []);
+
+const setLocalParentPrefs = (prefs: ParentRewardsPreferences[]) => {
+  writeStorage(STORAGE_KEYS.parentPrefs, prefs);
+};
+
+const getLocalTopups = (): FamilyPointsTopup[] =>
+  readStorage<FamilyPointsTopup[]>(STORAGE_KEYS.topups, []);
+
+const setLocalTopups = (topups: FamilyPointsTopup[]) => {
+  writeStorage(STORAGE_KEYS.topups, topups);
+};
+
+export const getMarketplaceProducts = async (
+  schoolId?: string,
+  featured?: boolean
+): Promise<MarketplaceProduct[]> => {
+  if (isSupabaseConfigured) {
+    try {
+      let query = supabase
+        .from('marketplace_products')
+        .select('*')
+        .eq('available', true)
+        .order('popularity_score', { ascending: false });
+
+      if (featured) {
+        query = query.eq('featured', true);
+      }
+
+      if (schoolId) {
+        query = query.or(`school_id.is.null,school_id.eq.${schoolId}`);
+      }
+
+      const { data, error } = await query;
+      if (!error && data) {
+        const products = data.map(toMarketplaceProduct);
+        if (products.length > 0) return products;
+      }
+    } catch {
+      // Fall back to local/mock data when table/policy is not available.
+    }
+  }
+
+  const localProducts = getLocalProducts();
+  if (localProducts.length > 0) {
+    return localProducts
+      .filter((p) => (!featured || p.featured) && (!schoolId || !p.schoolId || p.schoolId === schoolId))
+      .sort((a, b) => b.popularityScore - a.popularityScore);
+  }
+
+  return mockGetMarketplaceProducts(schoolId, featured);
+};
+
+export const createMarketplaceProduct = async (
+  payload: CreateMarketplaceProductInput
+): Promise<MarketplaceProduct> => {
+  const product: MarketplaceProduct = {
+    id: `mkp_${Date.now()}`,
+    name: payload.name,
+    description: payload.description,
+    category: payload.category as any,
+    pointsCost: payload.pointsCost,
+    stockQuantity: payload.stockQuantity,
+    currentStock: payload.currentStock ?? payload.stockQuantity,
+    imageUrl: payload.imageUrl,
+    featured: payload.featured ?? false,
+    available: payload.available ?? true,
+    schoolId: payload.schoolId,
+    popularityScore: payload.popularityScore ?? 50,
+    createdAt: nowIso(),
+    updatedAt: nowIso()
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('marketplace_products')
+        .insert({
+          name: payload.name,
+          description: payload.description,
+          category: payload.category,
+          points_cost: payload.pointsCost,
+          stock_quantity: payload.stockQuantity,
+          current_stock: payload.currentStock ?? payload.stockQuantity,
+          image_url: payload.imageUrl,
+          featured: payload.featured ?? false,
+          available: payload.available ?? true,
+          school_id: payload.schoolId,
+          popularity_score: payload.popularityScore ?? 50
+        })
+        .select('*')
+        .single();
+
+      if (!error && data) {
+        return toMarketplaceProduct(data);
+      }
+    } catch {
+      // Keep local fallback below.
+    }
+  }
+
+  const current = getLocalProducts();
+  setLocalProducts([product, ...current]);
+  return product;
+};
+
+export const submitMarketplaceSuggestion = async (input: {
+  parentId: string;
+  parentName?: string;
+  category: string;
+  suggestion: string;
+}): Promise<MarketplaceSuggestion> => {
+  const suggestion: MarketplaceSuggestion = {
+    id: `sug_${Date.now()}`,
+    parentId: input.parentId,
+    parentName: input.parentName,
+    category: input.category,
+    suggestion: input.suggestion,
+    status: 'NEW',
+    createdAt: nowIso()
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('marketplace_suggestions')
+        .insert({
+          parent_id: input.parentId,
+          parent_name: input.parentName || null,
+          category: input.category,
+          suggestion: input.suggestion,
+          status: 'NEW'
+        })
+        .select('*')
+        .single();
+
+      if (!error && data) {
+        return {
+          id: String(data.id),
+          parentId: String(data.parent_id),
+          parentName: data.parent_name || undefined,
+          category: String(data.category),
+          suggestion: String(data.suggestion),
+          status: data.status,
+          createdAt: data.created_at || nowIso()
+        };
+      }
+    } catch {
+      // Keep local fallback below.
+    }
+  }
+
+  const current = getLocalSuggestions();
+  setLocalSuggestions([suggestion, ...current]);
+  return suggestion;
+};
+
+export const getMarketplaceSuggestions = async (): Promise<MarketplaceSuggestion[]> => {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('marketplace_suggestions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        return data.map((item: any) => ({
+          id: String(item.id),
+          parentId: String(item.parent_id),
+          parentName: item.parent_name || undefined,
+          category: String(item.category),
+          suggestion: String(item.suggestion),
+          status: item.status,
+          createdAt: item.created_at || nowIso()
+        }));
+      }
+    } catch {
+      // Keep local fallback below.
+    }
+  }
+
+  return getLocalSuggestions().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+};
+
+export const getParentRewardsPreferences = async (
+  parentId: string
+): Promise<ParentRewardsPreferences> => {
+  const fallback: ParentRewardsPreferences = {
+    parentId,
+    studentPurchasesEnabled: true,
+    useFamilyPool: true,
+    updatedAt: nowIso()
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('parent_rewards_preferences')
+        .select('*')
+        .eq('parent_id', parentId)
+        .single();
+
+      if (!error && data) {
+        return {
+          parentId: String(data.parent_id),
+          studentPurchasesEnabled: Boolean(data.student_purchases_enabled),
+          useFamilyPool: Boolean(data.use_family_pool),
+          updatedAt: data.updated_at || nowIso()
+        };
+      }
+    } catch {
+      // Keep local fallback below.
+    }
+  }
+
+  const local = getLocalParentPrefs().find((item) => item.parentId === parentId);
+  return local || fallback;
+};
+
+export const saveParentRewardsPreferences = async (
+  parentId: string,
+  patch: Partial<Omit<ParentRewardsPreferences, 'parentId' | 'updatedAt'>>
+): Promise<ParentRewardsPreferences> => {
+  const current = await getParentRewardsPreferences(parentId);
+  const merged: ParentRewardsPreferences = {
+    ...current,
+    ...patch,
+    parentId,
+    updatedAt: nowIso()
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('parent_rewards_preferences')
+        .upsert({
+          parent_id: parentId,
+          student_purchases_enabled: merged.studentPurchasesEnabled,
+          use_family_pool: merged.useFamilyPool,
+          updated_at: nowIso()
+        }, { onConflict: 'parent_id' })
+        .select('*')
+        .single();
+
+      if (!error && data) {
+        return {
+          parentId: String(data.parent_id),
+          studentPurchasesEnabled: Boolean(data.student_purchases_enabled),
+          useFamilyPool: Boolean(data.use_family_pool),
+          updatedAt: data.updated_at || nowIso()
+        };
+      }
+    } catch {
+      // Keep local fallback below.
+    }
+  }
+
+  const all = getLocalParentPrefs().filter((item) => item.parentId !== parentId);
+  setLocalParentPrefs([merged, ...all]);
+  return merged;
+};
+
+export const recordFamilyPointsTopup = async (input: {
+  parentId: string;
+  pointsAmount: number;
+  note?: string;
+}): Promise<FamilyPointsTopup> => {
+  const tx: FamilyPointsTopup = {
+    id: `topup_${Date.now()}`,
+    parentId: input.parentId,
+    pointsAmount: input.pointsAmount,
+    source: 'MANUAL_TOPUP',
+    note: input.note,
+    createdAt: nowIso()
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('family_points_topups')
+        .insert({
+          parent_id: input.parentId,
+          points_amount: input.pointsAmount,
+          source: 'MANUAL_TOPUP',
+          note: input.note || null
+        })
+        .select('*')
+        .single();
+
+      if (!error && data) {
+        return {
+          id: String(data.id),
+          parentId: String(data.parent_id),
+          pointsAmount: Number(data.points_amount || 0),
+          source: 'MANUAL_TOPUP',
+          note: data.note || undefined,
+          createdAt: data.created_at || nowIso()
+        };
+      }
+    } catch {
+      // Keep local fallback below.
+    }
+  }
+
+  const all = getLocalTopups();
+  setLocalTopups([tx, ...all]);
+  return tx;
+};
+
+export const getFamilyPointsTopupTotal = async (parentId: string): Promise<number> => {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('family_points_topups')
+        .select('points_amount')
+        .eq('parent_id', parentId);
+
+      if (!error && data) {
+        return data.reduce((sum: number, row: any) => sum + Number(row.points_amount || 0), 0);
+      }
+    } catch {
+      // Keep local fallback below.
+    }
+  }
+
+  return getLocalTopups()
+    .filter((item) => item.parentId === parentId)
+    .reduce((sum, item) => sum + item.pointsAmount, 0);
+};
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -462,5 +894,15 @@ export const rewardsService = {
   mockGetStudentRewardsPoints,
   mockGetPointsTransactionHistory,
   mockGetMarketplaceProducts,
-  mockProcessRedemption
+  mockProcessRedemption,
+
+  // Real/fallback API
+  getMarketplaceProducts,
+  createMarketplaceProduct,
+  submitMarketplaceSuggestion,
+  getMarketplaceSuggestions,
+  getParentRewardsPreferences,
+  saveParentRewardsPreferences,
+  recordFamilyPointsTopup,
+  getFamilyPointsTopupTotal
 };

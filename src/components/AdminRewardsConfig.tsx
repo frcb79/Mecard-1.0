@@ -15,15 +15,27 @@ import {
   Percent,
   Zap,
   Calendar,
-  Trophy
+  Trophy,
+  ImagePlus,
+  PackagePlus,
+  Inbox
 } from 'lucide-react';
 import { SchoolRewardsConfig } from '../types';
-import { rewardsService } from '../services/rewardsService';
+import { MarketplaceSuggestion, rewardsService } from '../services/rewardsService';
 
 interface AdminRewardsConfigProps {
   schoolId?: string;
   schoolName?: string;
   onSave?: (config: SchoolRewardsConfig) => void;
+}
+
+interface AdminMarketplaceProduct {
+  id: string;
+  name: string;
+  description: string;
+  pointsCost: number;
+  stock: number;
+  imageUrl?: string;
 }
 
 export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
@@ -36,10 +48,25 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [marketplaceProducts, setMarketplaceProducts] = useState<AdminMarketplaceProduct[]>([]);
+  const [marketplaceLoading, setMarketplaceLoading] = useState(false);
+  const [marketplaceSuggestions, setMarketplaceSuggestions] = useState<MarketplaceSuggestion[]>([]);
+  const [draftProduct, setDraftProduct] = useState({
+    name: '',
+    description: '',
+    category: 'TECH',
+    pointsCost: '500',
+    stock: '10',
+    imageUrl: '',
+  });
 
   // Load config on mount
   useEffect(() => {
     loadConfig();
+  }, [schoolId]);
+
+  useEffect(() => {
+    loadMarketplaceData();
   }, [schoolId]);
 
   const loadConfig = async () => {
@@ -55,6 +82,35 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMarketplaceData = async () => {
+    setMarketplaceLoading(true);
+    try {
+      const [products, suggestions] = await Promise.all([
+        rewardsService.getMarketplaceProducts(schoolId),
+        rewardsService.getMarketplaceSuggestions()
+      ]);
+
+      setMarketplaceProducts(
+        products.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          pointsCost: item.pointsCost,
+          stock: item.currentStock,
+          imageUrl: item.imageUrl
+        }))
+      );
+      setMarketplaceSuggestions(suggestions);
+    } catch {
+      setMessage({
+        type: 'error',
+        text: 'No se pudieron cargar productos o sugerencias del marketplace'
+      });
+    } finally {
+      setMarketplaceLoading(false);
     }
   };
 
@@ -112,6 +168,61 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
   const handleReset = () => {
     loadConfig();
     setHasChanges(false);
+  };
+
+  const handleProductImageUpload = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDraftProduct(prev => ({
+        ...prev,
+        imageUrl: String(reader.result || ''),
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddMarketplaceProduct = async () => {
+    if (!draftProduct.name.trim() || !draftProduct.description.trim()) {
+      setMessage({
+        type: 'error',
+        text: 'Nombre y descripcion del producto son obligatorios'
+      });
+      return;
+    }
+
+    const pointsCost = Number(draftProduct.pointsCost);
+    const stock = Number(draftProduct.stock);
+
+    try {
+      const created = await rewardsService.createMarketplaceProduct({
+        name: draftProduct.name.trim(),
+        description: draftProduct.description.trim(),
+        category: draftProduct.category,
+        pointsCost: Number.isFinite(pointsCost) && pointsCost > 0 ? pointsCost : 500,
+        stockQuantity: Number.isFinite(stock) && stock >= 0 ? stock : 0,
+        imageUrl: draftProduct.imageUrl || undefined,
+        available: true,
+        featured: false,
+        schoolId
+      });
+
+      const newProduct: AdminMarketplaceProduct = {
+        id: created.id,
+        name: created.name,
+        description: created.description,
+        pointsCost: created.pointsCost,
+        stock: created.currentStock,
+        imageUrl: created.imageUrl
+      };
+
+      setMarketplaceProducts(prev => [newProduct, ...prev]);
+      setDraftProduct({ name: '', description: '', category: 'TECH', pointsCost: '500', stock: '10', imageUrl: '' });
+      setMessage({ type: 'success', text: 'Producto del marketplace guardado' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch {
+      setMessage({ type: 'error', text: 'No se pudo guardar el producto del marketplace' });
+    }
   };
 
   if (loading) {
@@ -388,6 +499,161 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
             <li>🥇 <strong>Gold ({config.tierThresholds.gold} - {config.tierThresholds.platinum}):</strong> 10% multiplicador</li>
             <li>💎 <strong>Platinum ({config.tierThresholds.platinum}+):</strong> 15% multiplicador</li>
           </ul>
+        </div>
+      </div>
+
+      {/* Seccion 4: Marketplace Products */}
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-5">
+        <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+          <PackagePlus size={20} /> Productos del Marketplace
+        </h3>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="marketplace-name" className="block text-sm font-bold text-slate-700 mb-2">Nombre del producto</label>
+              <input
+                id="marketplace-name"
+                value={draftProduct.name}
+                onChange={(e) => setDraftProduct(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="Ej. Kit STEM Basico"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="marketplace-description" className="block text-sm font-bold text-slate-700 mb-2">Descripcion del producto</label>
+              <textarea
+                id="marketplace-description"
+                value={draftProduct.description}
+                onChange={(e) => setDraftProduct(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="Describe beneficios, contenido y restricciones del producto"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label htmlFor="marketplace-category" className="block text-sm font-bold text-slate-700 mb-2">Categoria</label>
+                <select
+                  id="marketplace-category"
+                  value={draftProduct.category}
+                  onChange={(e) => setDraftProduct(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                >
+                  <option value="TECH">Tecnologia</option>
+                  <option value="SCHOOL_SUPPLIES">Utiles</option>
+                  <option value="SPORTS">Deportes</option>
+                  <option value="ENTERTAINMENT">Entretenimiento</option>
+                  <option value="GIFT_CARDS">Gift Cards</option>
+                  <option value="EXPERIENCES">Experiencias</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="marketplace-points" className="block text-sm font-bold text-slate-700 mb-2">Costo en puntos</label>
+                <input
+                  id="marketplace-points"
+                  type="number"
+                  min={1}
+                  value={draftProduct.pointsCost}
+                  onChange={(e) => setDraftProduct(prev => ({ ...prev, pointsCost: e.target.value }))}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="marketplace-stock" className="block text-sm font-bold text-slate-700 mb-2">Stock</label>
+                <input
+                  id="marketplace-stock"
+                  type="number"
+                  min={0}
+                  value={draftProduct.stock}
+                  onChange={(e) => setDraftProduct(prev => ({ ...prev, stock: e.target.value }))}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="marketplace-image" className="block text-sm font-bold text-slate-700 mb-2">Imagen del producto</label>
+              <label htmlFor="marketplace-image" className="w-full px-4 py-3 border-2 border-dashed border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 cursor-pointer flex items-center justify-center gap-2">
+                <ImagePlus size={16} /> Subir imagen
+              </label>
+              <input
+                id="marketplace-image"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleProductImageUpload(e.target.files?.[0] || null)}
+              />
+            </div>
+
+            <button
+              onClick={handleAddMarketplaceProduct}
+              className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors"
+            >
+              Guardar Producto
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-slate-700">Vista previa del producto</p>
+            <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50">
+              <div className="w-full h-36 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden mb-3">
+                {draftProduct.imageUrl ? (
+                  <img src={draftProduct.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-slate-300 text-sm font-bold">Sin imagen</span>
+                )}
+              </div>
+              <p className="font-black text-slate-800">{draftProduct.name || 'Nombre del producto'}</p>
+              <p className="text-xs text-slate-500 mt-1">{draftProduct.description || 'Descripcion del producto'}</p>
+              <div className="mt-3 flex items-center justify-between text-xs font-bold">
+                <span className="text-indigo-600">{draftProduct.pointsCost || '0'} pts</span>
+                <span className="text-slate-500">Stock {draftProduct.stock || '0'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {marketplaceLoading && (
+          <p className="text-xs font-semibold text-slate-500">Cargando productos del marketplace...</p>
+        )}
+
+        {marketplaceProducts.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-slate-700">Productos registrados</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {marketplaceProducts.map(product => (
+                <div key={product.id} className="p-3 border border-slate-100 rounded-xl bg-white">
+                  <p className="font-bold text-sm text-slate-800">{product.name}</p>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{product.description}</p>
+                  <p className="text-[11px] text-indigo-600 font-bold mt-1">{product.pointsCost} pts</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Seccion 5: Sugerencias de productos */}
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
+        <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+          <Inbox size={20} /> Sugerencias al Marketplace
+        </h3>
+        <p className="text-sm text-slate-600">Espacio para revisar recomendaciones enviadas por familias para nuevos productos.</p>
+        <div className="space-y-2">
+          {marketplaceSuggestions.length === 0 && (
+            <p className="text-xs text-slate-500">No hay sugerencias registradas todavia.</p>
+          )}
+          {marketplaceSuggestions.map((item) => (
+            <div key={item.id} className="p-3 rounded-xl border border-slate-100 bg-slate-50">
+              <p className="text-xs font-black text-slate-700">
+                {item.parentName || item.parentId} - {item.category}
+              </p>
+              <p className="text-sm text-slate-600 mt-1">{item.suggestion}</p>
+            </div>
+          ))}
         </div>
       </div>
 
