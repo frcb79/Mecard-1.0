@@ -13,6 +13,8 @@ import {
   Download,
   Eye,
   Filter,
+  Landmark,
+  TrendingUp,
 } from 'lucide-react';
 import { Button } from './Button';
 import {
@@ -155,24 +157,29 @@ export default function SchoolInvoiceDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* HEADER */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <FileText className="w-8 h-8 text-blue-600" />
-            <h1 className="text-4xl font-black text-slate-900">Mis Facturas</h1>
+        <div className="mb-8 md:mb-10 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <FileText className="w-8 h-8 text-indigo-600" />
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900">Flujo de Caja Escolar</h1>
+            </div>
+            <p className="text-slate-500 font-medium">{schoolName} · Facturacion y cobranza operativa</p>
           </div>
-          <p className="text-slate-500 font-medium">{schoolName}</p>
+          <div className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+            Vista Ejecutiva
+          </div>
         </div>
 
         {/* PAYMENT MESSAGE */}
         {paymentMessage && (
           <div
-            className={`mb-6 rounded-[24px] p-4 flex items-center gap-3 animate-in slide-in-from-top ${
+            className={`mb-6 rounded-[20px] p-4 flex items-center gap-3 animate-in slide-in-from-top border ${
               paymentMessage.type === 'success'
-                ? 'bg-emerald-50 border-2 border-emerald-200'
-                : 'bg-red-50 border-2 border-red-200'
+                ? 'bg-emerald-50 border-emerald-200'
+                : 'bg-red-50 border-red-200'
             }`}
           >
             {paymentMessage.type === 'success' ? (
@@ -192,37 +199,32 @@ export default function SchoolInvoiceDashboard({
           </div>
         )}
 
-        {/* STATS CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-[20px] p-6 border-2 border-slate-100 shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">
-              Total Facturas
-            </p>
-            <p className="text-3xl font-black text-slate-900">{stats.total}</p>
+        {/* EXECUTIVE CASHFLOW BENTO */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="rounded-[32px] border border-slate-200 bg-white p-6 ring-1 ring-inset ring-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Cartera por Cobrar</p>
+            <p className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900">{formatCurrency(stats.totalOwed)}</p>
+            <p className="mt-2 text-xs font-bold text-slate-500">{stats.pending} emitidas · {stats.overdue} vencidas</p>
           </div>
 
-          <div className="bg-white rounded-[20px] p-6 border-2 border-blue-100 shadow-sm">
-            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[2px] mb-2">
-              Por Pagar
-            </p>
-            <p className="text-3xl font-black text-blue-600">{stats.pending}</p>
-            <p className="text-sm text-blue-700 font-bold mt-2">
-              {formatCurrency(stats.totalOwed)}
-            </p>
+          <div className="rounded-[32px] border border-emerald-100 bg-emerald-50/50 p-6 ring-1 ring-inset ring-emerald-100">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-black text-emerald-700 uppercase tracking-[2px]">Facturas Pagadas</p>
+              <Landmark size={16} className="text-emerald-600" />
+            </div>
+            <p className="text-4xl md:text-5xl font-black tracking-tighter text-emerald-700 mt-2">{stats.paid}</p>
+            <p className="mt-2 text-xs font-bold text-emerald-700/80">Cobranza confirmada</p>
           </div>
 
-          <div className="bg-white rounded-[20px] p-6 border-2 border-emerald-100 shadow-sm">
-            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[2px] mb-2">
-              Pagadas
+          <div className="rounded-[32px] border border-indigo-100 bg-indigo-50/60 p-6 ring-1 ring-inset ring-indigo-100">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-black text-indigo-700 uppercase tracking-[2px]">Salud de Facturacion</p>
+              <TrendingUp size={16} className="text-indigo-600" />
+            </div>
+            <p className="text-4xl md:text-5xl font-black tracking-tighter text-indigo-700 mt-2">
+              {stats.total === 0 ? '0%' : `${Math.round((stats.paid / stats.total) * 100)}%`}
             </p>
-            <p className="text-3xl font-black text-emerald-600">{stats.paid}</p>
-          </div>
-
-          <div className="bg-white rounded-[20px] p-6 border-2 border-red-100 shadow-sm">
-            <p className="text-[10px] font-black text-red-600 uppercase tracking-[2px] mb-2">
-              Vencidas
-            </p>
-            <p className="text-3xl font-black text-red-600">{stats.overdue}</p>
+            <p className="mt-2 text-xs font-bold text-indigo-700/80">{stats.total} facturas del periodo</p>
           </div>
         </div>
 
@@ -235,8 +237,8 @@ export default function SchoolInvoiceDashboard({
                 onClick={() => setFilterStatus(status)}
                 className={`px-4 py-2 rounded-[16px] font-black text-[10px] uppercase tracking-[1px] transition-all ${
                   filterStatus === status
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-slate-300'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
                 }`}
               >
                 <Filter className="w-3 h-3 inline mr-2" />
@@ -249,7 +251,7 @@ export default function SchoolInvoiceDashboard({
         {/* INVOICES LIST */}
         <div className="space-y-4">
           {filteredInvoices.length === 0 ? (
-            <div className="bg-white rounded-[24px] p-8 border-2 border-slate-100 text-center">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100 text-center">
               <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <p className="text-slate-600 font-medium">No hay facturas para mostrar</p>
             </div>
@@ -257,7 +259,7 @@ export default function SchoolInvoiceDashboard({
             filteredInvoices.map((invoice) => (
               <div
                 key={invoice.id}
-                className={`border-2 rounded-[24px] p-6 transition-all cursor-pointer hover:shadow-md ${getStatusColor(
+                className={`border rounded-[28px] p-6 transition-all cursor-pointer ${getStatusColor(
                   invoice.status
                 )}`}
                 onClick={() => setSelectedInvoice(invoice)}
@@ -304,7 +306,7 @@ export default function SchoolInvoiceDashboard({
 
                   <div className="text-right">
                     <span
-                      className={`inline-block px-4 py-2 rounded-[12px] font-black text-[10px] uppercase tracking-[1px] ${
+                      className={`inline-block px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-[1px] ${
                         invoice.status === InvoiceStatus.PAID
                           ? 'bg-emerald-100 text-emerald-700'
                           : invoice.status === InvoiceStatus.OVERDUE
@@ -323,17 +325,17 @@ export default function SchoolInvoiceDashboard({
 
         {/* INVOICE DETAIL MODAL */}
         {selectedInvoice && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-[32px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-900/45 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               {/* Header */}
-              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-[32px]">
+              <div className="sticky top-0 bg-indigo-600 text-white p-6 rounded-t-[32px]">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-black">
                     Factura {selectedInvoice.invoiceNumber}
                   </h2>
                   <button
                     onClick={() => setSelectedInvoice(null)}
-                    className="text-xl font-bold hover:bg-blue-800 w-8 h-8 flex items-center justify-center rounded-full"
+                    className="text-xl font-bold hover:bg-indigo-700 w-8 h-8 flex items-center justify-center rounded-full"
                   >
                     ✕
                   </button>
@@ -347,7 +349,7 @@ export default function SchoolInvoiceDashboard({
               <div className="p-8 space-y-6">
                 {/* DATES */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-[16px] p-4">
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[1px] mb-2">
                       Fecha de Emisión
                     </p>
@@ -355,7 +357,7 @@ export default function SchoolInvoiceDashboard({
                       {new Date(selectedInvoice.issueDate).toLocaleDateString('es-MX')}
                     </p>
                   </div>
-                  <div className="bg-slate-50 rounded-[16px] p-4">
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[1px] mb-2">
                       Fecha de Vencimiento
                     </p>
@@ -372,7 +374,7 @@ export default function SchoolInvoiceDashboard({
                     {selectedInvoice.lineItems.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex justify-between items-start p-4 bg-slate-50 rounded-[16px]"
+                        className="flex justify-between items-start p-4 bg-slate-50 rounded-xl border border-slate-100"
                       >
                         <div className="flex-1">
                           <p className="font-bold text-slate-900">{item.description}</p>
@@ -391,7 +393,7 @@ export default function SchoolInvoiceDashboard({
                 </div>
 
                 {/* TOTALS */}
-                <div className="border-t-2 border-slate-200 pt-4 space-y-3">
+                <div className="border-t border-slate-200 pt-4 space-y-3">
                   <div className="flex justify-between items-center">
                     <p className="font-bold text-slate-700">Subtotal:</p>
                     <p className="font-bold text-slate-900">
@@ -404,9 +406,9 @@ export default function SchoolInvoiceDashboard({
                       {formatCurrency(selectedInvoice.taxes)}
                     </p>
                   </div>
-                  <div className="flex justify-between items-center bg-blue-50 p-4 rounded-[16px]">
-                    <p className="font-black text-lg text-blue-900">Total a Pagar:</p>
-                    <p className="font-black text-2xl text-blue-600">
+                  <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                    <p className="font-black text-lg text-indigo-900">Total a Pagar:</p>
+                    <p className="font-black text-2xl text-indigo-600">
                       {formatCurrency(selectedInvoice.total)}
                     </p>
                   </div>
@@ -415,7 +417,7 @@ export default function SchoolInvoiceDashboard({
                 {/* PAYMENT INSTRUCTIONS */}
                 {selectedInvoice.status === InvoiceStatus.ISSUED ||
                 selectedInvoice.status === InvoiceStatus.OVERDUE ? (
-                  <div className="bg-amber-50 border-2 border-amber-200 rounded-[20px] p-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-[1px] mb-3">
                       Instrucciones de Pago
                     </p>
@@ -435,7 +437,7 @@ export default function SchoolInvoiceDashboard({
 
                 {/* PAID CONFIRMATION */}
                 {selectedInvoice.status === InvoiceStatus.PAID ? (
-                  <div className="bg-emerald-50 border-2 border-emerald-200 rounded-[20px] p-4 flex items-center gap-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
                     <Check className="w-6 h-6 text-emerald-600 shrink-0" />
                     <div>
                       <p className="font-bold text-emerald-900">Factura Pagada</p>
@@ -449,10 +451,10 @@ export default function SchoolInvoiceDashboard({
               </div>
 
               {/* Footer */}
-              <div className="sticky bottom-0 bg-slate-50 p-6 border-t-2 border-slate-200 rounded-b-[32px] flex gap-3">
+              <div className="sticky bottom-0 bg-slate-50 p-6 border-t border-slate-200 rounded-b-[32px] flex gap-3">
                 <Button
                   onClick={() => setSelectedInvoice(null)}
-                  className="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-900 font-black px-6 py-3 rounded-[20px] transition-all uppercase text-[10px] tracking-[1px]"
+                    className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-black px-6 py-3 rounded-xl transition-all duration-300 uppercase text-[10px] tracking-[1px]"
                 >
                   Cerrar
                 </Button>
@@ -462,7 +464,7 @@ export default function SchoolInvoiceDashboard({
                   <Button
                     onClick={() => handlePayInvoice(selectedInvoice)}
                     disabled={paymentProcessing}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black px-6 py-3 rounded-[20px] transition-all shadow-lg uppercase text-[10px] tracking-[1px] flex items-center justify-center gap-2"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-black px-6 py-3 rounded-xl transition-all duration-300 uppercase text-[10px] tracking-[1px] flex items-center justify-center gap-2"
                   >
                     <DollarSign className="w-4 h-4" />
                     {paymentProcessing ? 'Procesando...' : 'Pagar Ahora'}

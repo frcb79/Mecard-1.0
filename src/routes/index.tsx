@@ -22,70 +22,98 @@ import NotFoundPage from '../components/NotFoundPage';
 
 // ========== LAZY IMPORTS (code-split per role) ==========
 
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  importer: () => Promise<{ default: T }>,
+  retries: number = 1
+) {
+  return React.lazy(async () => {
+    let attempt = 0;
+    let lastError: unknown;
+
+    while (attempt <= retries) {
+      try {
+        return await importer();
+      } catch (error) {
+        lastError = error;
+        attempt += 1;
+
+        if (attempt > retries) {
+          throw error;
+        }
+
+        // Retry once for transient dev-server/cache module fetch failures.
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+
+    throw lastError;
+  });
+}
+
 // Super Admin
-const SuperAdminDashboard = React.lazy(() => import('../components/SuperAdminDashboard'));
-const SchoolManagement = React.lazy(() => import('../components/SchoolManagement'));
-const BusinessModelConfiguration = React.lazy(() => import('../components/BusinessModelConfiguration'));
-const SettlementsView = React.lazy(() => import('../components/SettlementsView'));
-const ReportsView = React.lazy(() => import('../components/ReportsView'));
-const BillingConfigView = React.lazy(() => import('../components/SuperAdmin/BillingConfigView'));
-const BillingOperationsPanel = React.lazy(() => import('../components/SuperAdmin/BillingOperationsPanel'));
-const MecardAnalyticsDashboard = React.lazy(() => import('../components/SuperAdmin/MecardAnalyticsDashboard'));
-const SchoolBlockingManagement = React.lazy(() => import('../components/SuperAdmin/SchoolBlockingManagement'));
-const SchoolOnboardingDashboard = React.lazy(() => import('../components/SchoolOnboardingDashboard'));
-const AdminRewardsConfig = React.lazy(() => import('../components/AdminRewardsConfig'));
-const SupportSystem = React.lazy(() => import('../components/SupportSystem'));
+const SuperAdminDashboard = lazyWithRetry(() => import('../components/SuperAdminDashboard'));
+const SchoolManagement = lazyWithRetry(() => import('../components/SchoolManagement'));
+const BusinessModelConfiguration = lazyWithRetry(() => import('../components/BusinessModelConfiguration'));
+const SettlementsView = lazyWithRetry(() => import('../components/SettlementsView'));
+const ReportsView = lazyWithRetry(() => import('../components/ReportsView'));
+const BillingConfigView = lazyWithRetry(() => import('../components/SuperAdmin/BillingConfigView'));
+const BillingOperationsPanel = lazyWithRetry(() => import('../components/SuperAdmin/BillingOperationsPanel'));
+const MecardAnalyticsDashboard = lazyWithRetry(() => import('../components/SuperAdmin/MecardAnalyticsDashboard'));
+const SchoolBlockingManagement = lazyWithRetry(() => import('../components/SuperAdmin/SchoolBlockingManagement'));
+const SchoolOnboardingDashboard = lazyWithRetry(() => import('../components/SchoolOnboardingDashboard'));
+const AdminRewardsConfig = lazyWithRetry(() => import('../components/AdminRewardsConfig'));
+const SupportSystem = lazyWithRetry(() => import('../components/SupportSystem'));
 
 // School Admin
-const SchoolAdminContainer = React.lazy(() => import('../components/SchoolAdminContainer'));
-const StudentManagementView = React.lazy(() => import('../components/StudentManagementView'));
-const SmartStaffManager = React.lazy(() => import('../components/SmartStaffManager'));
-const StudentImportWizard = React.lazy(() => import('../components/StudentImportWizard'));
-const SchoolPermissionsView = React.lazy(() => import('../components/SchoolPermissionsView'));
-const SchoolTripsView = React.lazy(() => import('../components/SchoolTripsView'));
-const SchoolInvoiceDashboard = React.lazy(() => import('../components/SchoolInvoiceDashboard'));
-const SchoolFeesManager = React.lazy(() => import('../components/SchoolFeesManager'));
-const SchoolAnnouncementsView = React.lazy(() => import('../components/SchoolAnnouncementsView'));
-const SchoolReportsView = React.lazy(() => import('../components/SchoolReportsView'));
-const SchoolAccessDashboard = React.lazy(() => import('../components/SchoolAccessDashboard'));
-const CustomRolesManager = React.lazy(() => import('../components/CustomRolesManager'));
+const SchoolAdminContainer = lazyWithRetry(() => import('../components/SchoolAdminContainer'));
+const StudentManagementView = lazyWithRetry(() => import('../components/StudentManagementView'));
+const SmartStaffManager = lazyWithRetry(() => import('../components/SmartStaffManager'));
+const StudentImportWizard = lazyWithRetry(() => import('../components/StudentImportWizard'));
+const SchoolPermissionsView = lazyWithRetry(() => import('../components/SchoolPermissionsView'));
+const SchoolTripsView = lazyWithRetry(() => import('../components/SchoolTripsView'));
+const SchoolInvoiceDashboard = lazyWithRetry(() => import('../components/SchoolInvoiceDashboard'));
+const SchoolFeesManager = lazyWithRetry(() => import('../components/SchoolFeesManager'));
+const SchoolAnnouncementsView = lazyWithRetry(() => import('../components/SchoolAnnouncementsView'));
+const SchoolReportsView = lazyWithRetry(() => import('../components/SchoolReportsView'));
+const SchoolAccessDashboard = lazyWithRetry(() => import('../components/SchoolAccessDashboard'));
+const CustomRolesManager = lazyWithRetry(() => import('../components/CustomRolesManager'));
 
 // Unit Manager
-const ConcessionaireDashboard = React.lazy(() => import('../components/ConcessionaireDashboard'));
-const InventoryManagementView = React.lazy(() => import('../components/InventoryManagementView'));
+const ConcessionaireDashboard = lazyWithRetry(() => import('../components/ConcessionaireDashboard'));
+const InventoryManagementView = lazyWithRetry(() => import('../components/InventoryManagementView'));
 
 // POS
-const PosView = React.lazy(() => import('../components/PosView'));
-const CashierView = React.lazy(() => import('../components/CashierView'));
+const PosView = lazyWithRetry(() => import('../components/PosView'));
+const CashierView = lazyWithRetry(() => import('../components/CashierView'));
 
 // Parent
-const ParentPortalContainer = React.lazy(() => import('../components/ParentPortalContainer'));
-const ParentWalletView = React.lazy(() => import('../components/ParentWalletView'));
-const ParentLimitsView = React.lazy(() => import('../components/ParentLimitsView'));
-const ParentReportsView = React.lazy(() => import('../components/ParentReportsView'));
-const ParentNotificationsView = React.lazy(() => import('../components/ParentNotificationsView'));
-const ParentPermissionsView = React.lazy(() => import('../components/ParentPermissionsView'));
-const ParentGiftsView = React.lazy(() => import('../components/ParentGiftsView'));
-const ParentRewardsView = React.lazy(() => import('../components/ParentRewardsView'));
-const ParentTripsView = React.lazy(() => import('../components/ParentTripsView'));
-const ParentSettingsView = React.lazy(() => import('../components/ParentSettingsView'));
-const ParentFeesView = React.lazy(() => import('../components/ParentFeesView'));
+const ParentPortalContainer = lazyWithRetry(() => import('../components/ParentPortalContainer'));
+const ParentWalletView = lazyWithRetry(() => import('../components/ParentWalletView'));
+const ParentLimitsView = lazyWithRetry(() => import('../components/ParentLimitsView'));
+const ParentReportsView = lazyWithRetry(() => import('../components/ParentReportsView'));
+const ParentNotificationsView = lazyWithRetry(() => import('../components/ParentNotificationsView'));
+const ParentPermissionsView = lazyWithRetry(() => import('../components/ParentPermissionsView'));
+const ParentGiftsView = lazyWithRetry(() => import('../components/ParentGiftsView'));
+const ParentRewardsView = lazyWithRetry(() => import('../components/ParentRewardsView'));
+const ParentTripsView = lazyWithRetry(() => import('../components/ParentTripsView'));
+const ParentSettingsView = lazyWithRetry(() => import('../components/ParentSettingsView'));
+const ParentFeesView = lazyWithRetry(() => import('../components/ParentFeesView'));
 
 // Student
-const StudentDashboard = React.lazy(() => import('../components/StudentDashboard'));
-const TransactionHistory = React.lazy(() => import('../components/TransactionHistory'));
-const StudentCredentialView = React.lazy(() => import('../components/StudentCredentialView'));
-const StudentMenuView = React.lazy(() => import('../components/StudentMenuView'));
-const StudentGiftsView = React.lazy(() => import('../components/StudentGiftsView'));
-const StudentRewardsView = React.lazy(() => import('../components/StudentRewardsView'));
-const StudentNotificationsView = React.lazy(() => import('../components/StudentNotificationsView'));
-const StudentReportsView = React.lazy(() => import('../components/StudentReportsView'));
-const StudentTripsView = React.lazy(() => import('../components/StudentTripsView'));
-const StudentPermissionsView = React.lazy(() => import('../components/StudentPermissionsView'));
-const StudentSettingsView = React.lazy(() => import('../components/StudentSettingsView'));
-const StudentPreOrderView = React.lazy(() => import('../components/StudentPreOrderView'));
-const PreOrderQueueView = React.lazy(() => import('../components/PreOrderQueueView'));
-const DashboardPlaceholder = React.lazy(() => import('../components/DashboardPlaceholder'));
+const StudentDashboard = lazyWithRetry(() => import('../components/StudentDashboard'));
+const TransactionHistory = lazyWithRetry(() => import('../components/TransactionHistory'));
+const StudentCredentialView = lazyWithRetry(() => import('../components/StudentCredentialView'));
+const StudentMenuView = lazyWithRetry(() => import('../components/StudentMenuView'));
+const StudentGiftsView = lazyWithRetry(() => import('../components/StudentGiftsView'));
+const StudentRewardsView = lazyWithRetry(() => import('../components/StudentRewardsView'));
+const StudentNotificationsView = lazyWithRetry(() => import('../components/StudentNotificationsView'));
+const StudentReportsView = lazyWithRetry(() => import('../components/StudentReportsView'));
+const StudentTripsView = lazyWithRetry(() => import('../components/StudentTripsView'));
+const StudentPermissionsView = lazyWithRetry(() => import('../components/StudentPermissionsView'));
+const StudentSettingsView = lazyWithRetry(() => import('../components/StudentSettingsView'));
+const StudentPreOrderView = lazyWithRetry(() => import('../components/StudentPreOrderView'));
+const PreOrderQueueView = lazyWithRetry(() => import('../components/PreOrderQueueView'));
+const DashboardPlaceholder = lazyWithRetry(() => import('../components/DashboardPlaceholder'));
 
 // ========== SUSPENSE FALLBACK ==========
 function RouteLoader() {

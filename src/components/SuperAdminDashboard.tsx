@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Building2, Users, DollarSign, Zap, ShieldCheck, Landmark,
   TrendingUp, ArrowUpRight, Activity, AlertTriangle,
-  GraduationCap, CreditCard, BarChart3, Globe, Eye
+  GraduationCap, CreditCard, BarChart3, Globe, Eye, Fingerprint
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -44,9 +44,9 @@ export const SuperAdminDashboard: React.FC = () => {
   }, [schools, fetchMetrics]);
 
   return (
-    <div className="h-full bg-gradient-to-br from-slate-50 to-indigo-50/30 flex flex-col overflow-hidden">
+    <div className="h-full bg-[#F8FAFC] flex flex-col overflow-hidden">
       {/* Tab header */}
-      <div className="px-5 sm:px-8 py-4 bg-white/80 backdrop-blur-sm border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 shrink-0">
+      <div className="px-5 sm:px-8 py-4 bg-white/85 backdrop-blur-sm border-b border-slate-200 flex flex-wrap justify-between items-center gap-4 shrink-0">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="bg-indigo-600 p-1.5 rounded-xl"><Zap size={16} className="text-white" /></div>
@@ -61,9 +61,9 @@ export const SuperAdminDashboard: React.FC = () => {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-slate-400">Red: Online</span>
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50">
+          <ShieldCheck size={12} className="text-emerald-600" />
+          <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Sincronizado</span>
         </div>
       </div>
 
@@ -78,24 +78,27 @@ export const SuperAdminDashboard: React.FC = () => {
                 <Globe className="w-9 h-9 text-indigo-600" /> Visibilidad Global
               </h1>
               <p className="text-slate-400 font-bold text-sm mt-1">Red MeCard Network — Panel ejecutivo en tiempo real</p>
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <Fingerprint size={12} className="text-slate-500" /> Nodo Seguridad: <span className="font-mono text-slate-700">MX-NET-01-ACTIVE</span>
+              </div>
             </header>
 
             {/* KPI Grid — 2 rows */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <KPICard label="Campus" value={kpis.totalSchools} icon={<Building2 size={18} />} color="indigo" />
-              <KPICard label="Alumnos" value={kpis.totalStudents} icon={<GraduationCap size={18} />} color="purple" />
-              <KPICard label="Fondeo Global" value={fmt(kpis.totalBalance)} icon={<Landmark size={18} />} color="emerald" />
-              <KPICard label="Unidades Op." value={kpis.totalUnits} icon={<Building2 size={18} />} color="blue" />
-              <KPICard label="Cobrado" value={fmt(kpis.totalCollected)} icon={<DollarSign size={18} />} color="emerald" sub="colegiaturas" />
-              <KPICard label="Pendiente" value={fmt(kpis.totalPending)} icon={<CreditCard size={18} />} color="amber" />
-              <KPICard label="Vencidos" value={kpis.overdueCount} icon={<AlertTriangle size={18} />} color="rose" sub="cobros atrasados" />
-              <KPICard label="Tasa Cobranza" value={`${kpis.collectionRate}%`} icon={<TrendingUp size={18} />} color="indigo" sub={kpis.collectionRate >= 80 ? 'Saludable' : 'Atención'} />
+              <KPICard label="Campus" value={kpis.totalSchools} icon={<Building2 size={18} />} tone="indigo" />
+              <KPICard label="Alumnos" value={kpis.totalStudents} icon={<GraduationCap size={18} />} tone="violet" />
+              <KPICard label="Fondeo Global" value={fmt(kpis.totalBalance)} icon={<Landmark size={18} />} tone="emerald" />
+              <KPICard label="Unidades Op." value={kpis.totalUnits} icon={<Building2 size={18} />} tone="sky" />
+              <KPICard label="Cobrado" value={fmt(kpis.totalCollected)} icon={<DollarSign size={18} />} tone="emerald" sub="colegiaturas" />
+              <KPICard label="Pendiente" value={fmt(kpis.totalPending)} icon={<CreditCard size={18} />} tone="amber" />
+              <KPICard label="Vencidos" value={kpis.overdueCount} icon={<AlertTriangle size={18} />} tone="rose" sub="cobros atrasados" />
+              <KPICard label="Tasa Cobranza" value={`${kpis.collectionRate}%`} icon={<TrendingUp size={18} />} tone="indigo" sub={kpis.collectionRate >= 80 ? 'Saludable' : 'Atencion'} />
             </div>
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Area chart — Revenue */}
-              <div className="lg:col-span-2 bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+              <div className="lg:col-span-2 bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
                 <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
                   <BarChart3 size={18} className="text-indigo-600" /> Cobranza Mensual
                 </h3>
@@ -123,7 +126,7 @@ export const SuperAdminDashboard: React.FC = () => {
               </div>
 
               {/* Pie chart — Payment Status */}
-              <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+              <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
                 <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
                   <Activity size={18} className="text-indigo-600" /> Estado de Pagos
                 </h3>
@@ -151,13 +154,13 @@ export const SuperAdminDashboard: React.FC = () => {
             </div>
 
             {/* Campus Table */}
-            <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
               <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
                 <Building2 size={18} className="text-indigo-600" /> Campus de la Red
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <thead className="bg-slate-50 text-[9px] font-black text-slate-500 uppercase tracking-widest">
                     <tr>
                       <th className="p-4 rounded-l-xl">Campus</th>
                       <th className="p-4 text-center">Alumnos</th>
@@ -168,11 +171,11 @@ export const SuperAdminDashboard: React.FC = () => {
                   <tbody className="divide-y divide-slate-50">
                     {campusData.map(c => (
                       <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-bold text-sm text-slate-700">{c.name}</td>
-                        <td className="p-4 text-center text-sm font-black text-slate-600">{c.students}</td>
-                        <td className="p-4 text-right text-sm font-black text-emerald-600">{fmt(c.balance)}</td>
+                        <td className="p-5 font-bold text-sm text-slate-700">{c.name}</td>
+                        <td className="p-5 text-center text-sm font-black text-slate-600">{c.students}</td>
+                        <td className="p-5 text-right text-sm font-black text-emerald-600">{fmt(c.balance)}</td>
                         <td className="p-4 text-center">
-                          <span className="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600">Activo</span>
+                          <span className="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200">Activo</span>
                         </td>
                       </tr>
                     ))}
@@ -182,13 +185,13 @@ export const SuperAdminDashboard: React.FC = () => {
             </div>
 
             {/* Activity Log */}
-            <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
               <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6 flex items-center gap-2">
                 <Eye size={18} className="text-indigo-600" /> Actividad Reciente
               </h3>
               <div className="space-y-3">
                 {recentActivity.map(a => (
-                  <div key={a.id} className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl">
+                  <div key={a.id} className="flex items-center gap-4 p-4 bg-slate-50/60 rounded-2xl border border-slate-100">
                     <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
                       <ShieldCheck size={16} className="text-indigo-600" />
                     </div>
@@ -211,15 +214,62 @@ export const SuperAdminDashboard: React.FC = () => {
 };
 
 // ===== KPI Card Component =====
-function KPICard({ label, value, icon, color, sub }: { label: string; value: string | number; icon: React.ReactNode; color: string; sub?: string }) {
+function KPICard({ label, value, icon, tone, sub }: { label: string; value: string | number; icon: React.ReactNode; tone: 'indigo' | 'violet' | 'emerald' | 'sky' | 'amber' | 'rose'; sub?: string }) {
+  const toneClasses = {
+    indigo: {
+      card: 'border-indigo-100 ring-indigo-100/70',
+      label: 'text-indigo-500',
+      value: 'text-indigo-700',
+      sub: 'text-indigo-500',
+      icon: 'text-indigo-500'
+    },
+    violet: {
+      card: 'border-violet-100 ring-violet-100/70',
+      label: 'text-violet-500',
+      value: 'text-violet-700',
+      sub: 'text-violet-500',
+      icon: 'text-violet-500'
+    },
+    emerald: {
+      card: 'border-emerald-100 ring-emerald-100/70',
+      label: 'text-emerald-500',
+      value: 'text-emerald-700',
+      sub: 'text-emerald-500',
+      icon: 'text-emerald-500'
+    },
+    sky: {
+      card: 'border-sky-100 ring-sky-100/70',
+      label: 'text-sky-500',
+      value: 'text-sky-700',
+      sub: 'text-sky-500',
+      icon: 'text-sky-500'
+    },
+    amber: {
+      card: 'border-amber-100 ring-amber-100/70',
+      label: 'text-amber-500',
+      value: 'text-amber-700',
+      sub: 'text-amber-500',
+      icon: 'text-amber-500'
+    },
+    rose: {
+      card: 'border-rose-100 ring-rose-100/70',
+      label: 'text-rose-500',
+      value: 'text-rose-700',
+      sub: 'text-rose-500',
+      icon: 'text-rose-500'
+    }
+  } as const;
+
+  const cls = toneClasses[tone];
+
   return (
-    <div className={`bg-white p-6 rounded-[32px] border border-${color}-100 shadow-sm`}>
+    <div className={`bg-white p-6 rounded-[32px] border ring-1 ring-inset ${cls.card}`}>
       <div className="flex items-center justify-between mb-2">
-        <p className={`text-[10px] font-black text-${color}-400 uppercase tracking-[3px]`}>{label}</p>
-        <span className={`text-${color}-400`}>{icon}</span>
+        <p className={`text-[10px] font-black uppercase tracking-[3px] ${cls.label}`}>{label}</p>
+        <span className={cls.icon}>{icon}</span>
       </div>
-      <p className={`text-2xl font-black text-${color}-600 tracking-tighter`}>{value}</p>
-      {sub && <p className={`text-[10px] font-bold text-${color}-400 mt-1`}>{sub}</p>}
+      <p className={`text-2xl font-black tracking-tighter ${cls.value}`}>{value}</p>
+      {sub && <p className={`text-[10px] font-bold mt-1 ${cls.sub}`}>{sub}</p>}
     </div>
   );
 }
