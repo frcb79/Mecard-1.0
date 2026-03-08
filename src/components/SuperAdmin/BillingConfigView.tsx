@@ -37,7 +37,7 @@ const NumInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { prefix?
 )
 
 const SectionCard: React.FC<{ children: React.ReactNode; title: string; subtitle?: string }> = ({ children, title, subtitle }) => (
-  <div className="bg-white rounded-[48px] border border-slate-100 shadow-sm p-10 space-y-8 animate-in fade-in duration-300">
+  <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-10 space-y-8 animate-in fade-in duration-300">
     <div>
       <h2 className="text-2xl font-black text-slate-800 tracking-tighter">{title}</h2>
       {subtitle && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{subtitle}</p>}
@@ -124,7 +124,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-8 space-y-8 pb-32">
+    <div className="max-w-6xl mx-auto p-5 md:p-8 space-y-8 pb-32">
       {/* Header */}
       <header>
         <h1 className="text-4xl font-black text-slate-800 tracking-tighter">Configuración de Billing</h1>
@@ -361,7 +361,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
       )}
 
       {/* Sticky Save Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-8 py-4">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-200 px-8 py-4">
         <div className="max-w-6xl mx-auto flex gap-4 justify-end">
           <button
             onClick={loadConfig}

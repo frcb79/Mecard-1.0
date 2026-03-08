@@ -108,10 +108,10 @@ export default function SchoolBlockingManagement() {
   };
 
   const getEscalationColor = (daysUntilLegal: number) => {
-    if (daysUntilLegal <= 0) return 'bg-red-900 text-red-100';
-    if (daysUntilLegal <= 7) return 'bg-red-700 text-red-100';
-    if (daysUntilLegal <= 14) return 'bg-orange-600 text-orange-100';
-    return 'bg-amber-600 text-amber-100';
+    if (daysUntilLegal <= 0) return 'bg-rose-100 text-rose-700 border border-rose-200';
+    if (daysUntilLegal <= 7) return 'bg-rose-50 text-rose-700 border border-rose-200';
+    if (daysUntilLegal <= 14) return 'bg-orange-50 text-orange-700 border border-orange-200';
+    return 'bg-amber-50 text-amber-700 border border-amber-200';
   };
 
   if (loading) {
@@ -123,18 +123,18 @@ export default function SchoolBlockingManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-red-900 p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* HEADER */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="bg-red-600 p-3 rounded-[16px]">
+              <div className="bg-rose-600 p-3 rounded-xl">
                 <Lock className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-black text-white">Gestión de Bloqueos</h1>
-                <p className="text-red-200 text-sm font-medium">
+                <h1 className="text-4xl font-black text-slate-900">Gestión de Bloqueos</h1>
+                <p className="text-slate-500 text-sm font-medium">
                   Escuelas suspendidas por impago automático ({blockedSchools.length})
                 </p>
               </div>
@@ -143,7 +143,7 @@ export default function SchoolBlockingManagement() {
             <Button
               onClick={handleCheckAndApplyRules}
               disabled={executing}
-              className="bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white px-6 py-3 rounded-[16px] font-bold flex items-center gap-2"
+              className="bg-rose-600 hover:bg-rose-700 disabled:bg-slate-400 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2"
             >
               {executing ? (
                 <>
@@ -160,7 +160,7 @@ export default function SchoolBlockingManagement() {
           </div>
 
           {lastCheck && (
-            <p className="text-red-300 text-xs font-medium">
+            <p className="text-slate-400 text-xs font-medium">
               Última verificación: {lastCheck}
             </p>
           )}
@@ -169,7 +169,7 @@ export default function SchoolBlockingManagement() {
         {/* MESSAGE */}
         {message && (
           <div
-            className={`mb-6 rounded-[24px] p-4 border-2 flex items-center gap- 3 animate-in slide-in-from-top ${
+            className={`mb-6 rounded-[32px] p-4 border-2 flex items-center gap-3 animate-in slide-in-from-top ${
               message.type === 'success'
                 ? 'bg-emerald-50 border-emerald-200'
                 : 'bg-red-50 border-red-200'
@@ -182,7 +182,7 @@ export default function SchoolBlockingManagement() {
         )}
 
         {/* ALERT BOX */}
-        <div className="bg-red-800 border-2 border-red-600 rounded-[24px] p-6 mb-8 text-red-100">
+        <div className="bg-rose-50 border border-rose-200 rounded-[32px] p-6 mb-8 text-rose-700">
           <p className="font-bold text-sm">
             🚨 <strong>Acción Automática:</strong> Estas escuelas están bloqueadas. Sus estudiantes NO
             pueden hacer depósitos, compras, ni acceder al sistema. Después de 60 días se escala a
@@ -192,7 +192,7 @@ export default function SchoolBlockingManagement() {
 
         {/* NO BLOCKED SCHOOLS */}
         {blockedSchools.length === 0 ? (
-          <div className="bg-white rounded-[24px] p-12 text-center">
+          <div className="bg-white rounded-[32px] p-12 text-center border border-slate-200 ring-1 ring-inset ring-slate-100">
             <Lock className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
             <h2 className="text-2xl font-black text-slate-900 mb-2">
               ¡Excelente!
@@ -206,7 +206,7 @@ export default function SchoolBlockingManagement() {
             {blockedSchools.map((school) => (
               <div
                 key={school.schoolId}
-                className="bg-white rounded-[24px] shadow-xl overflow-hidden cursor-pointer hover:shadow-2xl transition-shadow"
+                className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-hidden cursor-pointer hover:shadow-2xl transition-shadow"
                 onClick={() => setSelectedSchool(school)}
               >
                 <div className="p-6 border-l-4 border-red-600 grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
@@ -249,7 +249,7 @@ export default function SchoolBlockingManagement() {
                   </div>
 
                   {/* Days Until Legal */}
-                  <div className={`rounded-[16px] p-4 text-center text-white ${getEscalationColor(school.daysUntilLegalAction)}`}>
+                  <div className={`rounded-2xl p-4 text-center ${getEscalationColor(school.daysUntilLegalAction)}`}>
                     <p className="text-[10px] font-black uppercase tracking-[1px] mb-1">
                       Días para Legal
                     </p>
@@ -260,7 +260,7 @@ export default function SchoolBlockingManagement() {
 
                   {/* Blocked Status */}
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 px-4 py-2 bg-red-100 rounded-[12px]">
+                    <div className="flex items-center justify-center gap-2 px-4 py-2 bg-red-100 rounded-xl">
                       <Lock className="w-5 h-5 text-red-600" />
                       <span className="font-black text-red-700">BLOQUEADA</span>
                     </div>
@@ -311,7 +311,7 @@ export default function SchoolBlockingManagement() {
 
                 {/* KEY METRICS */}
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-red-50 rounded-[16px] p-4 text-center">
+                  <div className="bg-red-50 rounded-2xl p-4 text-center">
                     <p className="text-[10px] font-black text-red-600 uppercase tracking-[1px] mb-2">
                       Días Vencida
                     </p>
@@ -319,7 +319,7 @@ export default function SchoolBlockingManagement() {
                       {selectedSchool.rule?.overdueDays || 0}
                     </p>
                   </div>
-                  <div className="bg-amber-50 rounded-[16px] p-4 text-center">
+                  <div className="bg-amber-50 rounded-2xl p-4 text-center">
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-[1px] mb-2">
                       Monto Adeudado
                     </p>
@@ -327,7 +327,7 @@ export default function SchoolBlockingManagement() {
                       {formatCurrency(selectedSchool.totalOwed)}
                     </p>
                   </div>
-                  <div className="bg-orange-50 rounded-[16px] p-4 text-center">
+                  <div className="bg-orange-50 rounded-2xl p-4 text-center">
                     <p className="text-[10px] font-black text-orange-600 uppercase tracking-[1px] mb-2">
                       Días para Legal
                     </p>
@@ -339,7 +339,7 @@ export default function SchoolBlockingManagement() {
 
                 {/* BLOCKING REASON */}
                 {selectedSchool.rule && (
-                  <div className="bg-slate-50 rounded-[16px] p-4 border-2 border-slate-200">
+                  <div className="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200">
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-[1px] mb-3">
                       Razón del Bloqueo
                     </p>
@@ -378,7 +378,7 @@ export default function SchoolBlockingManagement() {
                       {selectedSchool.overdueInvoices.map((inv) => (
                         <div
                           key={inv.id}
-                          className="bg-red-50 border-l-4 border-red-600 rounded-[12px] p-4 flex justify-between items-center"
+                          className="bg-red-50 border-l-4 border-red-600 rounded-xl p-4 flex justify-between items-center"
                         >
                           <div>
                             <p className="font-bold text-slate-900">{inv.invoiceNumber}</p>
@@ -395,7 +395,7 @@ export default function SchoolBlockingManagement() {
                 </div>
 
                 {/* ESCALATION TIMELINE */}
-                <div className="bg-slate-50 rounded-[16px] p-4 border-2 border-slate-200">
+                <div className="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200">
                   <p className="text-[10px] font-black text-slate-600 uppercase tracking-[1px] mb-4">
                     Escalation Timeline
                   </p>

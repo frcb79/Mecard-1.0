@@ -83,18 +83,18 @@ export default function MecardAnalyticsDashboard() {
   const previousPeriod = previousMonthDate.toISOString().split('T')[0].substring(0, 7) + '-01';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 to-blue-950 p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* HEADER */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-blue-500 to-purple-500 p-3 rounded-[16px]">
+              <div className="bg-indigo-600 p-3 rounded-2xl">
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-black text-white">Analytics MeCard</h1>
-                <p className="text-blue-200 text-sm font-medium">
+                <h1 className="text-4xl font-black text-slate-900">Analytics MeCard</h1>
+                <p className="text-slate-500 text-sm font-medium">
                   Dashboard de revenue, cobranza y salud financiera
                 </p>
               </div>
@@ -105,12 +105,12 @@ export default function MecardAnalyticsDashboard() {
                 type="month"
                 value={period.substring(0, 7)}
                 onChange={(e) => setPeriod(e.target.value + '-01')}
-                className="px-4 py-2 rounded-[12px] border-2 border-blue-700 bg-blue-900 text-white font-bold"
+                className="px-4 py-2 rounded-[12px] border-2 border-slate-200 bg-white text-slate-900 font-bold"
               />
               <Button
                 onClick={loadData}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-[12px] font-bold flex items-center gap-2"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-[12px] font-bold flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
               </Button>
@@ -118,7 +118,7 @@ export default function MecardAnalyticsDashboard() {
           </div>
 
           {lastRefresh && (
-            <p className="text-blue-300 text-xs font-medium">
+            <p className="text-slate-400 text-xs font-medium">
               Última actualización: {lastRefresh}
             </p>
           )}
@@ -127,62 +127,62 @@ export default function MecardAnalyticsDashboard() {
         {/* TOP KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {/* Total Revenue */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-[24px] p-6 text-white shadow-xl border-2 border-blue-500">
+          <div className="bg-white rounded-[32px] p-6 border border-slate-200 ring-1 ring-inset ring-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-blue-100">
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-indigo-500">
                 Total Revenue
               </p>
-              <DollarSign className="w-6 h-6 text-blue-200" />
+              <DollarSign className="w-6 h-6 text-indigo-500" />
             </div>
-            <p className="text-3xl font-black mb-2">{formatCurrency(analytics.totalRevenue)}</p>
-            <p className="text-blue-100 text-xs font-medium">Ingresos pagados este mes</p>
+            <p className="text-3xl font-black text-slate-900 mb-2">{formatCurrency(analytics.totalRevenue)}</p>
+            <p className="text-slate-500 text-xs font-medium">Ingresos pagados este mes</p>
           </div>
 
           {/* Payment Rate */}
-          <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-[24px] p-6 text-white shadow-xl border-2 border-emerald-500">
+          <div className="bg-white rounded-[32px] p-6 border border-slate-200 ring-1 ring-inset ring-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-100">
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-500">
                 Tasa de Cobranza
               </p>
-              <TrendingUp className="w-6 h-6 text-emerald-200" />
+              <TrendingUp className="w-6 h-6 text-emerald-500" />
             </div>
-            <p className="text-3xl font-black mb-2">{analytics.overallPaymentRate.toFixed(1)}%</p>
-            <p className="text-emerald-100 text-xs font-medium">De invoices pagadas</p>
+            <p className="text-3xl font-black text-emerald-700 mb-2">{analytics.overallPaymentRate.toFixed(1)}%</p>
+            <p className="text-slate-500 text-xs font-medium">De invoices pagadas</p>
           </div>
 
           {/* Health Score */}
-          <div className={`bg-gradient-to-br from-purple-600 to-purple-700 rounded-[24px] p-6 text-white shadow-xl border-2 border-purple-500`}>
+          <div className="bg-white rounded-[32px] p-6 border border-slate-200 ring-1 ring-inset ring-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-purple-100">
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-violet-500">
                 Health Score
               </p>
-              <CheckCircle className="w-6 h-6 text-purple-200" />
+              <CheckCircle className="w-6 h-6 text-violet-500" />
             </div>
             <p className={`text-3xl font-black mb-2 ${getHealthColor(analytics.paymentHealthScore)}`}>
               {analytics.paymentHealthScore}
             </p>
-            <p className="text-purple-100 text-xs font-medium">Salud del sistema (0-100)</p>
+            <p className="text-slate-500 text-xs font-medium">Salud del sistema (0-100)</p>
           </div>
 
           {/* Net Cash Flow */}
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[24px] p-6 text-white shadow-xl border-2 border-indigo-500">
+          <div className="bg-white rounded-[32px] p-6 border border-slate-200 ring-1 ring-inset ring-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-indigo-100">
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-indigo-500">
                 Net Flow
               </p>
-              <TrendingDown className="w-6 h-6 text-indigo-200" />
+              <TrendingDown className="w-6 h-6 text-indigo-500" />
             </div>
-            <p className={`text-3xl font-black mb-2 ${reconciliation.netCashFlow > 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+            <p className={`text-3xl font-black mb-2 ${reconciliation.netCashFlow > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {formatCurrency(reconciliation.netCashFlow)}
             </p>
-            <p className="text-indigo-100 text-xs font-medium">Flujo neto de caja</p>
+            <p className="text-slate-500 text-xs font-medium">Flujo neto de caja</p>
           </div>
         </div>
 
         {/* REVENUE BREAKDOWN + RECONCILIATION */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Revenue by Category */}
-          <div className="bg-white rounded-[24px] shadow-xl p-8">
+          <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-8">
             <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
               <PieChart className="w-6 h-6 text-blue-600" />
               Revenue por Categoría
@@ -223,7 +223,7 @@ export default function MecardAnalyticsDashboard() {
           </div>
 
           {/* Reconciliation: Money In/Out */}
-          <div className="bg-white rounded-[24px] shadow-xl p-8">
+          <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-8">
             <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
               <DollarSign className="w-6 h-6 text-emerald-600" />
               Reconciliación Mensual
@@ -231,7 +231,7 @@ export default function MecardAnalyticsDashboard() {
 
             <div className="space-y-6">
               {/* Money In */}
-              <div className="border-2 border-emerald-200 rounded-[16px] p-4 bg-emerald-50">
+              <div className="border-2 border-emerald-200 rounded-2xl p-4 bg-emerald-50">
                 <p className="font-black text-emerald-900 text-sm mb-3">
                   💰 DINERO QUE ENTRA
                 </p>
@@ -258,7 +258,7 @@ export default function MecardAnalyticsDashboard() {
               </div>
 
               {/* Money Out */}
-              <div className="border-2 border-red-200 rounded-[16px] p-4 bg-red-50">
+              <div className="border-2 border-red-200 rounded-2xl p-4 bg-red-50">
                 <p className="font-black text-red-900 text-sm mb-3">
                   💸 DINERO QUE SALE
                 </p>
@@ -294,7 +294,7 @@ export default function MecardAnalyticsDashboard() {
         </div>
 
         {/* SCHOOL METRICS TABLE */}
-        <div className="bg-white rounded-[24px] shadow-xl overflow-hidden">
+        <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-hidden">
           <div className="p-8 border-b-2 border-slate-100">
             <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
               <Users className="w-6 h-6 text-blue-600" />
@@ -365,7 +365,7 @@ export default function MecardAnalyticsDashboard() {
 
         {/* RISK ALERTS */}
         {reconciliation.metrics.delayedPayments > 0 && (
-          <div className="mt-8 bg-red-50 border-2 border-red-200 rounded-[24px] p-6 flex items-start gap-4">
+          <div className="mt-8 bg-red-50 border-2 border-red-200 rounded-[32px] p-6 flex items-start gap-4">
             <AlertTriangle className="w-8 h-8 text-red-600 shrink-0 mt-1" />
             <div>
               <h3 className="font-black text-red-900 text-lg mb-2">⚠️ Alertas de Riesgo</h3>
@@ -389,7 +389,7 @@ export default function MecardAnalyticsDashboard() {
         )}
 
         {/* INFO BOX */}
-        <div className="mt-8 bg-blue-50 border-2 border-blue-200 rounded-[24px] p-6">
+        <div className="mt-8 bg-blue-50 border-2 border-blue-200 rounded-[32px] p-6">
           <p className="text-blue-900 font-medium text-sm">
             💡 <strong>Nota sobre datos:</strong> Este dashboard usa datos simulados para demostración. En producción, los datos
             se cargarán desde Supabase (tablas: invoices, revenue_tracking, school_blocking_rules).

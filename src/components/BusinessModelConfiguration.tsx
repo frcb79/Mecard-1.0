@@ -176,7 +176,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                       model.margins.mecardMargin;
 
   return (
-    <div className="h-full bg-[#f8fafc] overflow-y-auto p-12 font-sans pb-40">
+    <div className="h-full bg-[#F8FAFC] overflow-y-auto p-5 md:p-8 font-sans pb-32">
       {/* Header Premium */}
       <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
         <div>
@@ -198,7 +198,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
 
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Tipo de Modelo Bento */}
-        <div className="bg-white rounded-[64px] p-12 border border-slate-100 shadow-sm relative overflow-hidden">
+        <div className="bg-white rounded-[32px] p-12 border border-slate-200 ring-1 ring-inset ring-slate-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12"><Building2 size={200}/></div>
             <h2 className="text-3xl font-black text-slate-800 mb-10 tracking-tight flex items-center gap-4 relative z-10">
                 Arquitectura de Operación
@@ -213,7 +213,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                     <button
                         key={type.id}
                         onClick={() => setModel(prev => ({ ...prev, type: type.id as BusinessModelType }))}
-                        className={`p-10 rounded-[44px] border-2 text-left transition-all group ${
+                        className={`p-10 rounded-[24px] border-2 text-left transition-all group ${
                             model.type === type.id
                             ? 'border-indigo-600 bg-indigo-50/50 shadow-xl shadow-indigo-100'
                             : 'border-slate-50 bg-slate-50/50 hover:border-indigo-200'
@@ -228,7 +228,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
         </div>
 
         {/* Distribución de Márgenes Advanced */}
-        <div className="bg-white rounded-[64px] p-12 border border-slate-100 shadow-sm">
+        <div className="bg-white rounded-[32px] p-12 border border-slate-200 ring-1 ring-inset ring-slate-100">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
                 <div>
                     <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-4">
@@ -279,7 +279,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                 </div>
 
                 {/* KPI Result Box */}
-                <div className="bg-slate-900 rounded-[56px] p-12 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl">
+                <div className="bg-slate-900 rounded-[32px] p-12 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl">
                     <div className="absolute top-0 right-0 p-8 opacity-10"><Calculator size={140}/></div>
                     <div className="relative z-10">
                         <h3 className="text-xl font-black italic tracking-tight mb-8 text-indigo-400">Ejemplo Real de Dispersión</h3>
@@ -306,7 +306,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
         {/* Costos y Límites Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Costos Operativos */}
-            <div className="bg-white rounded-[64px] p-12 border border-slate-100 shadow-sm space-y-10">
+            <div className="bg-white rounded-[32px] p-12 border border-slate-200 ring-1 ring-inset ring-slate-100 space-y-10">
                 <h3 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-4">
                     <CreditCard className="text-indigo-600" /> Costos de Card & Admin
                 </h3>
@@ -318,7 +318,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
             </div>
 
             {/* Límites */}
-            <div className="bg-white rounded-[64px] p-12 border border-slate-100 shadow-sm space-y-10">
+            <div className="bg-white rounded-[32px] p-12 border border-slate-200 ring-1 ring-inset ring-slate-100 space-y-10">
                 <h3 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-4">
                     <Wallet className="text-indigo-600" /> Límites de Monedero
                 </h3>
@@ -331,7 +331,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
         </div>
 
         {/* Liquidaciones y Datos Bancarios */}
-        <div className="bg-white rounded-[64px] p-12 border border-slate-100 shadow-sm space-y-12">
+        <div className="bg-white rounded-[32px] p-12 border border-slate-200 ring-1 ring-inset ring-slate-100 space-y-12">
             <h3 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-4">
                 <Calendar className="text-indigo-600" /> Parámetros de Liquidación
             </h3>
@@ -367,7 +367,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                     </div>
                 </div>
 
-                <div className="bg-indigo-50/50 p-10 rounded-[48px] border border-indigo-100 space-y-6">
+                <div className="bg-indigo-50/50 p-10 rounded-[32px] border border-indigo-100 space-y-6">
                     <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-3"><Landmark size={18}/> Datos del Beneficiario</h4>
                     <div className="space-y-6">
                         <select
@@ -388,7 +388,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center bg-white p-10 rounded-[48px] shadow-2xl border border-slate-100">
+        <div className="flex justify-between items-center bg-white p-10 rounded-[32px] shadow-2xl border border-slate-100">
             <Button onClick={() => setShowPreview(!showPreview)} variant="secondary" className="rounded-[28px] px-10 py-6 font-black text-[10px] uppercase tracking-[4px]">
                 {showPreview ? 'Ocultar JSON' : 'Debug Model'}
             </Button>
@@ -397,7 +397,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
                 <Button 
                     onClick={handleSave} 
                     disabled={Object.keys(errors).length > 0} 
-                    className="bg-indigo-600 px-16 py-8 rounded-[36px] font-black uppercase tracking-[6px] text-xs shadow-3xl shadow-indigo-100 hover:scale-105 transition-all"
+                    className="bg-indigo-600 px-16 py-8 rounded-[20px] font-black uppercase tracking-[6px] text-xs shadow-3xl shadow-indigo-100 hover:scale-105 transition-all"
                 >
                     <Save className="mr-3"/> Guardar Configuración Global
                 </Button>
@@ -405,7 +405,7 @@ export const BusinessModelConfiguration: React.FC<BusinessModelConfigurationProp
         </div>
 
         {showPreview && (
-          <pre className="p-10 bg-slate-900 text-indigo-300 rounded-[48px] text-xs font-mono overflow-auto animate-in fade-in zoom-in">
+          <pre className="p-10 bg-slate-900 text-indigo-300 rounded-[32px] text-xs font-mono overflow-auto animate-in fade-in zoom-in">
             {JSON.stringify(model, null, 2)}
           </pre>
         )}
