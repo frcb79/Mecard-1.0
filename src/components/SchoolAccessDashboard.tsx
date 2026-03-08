@@ -160,7 +160,7 @@ export default function SchoolAccessDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/30 p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div>
@@ -171,7 +171,7 @@ export default function SchoolAccessDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 bg-white p-3 rounded-[28px] border border-slate-100 shadow-sm w-fit flex-wrap">
+        <div className="flex gap-2 bg-white p-3 rounded-[28px] border border-slate-200 ring-1 ring-inset ring-slate-100 w-fit flex-wrap">
           {([
             ['live', 'Monitor', <Activity size={16} key="l" />],
             ['attendance', 'Asistencia', <Users size={16} key="a" />],
@@ -179,7 +179,7 @@ export default function SchoolAccessDashboard() {
             ['api', 'API', <Code size={16} key="i" />],
           ] as const).map(([id, label, icon]) => (
             <button key={id} onClick={() => setActiveTab(id as Tab)}
-              className={`px-7 py-3 rounded-[22px] flex items-center gap-2 font-black text-[11px] uppercase tracking-[2px] transition-all ${activeTab === id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
+              className={`px-6 py-3 rounded-xl flex items-center gap-2 font-black text-[11px] uppercase tracking-[2px] transition-all ${activeTab === id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
               {icon} {label}
             </button>
           ))}
@@ -206,7 +206,7 @@ export default function SchoolAccessDashboard() {
                 <p className="text-[10px] font-black text-rose-400 uppercase tracking-[3px] mb-1">Denegados</p>
                 <p className="text-3xl font-black text-rose-600 tracking-tighter">{liveStats.denied}</p>
               </div>
-              <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+              <div className="bg-white p-6 rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[3px] mb-1">Total</p>
                 <p className="text-3xl font-black text-slate-700 tracking-tighter">{liveStats.total}</p>
               </div>
@@ -217,7 +217,7 @@ export default function SchoolAccessDashboard() {
               {accessPoints.map(ap => {
                 const sc = STATUS_COLORS[ap.status];
                 return (
-                  <div key={ap.id} className={`bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm`}>
+                  <div key={ap.id} className={`bg-white p-5 rounded-[28px] border border-slate-200 ring-1 ring-inset ring-slate-100`}>
                     <div className="flex items-center gap-3 mb-3">
                       <div className={`w-2.5 h-2.5 rounded-full ${sc.dot} ${ap.status === AccessPointStatus.ONLINE ? 'animate-pulse' : ''}`} />
                       <span className={`text-[9px] font-black uppercase tracking-widest ${sc.text}`}>{ap.status}</span>
@@ -230,7 +230,7 @@ export default function SchoolAccessDashboard() {
             </div>
 
             {/* Live Feed */}
-            <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100">
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                 <h3 className="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2"><Activity size={16} className="text-indigo-600" /> Feed en Vivo</h3>
                 <span className="text-[9px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1.5">
@@ -293,7 +293,7 @@ export default function SchoolAccessDashboard() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-hidden">
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                   <tr>
@@ -337,7 +337,7 @@ export default function SchoolAccessDashboard() {
               {accessPoints.map(ap => {
                 const sc = STATUS_COLORS[ap.status];
                 return (
-                  <div key={ap.id} className={`bg-white rounded-[40px] p-8 border ${ap.status === AccessPointStatus.ONLINE ? 'border-emerald-100' : ap.status === AccessPointStatus.MAINTENANCE ? 'border-amber-100' : 'border-rose-100'} shadow-sm`}>
+                  <div key={ap.id} className={`bg-white rounded-[32px] p-8 border ${ap.status === AccessPointStatus.ONLINE ? 'border-emerald-100' : ap.status === AccessPointStatus.MAINTENANCE ? 'border-amber-100' : 'border-rose-100'} shadow-sm`}>
                     <div className="flex items-start justify-between mb-6">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
@@ -394,7 +394,7 @@ export default function SchoolAccessDashboard() {
         {activeTab === 'api' && (
           <div className="space-y-8 animate-in fade-in duration-300">
             {/* API Keys */}
-            <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2"><Key size={20} className="text-indigo-600" /> API Keys</h3>
               </div>
@@ -435,7 +435,7 @@ export default function SchoolAccessDashboard() {
             </div>
 
             {/* Webhooks */}
-            <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2"><Webhook size={20} className="text-indigo-600" /> Webhooks</h3>
               </div>
@@ -479,7 +479,7 @@ export default function SchoolAccessDashboard() {
             </div>
 
             {/* API Documentation */}
-            <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
               <button onClick={() => setShowApiDocs(!showApiDocs)} className="w-full flex items-center justify-between text-left">
                 <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2"><Terminal size={20} className="text-indigo-600" /> Documentación API</h3>
                 <ChevronDown size={20} className={`text-slate-300 transition-transform ${showApiDocs ? 'rotate-180' : ''}`} />

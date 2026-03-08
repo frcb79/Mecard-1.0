@@ -81,7 +81,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Toolbar */}
-      <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
+      <div className="bg-white p-8 rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100">
         <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={22} />
@@ -126,7 +126,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
       </div>
 
       {/* Table View */}
-      <div className="bg-white rounded-[48px] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
             <tr>
@@ -181,7 +181,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
       {/* ADD STUDENT MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[56px] p-12 w-full max-w-xl shadow-2xl relative">
+          <div className="bg-white rounded-[32px] p-12 w-full max-w-xl shadow-2xl relative">
             <button onClick={() => setShowAddModal(false)} className="absolute top-10 right-10 text-slate-300 hover:text-slate-800"><X size={32}/></button>
             <h3 className="text-3xl font-black mb-8 tracking-tighter">Registrar Alumno</h3>
             <div className="space-y-6">
@@ -211,7 +211,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
       {/* EDIT STUDENT MODAL */}
       {showEditModal && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[56px] p-12 w-full max-w-xl shadow-2xl relative">
+          <div className="bg-white rounded-[32px] p-12 w-full max-w-xl shadow-2xl relative">
             <button onClick={() => { setShowEditModal(false); setSelectedStudent(null); }} className="absolute top-10 right-10 text-slate-300 hover:text-slate-800"><X size={32}/></button>
             <h3 className="text-3xl font-black mb-8 tracking-tighter">Editar Alumno</h3>
             <div className="space-y-6">
@@ -240,7 +240,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
       {/* IMPORT MODAL — redirects to dedicated import wizard */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-6">
-          <div className="bg-white rounded-[56px] shadow-2xl w-full max-w-md p-12 animate-in zoom-in duration-300 text-center">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md p-12 animate-in zoom-in duration-300 text-center">
             <div className="w-20 h-20 bg-indigo-50 rounded-[32px] flex items-center justify-center text-indigo-600 mx-auto mb-6"><Upload size={40}/></div>
             <h2 className="text-2xl font-black text-slate-800 tracking-tighter mb-3">Importar Base CSV</h2>
             <p className="text-slate-400 font-medium text-sm mb-8">Para importaciones masivas utiliza el wizard dedicado con validación completa de CURPs y formato.</p>
@@ -255,7 +255,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
       {/* DELETE CONFIRMATION */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl text-center">
+          <div className="bg-white rounded-[32px] p-10 w-full max-w-sm shadow-2xl text-center">
             <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6"><AlertTriangle size={32} className="text-rose-500" /></div>
             <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">¿Eliminar a {deleteConfirm.name}?</h3>
             <p className="text-sm text-slate-500 mb-8">Esta acción no se puede deshacer.</p>

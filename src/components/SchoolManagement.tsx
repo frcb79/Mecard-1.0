@@ -87,7 +87,7 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
 
   return (
     <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-md flex items-center justify-center z-[100] p-6">
-      <div role="dialog" aria-modal="true" aria-label="Configuración de campus" className="bg-white rounded-[56px] shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in duration-300">
+      <div role="dialog" aria-modal="true" aria-label="Configuración de campus" className="bg-white rounded-[32px] shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in duration-300">
         
         {/* Header */}
         <div className="bg-slate-900 text-white p-12 shrink-0 relative overflow-hidden">
@@ -118,7 +118,7 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
                <h3 className="text-xl font-black text-slate-800 italic uppercase flex items-center gap-3 mb-6"><ShieldCheck size={20} className="text-indigo-600"/> Acuerdo y Liquidación</h3>
                
                {/* Lógica de Periodo de Prueba */}
-               <div className="bg-slate-900 rounded-[48px] p-12 text-white relative overflow-hidden shadow-2xl">
+               <div className="bg-slate-900 rounded-[32px] p-12 text-white relative overflow-hidden shadow-2xl">
                   <div className="absolute top-0 right-0 p-12 opacity-10"><CalendarDays size={120}/></div>
                   <div className="relative z-10">
                     <h3 className="text-2xl font-black italic uppercase mb-2 tracking-tighter">Configuración del Contrato</h3>
@@ -334,7 +334,7 @@ export const SchoolManagement: React.FC = () => {
          })}
       </div>
 
-      <div className="bg-white rounded-[56px] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-hidden">
         <table className="w-full">
            <thead className="bg-slate-50 border-b border-slate-100">
               <tr>

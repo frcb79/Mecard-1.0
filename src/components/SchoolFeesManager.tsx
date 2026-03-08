@@ -299,7 +299,7 @@ export default function SchoolFeesManager() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/30 p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -335,7 +335,7 @@ export default function SchoolFeesManager() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1.5 bg-white p-2 rounded-[24px] border border-slate-100 shadow-sm overflow-x-auto">
+        <div className="flex gap-1.5 bg-white p-2 rounded-[24px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-x-auto">
           {tabs.map(([id, label, icon]) => (
             <button key={id} onClick={() => setActiveTab(id)}
               className={`px-5 py-2.5 rounded-[18px] flex items-center gap-1.5 font-black text-[10px] uppercase tracking-[1.5px] transition-all whitespace-nowrap ${activeTab === id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
@@ -351,7 +351,7 @@ export default function SchoolFeesManager() {
               <button onClick={openAddFee} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all">
                 <Plus size={18} /> Nuevo Concepto
               </button>
-              <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 ring-1 ring-inset ring-slate-100">
                 <select value={genFeeId} onChange={e => setGenFeeId(e.target.value)} className="px-3 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-600 outline-none">
                   <option value="">Concepto...</option>
                   {fees.filter(f => f.isActive).map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -430,7 +430,7 @@ export default function SchoolFeesManager() {
               </button>
             </div>
 
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
@@ -557,7 +557,7 @@ export default function SchoolFeesManager() {
                 <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[2px] mb-1">Completados</p>
                 <p className="text-2xl font-black text-emerald-600 tracking-tighter">{plans.filter(p => p.status === PaymentPlanStatus.COMPLETED).length}</p>
               </div>
-              <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm">
+              <div className="bg-white p-6 rounded-[28px] border border-slate-200 ring-1 ring-inset ring-slate-100">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-[2px] mb-1">Monto en Planes</p>
                 <p className="text-2xl font-black text-slate-800 tracking-tighter">${plans.reduce((s, p) => s + p.totalAmount, 0).toLocaleString('es-MX')}</p>
               </div>
@@ -568,7 +568,7 @@ export default function SchoolFeesManager() {
                 const progress = plan.installments > 0 ? Math.round((plan.paidInstallments / plan.installments) * 100) : 0;
                 const sc = PLAN_STATUS_LABELS[plan.status];
                 return (
-                  <div key={plan.id} className="bg-white rounded-[32px] p-7 border border-slate-100 shadow-sm">
+                  <div key={plan.id} className="bg-white rounded-[32px] p-7 border border-slate-200 ring-1 ring-inset ring-slate-100">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-black text-slate-800 tracking-tight">{plan.feeName}</h3>
@@ -633,7 +633,7 @@ export default function SchoolFeesManager() {
               </div>
             </div>
 
-            <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100">
               <h3 className="text-sm font-black text-slate-800 tracking-tight mb-6">Antigüedad de Cartera Vencida</h3>
               <div className="space-y-4">
                 {agingBuckets.map((bucket, colorIdx) => {
@@ -657,7 +657,7 @@ export default function SchoolFeesManager() {
             </div>
 
             {agingBuckets.some(b => b.count > 0) && (
-              <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 overflow-hidden">
                 <div className="p-6 border-b border-slate-50">
                   <h3 className="text-sm font-black text-slate-800">Detalle de Pagos Vencidos</h3>
                 </div>
@@ -759,7 +759,7 @@ export default function SchoolFeesManager() {
       {/* Fee Modal */}
       {showFeeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6 overflow-y-auto">
-          <div className="bg-white rounded-[40px] p-10 w-full max-w-lg shadow-2xl relative my-8">
+          <div className="bg-white rounded-[32px] p-10 w-full max-w-lg shadow-2xl relative my-8">
             <button onClick={() => setShowFeeModal(false)} className="absolute top-6 right-6 text-slate-300 hover:text-slate-800"><X size={24} /></button>
             <h3 className="text-2xl font-black text-slate-800 tracking-tighter mb-6">{editingFee ? 'Editar Concepto' : 'Nuevo Concepto'}</h3>
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -853,7 +853,7 @@ export default function SchoolFeesManager() {
       {/* Scholarship Modal */}
       {showScholarshipModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6 overflow-y-auto">
-          <div className="bg-white rounded-[40px] p-10 w-full max-w-lg shadow-2xl relative my-8">
+          <div className="bg-white rounded-[32px] p-10 w-full max-w-lg shadow-2xl relative my-8">
             <button onClick={() => setShowScholarshipModal(false)} className="absolute top-6 right-6 text-slate-300 hover:text-slate-800"><X size={24} /></button>
             <h3 className="text-2xl font-black text-slate-800 tracking-tighter mb-6">{editingScholarship ? 'Editar Beca' : 'Nueva Beca'}</h3>
             <div className="space-y-4">
@@ -925,7 +925,7 @@ export default function SchoolFeesManager() {
       {/* Reminder Modal */}
       {showReminderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[40px] p-10 w-full max-w-lg shadow-2xl relative">
+          <div className="bg-white rounded-[32px] p-10 w-full max-w-lg shadow-2xl relative">
             <button onClick={() => setShowReminderModal(false)} className="absolute top-6 right-6 text-slate-300 hover:text-slate-800"><X size={24} /></button>
             <h3 className="text-2xl font-black text-slate-800 tracking-tighter mb-6">{editingReminder ? 'Editar Recordatorio' : 'Nuevo Recordatorio'}</h3>
             <div className="space-y-4">

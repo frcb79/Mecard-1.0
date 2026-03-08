@@ -116,7 +116,7 @@ export default function SchoolPermissionsView() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
       {/* Header */}
       <div className="max-w-6xl mx-auto mb-6">
         <div className="flex items-center justify-between mb-2">

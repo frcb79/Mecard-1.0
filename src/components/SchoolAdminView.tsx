@@ -13,17 +13,17 @@ import { MOCK_STUDENT_TRANSACTIONS } from '../constants';
 
 interface StatCardProps { title: string; value: string | number; icon: React.ComponentType<{ size?: number; className?: string }>; color: string; trend?: string; subtitle?: string; }
 const StatCard = ({ title, value, icon: Icon, color, trend, subtitle }: StatCardProps) => (
-  <div className="bg-white p-10 rounded-[48px] shadow-sm border border-slate-100 flex items-center space-x-8 hover:shadow-xl hover:-translate-y-2 transition-all duration-500 group">
-    <div className={`p-6 rounded-[32px] ${color} bg-opacity-10 text-white flex items-center justify-center transition-transform group-hover:scale-110`}>
+  <div className="bg-white p-6 rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 flex items-center space-x-5 transition-all duration-300">
+    <div className={`p-4 rounded-2xl ${color} bg-opacity-10 text-white flex items-center justify-center`}>
       <Icon className={`w-8 h-8 ${color.replace('bg-', 'text-')}`} />
     </div>
     <div className="flex-1">
-      <p className="text-slate-400 text-[10px] font-black uppercase tracking-[3px] mb-2">{title}</p>
-      <h3 className="text-5xl font-black text-slate-800 tracking-tighter leading-none">{value}</h3>
-      {subtitle && <p className="text-[10px] font-bold text-slate-400 mt-3">{subtitle}</p>}
+      <p className="text-slate-400 text-[10px] font-black uppercase tracking-[2px] mb-1">{title}</p>
+      <h3 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tighter leading-none">{value}</h3>
+      {subtitle && <p className="text-[10px] font-bold text-slate-400 mt-2">{subtitle}</p>}
       {trend && (
-        <div className="flex items-center gap-2 mt-4">
-            <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">{trend}</span>
+        <div className="flex items-center gap-2 mt-3">
+            <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">{trend}</span>
         </div>
       )}
     </div>
@@ -79,14 +79,15 @@ export const SchoolAdminView: React.FC<{
   };
 
   return (
-    <div className="p-12 h-full overflow-y-auto bg-[#f8fafc] font-sans">
-        <header className="mb-16 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
+    <div className="p-5 md:p-8 h-full overflow-y-auto bg-[#F8FAFC] font-sans">
+      <header className="mb-10 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
             <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-                <p className="text-indigo-500 font-black uppercase text-[11px] tracking-[6px] mb-4">Master Control Panel</p>
-                <h1 className="text-6xl font-black text-slate-800 tracking-tighter leading-none">Gestión Institucional</h1>
+          <p className="text-indigo-600 font-black uppercase text-[10px] tracking-[4px] mb-2">School Executive Dashboard</p>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tighter leading-none">Gestión Institucional</h1>
+          <p className="text-slate-500 font-medium mt-2">Monitoreo operativo, ventas y salud financiera escolar</p>
             </div>
             
-            <div className="flex bg-white p-2.5 rounded-[32px] shadow-sm border border-slate-100 relative z-10 animate-in slide-in-from-right-4 duration-500" role="tablist" aria-label="Secciones de administración">
+        <div className="flex bg-white p-2 rounded-2xl border border-slate-200 ring-1 ring-inset ring-slate-100 relative z-10 animate-in slide-in-from-right-4 duration-500" role="tablist" aria-label="Secciones de administración">
                 <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutGrid size={18}/>} label="Dashboard" />
                 <TabButton active={activeTab === 'students'} onClick={() => setActiveTab('students')} icon={<Users size={18}/>} label="Directorio" />
                 <TabButton active={activeTab === 'units'} onClick={() => setActiveTab('units')} icon={<Store size={18}/>} label="Unidades POS" />
@@ -95,9 +96,9 @@ export const SchoolAdminView: React.FC<{
 
         <div className="max-w-7xl mx-auto">
             {activeTab === 'dashboard' && (
-              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 {/* Master KPIs */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard title="Población Red" value={allStudents.length} icon={Users} color="bg-indigo-600" trend={`${allStudents.filter(s => s.status === 'Active').length} activos`} />
                   <StatCard title="Saldo en Red" value={`$${totalBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Landmark} color="bg-emerald-500" trend="Capital Escolar" />
                   <StatCard title="Ventas Período" value={`$${totalSales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Activity} color="bg-orange-600" trend={`${purchaseTransactions.length} compras • Ticket prom. $${avgTicket.toFixed(0)}`} />
@@ -105,40 +106,40 @@ export const SchoolAdminView: React.FC<{
                 </div>
 
                 {/* Second Row: Units Status and Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                   <div className="lg:col-span-2 bg-white rounded-[56px] p-12 border border-slate-100 shadow-sm relative overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                   <div className="lg:col-span-2 bg-white rounded-[32px] p-6 md:p-8 border border-slate-200 ring-1 ring-inset ring-slate-100 relative overflow-hidden">
                       <div className="absolute top-0 right-0 p-12 text-slate-50 opacity-10"><PieChart size={200}/></div>
-                      <h3 className="text-2xl font-black text-slate-800 mb-10 tracking-tight flex items-center gap-4"><TrendingUp className="text-indigo-600"/> Rendimiento por Unidad</h3>
-                      <div className="space-y-6 relative z-10">
+                      <h3 className="text-2xl font-black text-slate-800 mb-6 tracking-tight flex items-center gap-3"><TrendingUp className="text-indigo-600"/> Rendimiento por Unidad</h3>
+                      <div className="space-y-4 relative z-10">
                          {operatingUnits.map((unit, idx) => (
-                           <div key={unit.id} className="flex items-center justify-between p-8 bg-slate-50 rounded-[40px] border border-slate-100 hover:bg-white hover:shadow-xl transition-all group">
-                              <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors shadow-sm">{unit.type === 'CAFETERIA' ? <ChefHat size={32}/> : <PenTool size={32}/>}</div>
+                           <div key={unit.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 transition-all group">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors border border-slate-200">{unit.type === 'CAFETERIA' ? <ChefHat size={24}/> : <PenTool size={24}/>}</div>
                                 <div>
-                                   <p className="font-black text-slate-800 text-xl tracking-tight">{unit.name}</p>
+                                   <p className="font-black text-slate-800 text-lg tracking-tight">{unit.name}</p>
                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{unit.type} • {unit.ownerType}</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-black text-slate-800 text-2xl tracking-tighter">${unitDailyRevenue(unit.id, idx).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
-                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Activa Hoy</span>
+                                <p className="font-black text-slate-800 text-xl tracking-tighter">${unitDailyRevenue(unit.id, idx).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Activa Hoy</span>
                               </div>
                            </div>
                          ))}
                       </div>
                    </div>
 
-                   <div className="bg-indigo-900 rounded-[56px] p-12 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between">
+                   <div className="bg-indigo-900 rounded-[32px] p-6 md:p-8 text-white relative overflow-hidden flex flex-col justify-between border border-indigo-800">
                       <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                       <div className="relative z-10">
-                        <p className="text-indigo-400 font-black uppercase text-[10px] tracking-[4px] mb-6">Próxima Liquidación</p>
-                        <h4 className="text-4xl font-black tracking-tighter mb-4 leading-none">Recuperación de Comisiones</h4>
-                        <p className="text-indigo-200 text-lg font-medium leading-relaxed opacity-80">El próximo viernes se liquidarán las rentas y comisiones de los concesionarios activos.</p>
+                        <p className="text-indigo-300 font-black uppercase text-[10px] tracking-[3px] mb-4">Próxima Liquidación</p>
+                        <h4 className="text-3xl font-black tracking-tighter mb-3 leading-none">Recuperación de Comisiones</h4>
+                        <p className="text-indigo-100 text-sm font-medium leading-relaxed opacity-80">El próximo viernes se liquidarán las rentas y comisiones de los concesionarios activos.</p>
                       </div>
-                      <div className="pt-10 border-t border-white/10 mt-10">
+                      <div className="pt-6 border-t border-white/10 mt-6">
                         <div className="flex justify-between items-end">
-                            <div><p className="text-[10px] text-indigo-400 uppercase font-black tracking-widest mb-1">Monto Estimado</p><p className="text-5xl font-black tracking-tighter">${totalSales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p></div>
-                            <button className="p-5 bg-white text-indigo-900 rounded-3xl shadow-xl hover:scale-110 transition-all"><ArrowUpRight size={28}/></button>
+                            <div><p className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-1">Monto Estimado</p><p className="text-4xl font-black tracking-tighter">${totalSales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p></div>
+                            <button className="p-3 bg-white text-indigo-900 rounded-xl transition-all"><ArrowUpRight size={20}/></button>
                         </div>
                       </div>
                    </div>
@@ -158,25 +159,25 @@ export const SchoolAdminView: React.FC<{
             )}
 
             {activeTab === 'units' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in zoom-in duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in zoom-in duration-500">
                 {operatingUnits.map(unit => (
-                   <div key={unit.id} className="bg-white rounded-[56px] p-12 border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:shadow-2xl transition-all">
-                      <div className="w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center text-slate-300 group-hover:text-indigo-600 transition-all mb-8 shadow-inner">{unit.type === 'CAFETERIA' ? <ChefHat size={48}/> : <PenTool size={48}/>}</div>
-                      <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">{unit.name}</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">{unit.type} • {unit.ownerType}</p>
+                 <div key={unit.id} className="bg-white rounded-[32px] p-8 border border-slate-200 ring-1 ring-inset ring-slate-100 flex flex-col items-center text-center group transition-all">
+                   <div className="w-20 h-20 bg-slate-50 rounded-3xl border border-slate-200 flex items-center justify-center text-slate-300 group-hover:text-indigo-600 transition-all mb-6">{unit.type === 'CAFETERIA' ? <ChefHat size={36}/> : <PenTool size={36}/>}</div>
+                   <h3 className="text-xl font-black text-slate-800 tracking-tight mb-1">{unit.name}</h3>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">{unit.type} • {unit.ownerType}</p>
                       
-                      <div className="grid grid-cols-2 gap-4 w-full pt-8 border-t border-slate-50">
+                   <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-slate-100">
                         <div className="text-left"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cajeros</p><p className="font-black text-slate-800 text-lg">2 Activos</p></div>
                         <div className="text-right"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p><span className={`${unit.isActive ? 'text-emerald-500' : 'text-slate-400'} font-black text-[9px] uppercase tracking-widest flex items-center justify-end gap-1`}><CheckCircle2 size={12}/> {unit.isActive ? 'Activa' : 'Inactiva'}</span></div>
                       </div>
 
-                      <button onClick={() => toast.info('Terminales', `${unit.name} — Gestión de terminales disponible en V2`)} className="mt-10 w-full py-5 rounded-2xl bg-slate-50 text-slate-400 font-black uppercase text-[10px] tracking-[2px] hover:bg-indigo-50 hover:text-indigo-600 transition-all">Gestionar Terminales</button>
+                   <button onClick={() => toast.info('Terminales', `${unit.name} — Gestión de terminales disponible en V2`)} className="mt-8 w-full py-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 font-black uppercase text-[10px] tracking-[2px] hover:bg-indigo-50 hover:text-indigo-600 transition-all">Gestionar Terminales</button>
                    </div>
                 ))}
                 
-                <div onClick={() => setShowAddUnitModal(true)} className="border-4 border-dashed border-slate-200 rounded-[56px] p-12 flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100 hover:border-indigo-400 cursor-pointer transition-all group">
-                   <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-300 group-hover:text-indigo-600 mb-6 transition-all"><Plus size={40}/></div>
-                   <p className="font-black text-slate-800 text-xl tracking-tight">Nueva Unidad</p>
+               <div onClick={() => setShowAddUnitModal(true)} className="border-2 border-dashed border-slate-300 rounded-[32px] p-8 flex flex-col items-center justify-center text-center opacity-70 hover:opacity-100 hover:border-indigo-400 cursor-pointer transition-all group">
+                 <div className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-300 group-hover:text-indigo-600 mb-4 transition-all"><Plus size={30}/></div>
+                 <p className="font-black text-slate-800 text-lg tracking-tight">Nueva Unidad</p>
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Cafetería o Papelería</p>
                 </div>
               </div>
@@ -186,7 +187,7 @@ export const SchoolAdminView: React.FC<{
         {/* ===== ADD UNIT MODAL ===== */}
         {showAddUnitModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-            <div className="bg-white rounded-[48px] p-12 w-full max-w-md shadow-2xl relative">
+            <div className="bg-white rounded-[32px] p-12 w-full max-w-md shadow-2xl relative">
               <button onClick={() => setShowAddUnitModal(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-800"><X size={28}/></button>
               <h3 className="text-2xl font-black text-slate-800 tracking-tighter mb-8">Nueva Unidad Operativa</h3>
               <div className="space-y-6">
@@ -222,7 +223,7 @@ export const SchoolAdminView: React.FC<{
         {/* ===== DELETE CONFIRMATION DIALOG ===== */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-            <div className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl text-center">
+            <div className="bg-white rounded-[32px] p-10 w-full max-w-sm shadow-2xl text-center">
               <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle size={32} className="text-rose-500" />
               </div>
@@ -245,7 +246,7 @@ const TabButton = ({ active, onClick, icon, label }: TabButtonProps) => (
     onClick={onClick} 
     role="tab"
     aria-selected={active}
-    className={`px-10 py-4 rounded-[22px] flex items-center gap-3 transition-all font-black text-[11px] uppercase tracking-[3px] ${active ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+    className={`px-6 md:px-8 py-3 rounded-xl flex items-center gap-2.5 transition-all font-black text-[10px] uppercase tracking-[2px] ${active ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
   >
     {icon} <span>{label}</span>
   </button>

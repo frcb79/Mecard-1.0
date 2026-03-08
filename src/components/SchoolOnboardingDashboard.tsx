@@ -90,17 +90,17 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
             {/* WELCOME STEP */}
             {currentStep === 'welcome' && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 text-center py-20">
-                    <div className="bg-indigo-50 w-32 h-32 rounded-[48px] flex items-center justify-center text-indigo-600 mx-auto mb-12 shadow-2xl shadow-indigo-100 border-4 border-white">
+                    <div className="bg-indigo-50 w-32 h-32 rounded-[32px] flex items-center justify-center text-indigo-600 mx-auto mb-12 shadow-2xl shadow-indigo-100 border-4 border-white">
                         <Sparkles size={64} />
                     </div>
                     <h2 className="text-6xl font-black text-slate-800 tracking-tighter mb-6 leading-none">¡Bienvenidos, {school.name}!</h2>
                     <p className="text-slate-400 text-xl font-medium max-w-2xl mx-auto mb-16 leading-relaxed">Estás a unos pasos de digitalizar la economía de tu colegio. MeCard Network te permitirá gestionar cafeterías, papelerías y monederos digitales de forma centralizada.</p>
-                    <div className="bg-white p-10 rounded-[56px] border border-slate-100 shadow-xl shadow-slate-200/40 grid grid-cols-3 gap-8 mb-16">
+                    <div className="bg-white p-10 rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/40 grid grid-cols-3 gap-8 mb-16">
                         <FeatureCard icon={<Database className="text-indigo-500"/>} title="Nodo Único" desc="Base de datos privada para tu campus." />
                         <FeatureCard icon={<Landmark className="text-emerald-500"/>} title="FinTech Core" desc="Personalización de CLABEs SPEI." />
                         <FeatureCard icon={<ShieldCheck className="text-amber-500"/>} title="Safety First" desc="Control parental de salud y gasto." />
                     </div>
-                    <Button onClick={handleNext} className="px-16 py-8 rounded-[40px] bg-indigo-600 text-white font-black uppercase tracking-[4px] shadow-2xl hover:scale-105 transition-all">Iniciar Configuración <ArrowRight className="ml-4"/></Button>
+                    <Button onClick={handleNext} className="px-16 py-8 rounded-[32px] bg-indigo-600 text-white font-black uppercase tracking-[4px] shadow-2xl hover:scale-105 transition-all">Iniciar Configuración <ArrowRight className="ml-4"/></Button>
                 </div>
             )}
 
@@ -111,14 +111,14 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                         <div className="bg-indigo-600 p-4 rounded-3xl text-white shadow-lg"><Building2 size={32}/></div>
                         <h3 className="text-4xl font-black text-slate-800 tracking-tighter">Perfil Institucional</h3>
                     </div>
-                    <div className="bg-white p-12 rounded-[56px] border border-slate-100 shadow-sm space-y-10">
+                    <div className="bg-white p-12 rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 space-y-10">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <InputField label="Razón Social Legal" value={formData.legalName} onChange={v => setFormData({...formData, legalName: v})} placeholder="Ej. Colegio Cumbres de México S.C." />
                             <InputField label="RFC Institucional" value={formData.rfc} onChange={v => setFormData({...formData, rfc: v.toUpperCase()})} placeholder="XAXX010101000" />
                         </div>
-                        <div className="p-8 bg-slate-50 rounded-[40px] border border-slate-100 flex items-center justify-between">
+                        <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-6">
-                                <div className="text-6xl p-4 bg-white rounded-[32px] border border-slate-100 shadow-sm">{school.logo}</div>
+                                <div className="text-6xl p-4 bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100">{school.logo}</div>
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Identificador Visual</p>
                                     <p className="font-bold text-slate-800">El logo configurado por MeCard Corp.</p>
@@ -142,7 +142,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                     </div>
                     
                     <div className="space-y-8">
-                        <div className="bg-slate-900 p-12 rounded-[56px] text-white shadow-2xl relative overflow-hidden">
+                        <div className="bg-slate-900 p-12 rounded-[32px] text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12"><Database size={200}/></div>
                             <div className="relative z-10">
                                 <h4 className="text-2xl font-black text-indigo-400 mb-8 flex items-center gap-3"><ShieldCheck/> MeCard Institutional Node</h4>
@@ -162,7 +162,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                             </div>
                         </div>
 
-                        <div className="bg-indigo-50 p-10 rounded-[48px] border border-indigo-100 flex gap-8 items-center">
+                        <div className="bg-indigo-50 p-10 rounded-[32px] border border-indigo-100 flex gap-8 items-center">
                             <div className="bg-white p-4 rounded-2xl text-indigo-600 shadow-sm"><Bot size={32}/></div>
                             <div>
                                 <p className="text-indigo-900 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2"><Sparkles size={14}/> Gemini Advisor</p>
@@ -186,13 +186,13 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                         <h3 className="text-4xl font-black text-slate-800 tracking-tighter">Base Estudiantil</h3>
                     </div>
 
-                    <div className="bg-white p-12 rounded-[56px] border border-slate-100 shadow-sm text-center">
+                    <div className="bg-white p-12 rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 text-center">
                         <div className="grid grid-cols-2 gap-8 mb-12 text-left">
-                            <div className="p-10 bg-slate-50 rounded-[40px] border border-slate-100">
+                            <div className="p-10 bg-slate-50 rounded-[32px] border border-slate-100">
                                 <p className="text-5xl font-black text-slate-800 tracking-tighter">{allStudents.length}</p>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Alumnos en el Sistema</p>
                             </div>
-                            <div className="p-10 bg-indigo-50 rounded-[40px] border border-indigo-100">
+                            <div className="p-10 bg-indigo-50 rounded-[32px] border border-indigo-100">
                                 <p className="text-5xl font-black text-indigo-600 tracking-tighter">Pendiente</p>
                                 <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-2">Generación de CLABEs</p>
                             </div>
@@ -223,13 +223,13 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                        <div className="bg-white p-10 rounded-[56px] border-2 border-dashed border-slate-200 hover:border-indigo-400 transition-all cursor-pointer flex flex-col items-center justify-center text-center py-20 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 group">
+                        <div className="bg-white p-10 rounded-[32px] border-2 border-dashed border-slate-200 hover:border-indigo-400 transition-all cursor-pointer flex flex-col items-center justify-center text-center py-20 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 group">
                             {/* Added missing Plus icon usage */}
                             <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all mb-6"><Plus size={40}/></div>
                             <p className="font-black text-slate-800 text-xl tracking-tight">Nueva Cafetería</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Punto de Venta de Alimentos</p>
                         </div>
-                        <div className="bg-white p-10 rounded-[56px] border-2 border-dashed border-slate-200 hover:border-blue-400 transition-all cursor-pointer flex flex-col items-center justify-center text-center py-20 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 group">
+                        <div className="bg-white p-10 rounded-[32px] border-2 border-dashed border-slate-200 hover:border-blue-400 transition-all cursor-pointer flex flex-col items-center justify-center text-center py-20 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 group">
                             {/* Added missing Plus icon usage */}
                             <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all mb-6"><Plus size={40}/></div>
                             <p className="font-black text-slate-800 text-xl tracking-tight">Nueva Papelería</p>
@@ -237,7 +237,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                         </div>
                     </div>
 
-                    <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div className="bg-white p-10 rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 flex items-center justify-between">
                         <div className="flex items-center gap-6">
                             <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400"><Info size={32}/></div>
                             <div>
@@ -259,7 +259,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                     <h2 className="text-6xl font-black text-slate-800 tracking-tighter mb-6 leading-none">¡Todo Listo para el Lanzamiento!</h2>
                     <p className="text-slate-400 text-xl font-medium max-w-xl mx-auto mb-16 leading-relaxed">Has completado la configuración técnica básica. Tu campus ya es parte de la red <strong>MeCard Network</strong>.</p>
                     
-                    <div className="bg-slate-900 rounded-[56px] p-12 text-white max-w-2xl mx-auto mb-16 shadow-2xl text-left relative overflow-hidden">
+                    <div className="bg-slate-900 rounded-[32px] p-12 text-white max-w-2xl mx-auto mb-16 shadow-2xl text-left relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-10"><Rocket size={80}/></div>
                         <h4 className="text-[10px] font-black uppercase tracking-[4px] text-indigo-400 mb-8">CHECKLIST DE ACTIVACIÓN</h4>
                         <ul className="space-y-6">
@@ -273,7 +273,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                     <Button onClick={() => {
                         onUpdateSchool({ onboardingStatus: 'COMPLETED' });
                         onComplete();
-                    }} className="px-20 py-10 rounded-[48px] bg-indigo-600 text-white font-black uppercase tracking-[5px] text-sm shadow-2xl shadow-indigo-200 hover:scale-110 transition-all">Activar Campus y Abrir Directorio</Button>
+                    }} className="px-20 py-10 rounded-[32px] bg-indigo-600 text-white font-black uppercase tracking-[5px] text-sm shadow-2xl shadow-indigo-200 hover:scale-110 transition-all">Activar Campus y Abrir Directorio</Button>
                 </div>
             )}
         </div>
@@ -300,7 +300,7 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
 interface FeatureCardProps { icon: React.ReactNode; title: string; desc: string; }
 const FeatureCard = ({ icon, title, desc }: FeatureCardProps) => (
     <div className="text-center">
-        <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-sm">{icon}</div>
+        <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200 ring-1 ring-inset ring-slate-100">{icon}</div>
         <p className="font-black text-slate-800 text-xs uppercase tracking-widest mb-1">{title}</p>
         <p className="text-[9px] text-slate-400 font-bold leading-tight">{desc}</p>
     </div>

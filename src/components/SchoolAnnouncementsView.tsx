@@ -92,7 +92,7 @@ export default function SchoolAnnouncementsView() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/30 p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -177,7 +177,7 @@ export default function SchoolAnnouncementsView() {
             );
           })}
           {filtered.length === 0 && (
-            <div className="bg-white rounded-[40px] p-16 text-center opacity-30 border border-slate-100">
+            <div className="bg-white rounded-[32px] p-16 text-center opacity-30 border border-slate-100">
               <Megaphone size={48} className="mx-auto mb-4" />
               <p className="font-black uppercase tracking-widest text-xs">No hay circulares</p>
             </div>
@@ -188,7 +188,7 @@ export default function SchoolAnnouncementsView() {
       {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[48px] p-12 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-[32px] p-12 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setShowModal(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-800"><X size={28} /></button>
             <h3 className="text-2xl font-black text-slate-800 tracking-tighter mb-8">{editingAnn ? 'Editar Circular' : 'Nueva Circular'}</h3>
             <div className="space-y-5">
@@ -242,7 +242,7 @@ export default function SchoolAnnouncementsView() {
       {/* Preview Modal */}
       {previewAnn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[48px] p-12 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-[32px] p-12 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setPreviewAnn(null)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-800"><X size={28} /></button>
             <div className="mb-6">
               <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${PRIORITY_CONFIG[previewAnn.priority].bg} ${PRIORITY_CONFIG[previewAnn.priority].color}`}>
@@ -274,7 +274,7 @@ export default function SchoolAnnouncementsView() {
       {/* Delete Confirmation */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl text-center">
+          <div className="bg-white rounded-[32px] p-10 w-full max-w-sm shadow-2xl text-center">
             <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6"><AlertTriangle size={32} className="text-rose-500" /></div>
             <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">¿Eliminar circular?</h3>
             <p className="text-sm text-slate-500 mb-8">Esta acción no se puede deshacer.</p>
