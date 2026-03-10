@@ -1797,6 +1797,9 @@ DROP POLICY IF EXISTS "platform_settings_super_admin" ON platform_settings;
 CREATE POLICY "platform_settings_super_admin" ON platform_settings FOR ALL
   USING (EXISTS (
     SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
   ));
 
 DROP POLICY IF EXISTS "platform_settings_read" ON platform_settings;
@@ -1811,12 +1814,15 @@ CREATE TABLE IF NOT EXISTS school_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   school_id UUID NOT NULL UNIQUE REFERENCES schools(id) ON DELETE CASCADE,
   
-  -- Pool Points Multiplier
-  pool_points_multiplier DECIMAL(2,2) NOT NULL DEFAULT 1.0,
+  -- Supports values such as 1.00, 1.25, 2.50 without overflow.
+  pool_points_multiplier DECIMAL(6,2) NOT NULL DEFAULT 1.0,
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE school_settings
+  ALTER COLUMN pool_points_multiplier TYPE DECIMAL(6,2);
 
 CREATE INDEX IF NOT EXISTS idx_school_settings_school ON school_settings(school_id);
 
@@ -1826,11 +1832,17 @@ DROP POLICY IF EXISTS "school_settings_own" ON school_settings;
 CREATE POLICY "school_settings_own" ON school_settings FOR ALL
   USING (school_id IN (
     SELECT school_id FROM user_roles WHERE user_id = (SELECT auth.uid())
+  ))
+  WITH CHECK (school_id IN (
+    SELECT school_id FROM user_roles WHERE user_id = (SELECT auth.uid())
   ));
 
 DROP POLICY IF EXISTS "school_settings_super_admin" ON school_settings;
 CREATE POLICY "school_settings_super_admin" ON school_settings FOR ALL
   USING (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ))
+  WITH CHECK (EXISTS (
     SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
   ));
 
@@ -1840,7 +1852,8 @@ CREATE POLICY "school_settings_super_admin" ON school_settings FOR ALL
 
 CREATE TABLE IF NOT EXISTS points_ledger (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  student_id UUID REFERENCES students(id) ON DELETE SET NULL,
   school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
   
   transaction_type TEXT NOT NULL CHECK (transaction_type IN (
@@ -1867,6 +1880,7 @@ CREATE TABLE IF NOT EXISTS points_ledger (
 );
 
 CREATE INDEX IF NOT EXISTS idx_points_ledger_student ON points_ledger(student_id);
+CREATE INDEX IF NOT EXISTS idx_points_ledger_profile ON points_ledger(profile_id);
 CREATE INDEX IF NOT EXISTS idx_points_ledger_school ON points_ledger(school_id);
 CREATE INDEX IF NOT EXISTS idx_points_ledger_type ON points_ledger(transaction_type);
 CREATE INDEX IF NOT EXISTS idx_points_ledger_created ON points_ledger(created_at DESC);
@@ -1875,13 +1889,11 @@ ALTER TABLE points_ledger ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "points_own" ON points_ledger;
 CREATE POLICY "points_own" ON points_ledger FOR SELECT
-  USING (student_id IN (
-    SELECT id FROM students WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (profile_id = (SELECT auth.uid()));
 
 DROP POLICY IF EXISTS "points_parent" ON points_ledger;
 CREATE POLICY "points_parent" ON points_ledger FOR SELECT
-  USING (student_id IN (
+  USING (student_id IS NOT NULL AND student_id IN (
     SELECT s.id FROM students s
     JOIN parent_student_links psl ON s.id = psl.student_id
     WHERE psl.parent_id = (SELECT auth.uid())
@@ -1897,10 +1909,76 @@ DROP POLICY IF EXISTS "points_super_admin" ON points_ledger;
 CREATE POLICY "points_super_admin" ON points_ledger FOR ALL
   USING (EXISTS (
     SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
   ));
 
 -- ============================================
--- 4. PENDING SCHOOL REFUNDS (Manual Batch Processing)
+-- 4. POOL POINT CONVERSIONS (Expired Pool -> Points)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS pool_point_conversions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pool_id UUID NOT NULL REFERENCES birthday_pools(id) ON DELETE CASCADE,
+  contributor_profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
+  contributor_student_id UUID REFERENCES students(id) ON DELETE SET NULL,
+  school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+
+  original_contribution_amount DECIMAL(12,2) NOT NULL CHECK (original_contribution_amount > 0),
+  points_awarded INT,
+  conversion_rate DECIMAL(6,2) NOT NULL DEFAULT 1.0,
+  multiplier_applied DECIMAL(6,2) NOT NULL DEFAULT 1.0,
+
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'converted', 'failed', 'cancelled')),
+  eligible_at TIMESTAMPTZ NOT NULL,
+  converted_at TIMESTAMPTZ,
+
+  notes TEXT,
+  error_message TEXT,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE(pool_id, contributor_profile_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pool_point_conversions_pool ON pool_point_conversions(pool_id);
+CREATE INDEX IF NOT EXISTS idx_pool_point_conversions_profile ON pool_point_conversions(contributor_profile_id);
+CREATE INDEX IF NOT EXISTS idx_pool_point_conversions_pending ON pool_point_conversions(eligible_at) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_pool_point_conversions_school ON pool_point_conversions(school_id);
+
+ALTER TABLE pool_point_conversions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "pool_point_conversions_own" ON pool_point_conversions;
+CREATE POLICY "pool_point_conversions_own" ON pool_point_conversions FOR SELECT
+  USING (contributor_profile_id = (SELECT auth.uid()));
+
+DROP POLICY IF EXISTS "pool_point_conversions_parent" ON pool_point_conversions;
+CREATE POLICY "pool_point_conversions_parent" ON pool_point_conversions FOR SELECT
+  USING (contributor_student_id IS NOT NULL AND contributor_student_id IN (
+    SELECT s.id FROM students s
+    JOIN parent_student_links psl ON s.id = psl.student_id
+    WHERE psl.parent_id = (SELECT auth.uid())
+  ));
+
+DROP POLICY IF EXISTS "pool_point_conversions_school_admin" ON pool_point_conversions;
+CREATE POLICY "pool_point_conversions_school_admin" ON pool_point_conversions FOR SELECT
+  USING (school_id IN (
+    SELECT school_id FROM user_roles WHERE user_id = (SELECT auth.uid())
+  ));
+
+DROP POLICY IF EXISTS "pool_point_conversions_super_admin" ON pool_point_conversions;
+CREATE POLICY "pool_point_conversions_super_admin" ON pool_point_conversions FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ));
+
+-- ============================================
+-- 5. PENDING SCHOOL REFUNDS (Manual Batch Processing)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS pending_school_refunds (
@@ -1955,10 +2033,13 @@ DROP POLICY IF EXISTS "pending_refunds_super_admin" ON pending_school_refunds;
 CREATE POLICY "pending_refunds_super_admin" ON pending_school_refunds FOR ALL
   USING (EXISTS (
     SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
   ));
 
 -- ============================================
--- 5. SCHOOL REFUND SETTLEMENTS (Settlement Ledger)
+-- 6. SCHOOL REFUND SETTLEMENTS (Settlement Ledger)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS school_refund_settlements (
@@ -2010,6 +2091,9 @@ CREATE POLICY "settlements_school_admin" ON school_refund_settlements FOR SELECT
 DROP POLICY IF EXISTS "settlements_super_admin" ON school_refund_settlements;
 CREATE POLICY "settlements_super_admin" ON school_refund_settlements FOR ALL
   USING (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ))
+  WITH CHECK (EXISTS (
     SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
   ));
 

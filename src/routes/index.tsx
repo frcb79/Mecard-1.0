@@ -65,6 +65,7 @@ const AdminRewardsConfig = lazyWithRetry(() => import('../components/AdminReward
 const SupportSystem = lazyWithRetry(() => import('../components/SupportSystem'));
 const CommercialSimulator = lazyWithRetry(() => import('../components/SuperAdmin/CommercialSimulator'));
 const CollectionsMonitor = lazyWithRetry(() => import('../components/SuperAdmin/CollectionsMonitor'));
+const RefundPolicyAdminPage = lazyWithRetry(() => import('../components/refunds/RefundPolicyAdminPage'));
 
 // School Admin
 const SchoolCollectionsDashboard = lazyWithRetry(() => import('../components/SchoolCollectionsDashboard'));
@@ -80,6 +81,7 @@ const SchoolAnnouncementsView = lazyWithRetry(() => import('../components/School
 const SchoolReportsView = lazyWithRetry(() => import('../components/SchoolReportsView'));
 const SchoolAccessDashboard = lazyWithRetry(() => import('../components/SchoolAccessDashboard'));
 const CustomRolesManager = lazyWithRetry(() => import('../components/CustomRolesManager'));
+const SchoolRefundSettingsPage = lazyWithRetry(() => import('../components/refunds/SchoolRefundSettingsPage'));
 
 // Unit Manager
 const ConcessionaireDashboard = lazyWithRetry(() => import('../components/ConcessionaireDashboard'));
@@ -293,6 +295,16 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/admin/refunds"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <RefundPolicyAdminPage />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/support"
         element={
           <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
@@ -400,6 +412,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
             <RoleBasedLayout>
               <SchoolTripsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/school/refunds"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolRefundSettingsPage />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

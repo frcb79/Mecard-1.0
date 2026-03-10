@@ -169,6 +169,8 @@ export const poolService = {
       if (refundTotal > 0 && poolData.pool_contributions && poolData.pool_contributions.length > 0) {
         const contributions = poolData.pool_contributions as any[];
         const totalCollected = contributions.reduce((sum, c) => sum + c.amount, 0);
+        const autoRefundToPointsAt = new Date(`${poolData.birthday_date}T12:00:00.000Z`);
+        autoRefundToPointsAt.setUTCDate(autoRefundToPointsAt.getUTCDate() + 30);
 
         const refunds: Array<{
           pool_id: string;
@@ -178,6 +180,7 @@ export const poolService = {
           refund_amount: number;
           refund_method: string;
           status: string;
+          auto_refund_to_points_at: string;
         }> = contributions.map((contrib) => {
           // Cálculo pro-rata: (contribución / total) * refundo total
           const proportionalRefund = parseFloat(
@@ -191,6 +194,7 @@ export const poolService = {
             refund_amount: proportionalRefund,
             refund_method: 'wallet',
             status: 'pending',
+            auto_refund_to_points_at: autoRefundToPointsAt.toISOString(),
           };
         });
 
@@ -262,6 +266,18 @@ export const poolService = {
    */
   async processPoolRefunds(poolId: string, productChangeId: string): Promise<void> {
     try {
+      const { data: poolRow } = await supabase
+        .from('birthday_pools')
+        .select('birthday_student_id')
+        .eq('id', poolId)
+        .single();
+
+      const { data: birthdayStudent } = await supabase
+        .from('students')
+        .select('id, school_id')
+        .eq('id', poolRow?.birthday_student_id)
+        .maybeSingle();
+
       // 1. Obtener todos los reembolsos pendientes para esto cambio
       const { data: refunds, error: refundError } = await supabase
         .from('pool_refunds')
@@ -275,31 +291,47 @@ export const poolService = {
       // 2. Para cada reembolso, crear una transacción de billetera
       for (const refund of refunds) {
         try {
-          // Crear transacción de reembolso
-          const { data: transaction, error: txError } = await supabase
-            .from('transactions')
-            .insert({
-              student_id: refund.contributor_id, // Usar contributor como student para tracking
-              type: 'REFUND',
-              status: 'completed',
-              amount: refund.refund_amount,
-              notes: `Pool product swap refund for pool ${poolId}`,
-              metadata: {
-                pool_id: poolId,
-                refund_id: refund.id,
-                reason: 'Product swap',
-              },
-            })
-            .select()
-            .single();
+          const { data: contributorStudent } = await supabase
+            .from('students')
+            .select('id')
+            .eq('user_id', refund.contributor_id)
+            .maybeSingle();
 
-          if (txError) {
-            // Marcar reembolso como fallido
-            await supabase
-              .from('pool_refunds')
-              .update({ status: 'failed' })
-              .eq('id', refund.id);
-            continue;
+          const transactionStudentId = contributorStudent?.id || birthdayStudent?.id;
+
+          let transactionId: string | null = null;
+
+          if (transactionStudentId && birthdayStudent?.school_id) {
+            const { data: transaction, error: txError } = await supabase
+              .from('transactions')
+              .insert({
+                school_id: birthdayStudent.school_id,
+                student_id: transactionStudentId,
+                type: 'refund',
+                status: 'completed',
+                amount: refund.refund_amount,
+                notes: `Pool product swap refund for pool ${poolId}`,
+                refund_reason: 'pool_cheaper',
+                refund_type: 'pool',
+                metadata: {
+                  pool_id: poolId,
+                  refund_id: refund.id,
+                  beneficiary_profile_id: refund.contributor_id,
+                  reason: 'Product swap',
+                },
+              })
+              .select('id')
+              .single();
+
+            if (txError) {
+              await supabase
+                .from('pool_refunds')
+                .update({ status: 'failed' })
+                .eq('id', refund.id);
+              continue;
+            }
+
+            transactionId = transaction.id;
           }
 
           // 3. Actualizar el balance del contributor en profiles
@@ -325,7 +357,7 @@ export const poolService = {
             .update({
               status: 'processed',
               processed_at: new Date().toISOString(),
-              transaction_id: transaction.id,
+              transaction_id: transactionId,
             })
             .eq('id', refund.id);
         } catch (error) {

@@ -14,16 +14,38 @@
  *   await refundService.settleApprovedRefund(id, {method, reference}, userId);
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
-import {
-  PoolRefund, PendingSchoolRefund, SchoolRefundSettlement,
-  PointsLedgerEntry, PlatformSettings, SchoolSettings
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type {
+  PendingSchoolRefund,
+  PlatformSettings,
+  PoolPointConversion,
+  SchoolRefundSettlement,
+  SchoolSettings,
 } from '../types';
 
 export interface RefundConversionResult {
   converted: number;
+  queued?: number;
   errors: string[];
   timestamp: string;
+}
+
+interface BirthdayPoolCandidateRow {
+  id: string;
+  birthday_student_id: string;
+  birthday_date: string;
+  status: string;
+  collected_amount: number;
+}
+
+interface PoolContributionRow {
+  contributor_id: string;
+  amount: number;
+}
+
+interface ContributorContext {
+  schoolId: string;
+  contributorStudentId: string | null;
 }
 
 export interface ApprovePendingRefundResult {
@@ -73,119 +95,100 @@ export class RefundService {
     const timestamp = new Date().toISOString();
 
     try {
-      // Get platform settings
-      const { data: settings, error: settingsError } = await this.supabase
-        .from('platform_settings')
-        .select('pool_points_expiry_days')
-        .single();
+      const settings = await this.ensurePlatformSettings();
+      const queuedResult = await this.syncEligiblePoolPointConversions(settings?.pool_points_expiry_days ?? 30);
+      errors.push(...queuedResult.errors);
 
-      if (settingsError) {
-        errors.push(`Failed to fetch platform settings: ${settingsError.message}`);
-        return { converted: 0, errors, timestamp };
-      }
-
-      const expiryDays = settings?.pool_points_expiry_days || 30;
-
-      // Calculate the cutoff date
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - expiryDays);
-
-      // Find eligible refunds
-      const { data: refunds, error: fetchError } = await this.supabase
-        .from('pool_refunds')
-        .select(`
-          id,
-          pool_id,
-          contributor_id,
-          refund_amount,
-          status,
-          converted_to_points_at,
-          auto_refund_to_points_at,
-          birthday_pools!inner(birthday_student_id),
-          profiles(school_id)
-        `)
-        .eq('status', 'processed')
-        .is('converted_to_points_at', null)
-        .lte('auto_refund_to_points_at', cutoffDate.toISOString());
+      const { data: conversions, error: fetchError } = await this.supabase
+        .from('pool_point_conversions')
+        .select('*')
+        .eq('status', 'pending')
+        .lte('eligible_at', timestamp)
+        .order('eligible_at', { ascending: true });
 
       if (fetchError) {
         errors.push(`Fetch error: ${fetchError.message}`);
-        return { converted: 0, errors, timestamp };
+        return { converted: 0, queued: queuedResult.created, errors, timestamp };
       }
 
-      if (!refunds || refunds.length === 0) {
-        return { converted: 0, errors, timestamp };
+      if (!conversions || conversions.length === 0) {
+        return { converted: 0, queued: queuedResult.created, errors, timestamp };
       }
 
-      // Process each refund
-      for (const refund of refunds) {
+      for (const conversion of conversions as PoolPointConversion[]) {
         try {
-          const schoolId = refund.profiles?.school_id;
-          const studentId = refund.birthday_pools?.birthday_student_id;
-
-          if (!schoolId || !studentId) {
-            errors.push(`Refund ${refund.id}: Missing school_id or student_id`);
+          if (!conversion.school_id) {
+            errors.push(`Conversion ${conversion.id}: Missing school_id`);
             continue;
           }
 
-          // Calculate points
-          const points = await this._calculatePoolToPoints(refund.refund_amount, schoolId);
+          const points = await this._calculatePoolToPoints(
+            conversion.original_contribution_amount,
+            conversion.school_id,
+            settings?.pool_to_points_exchange_rate ?? 1
+          );
 
-          // Get current points balance for this student
           const { data: lastEntry } = await this.supabase
             .from('points_ledger')
             .select('balance_after')
-            .eq('student_id', studentId)
-            .eq('school_id', schoolId)
+            .eq('profile_id', conversion.contributor_profile_id)
+            .eq('school_id', conversion.school_id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
           const balanceAfter = (lastEntry?.balance_after || 0) + points;
 
-          // Create points ledger entry
           const { error: insertError } = await this.supabase
             .from('points_ledger')
             .insert({
-              student_id: studentId,
-              school_id: schoolId,
+              profile_id: conversion.contributor_profile_id,
+              student_id: conversion.contributor_student_id ?? null,
+              school_id: conversion.school_id,
               transaction_type: 'POOL_CONVERSION',
               amount: points,
               source_module: 'pool',
-              source_id: refund.pool_id,
-              source_description: `Pool refund converted to points after ${expiryDays} days`,
+              source_id: conversion.pool_id,
+              source_description: 'Expired birthday pool contribution converted to points',
               balance_after: balanceAfter,
-              notes: `Pool refund ID: ${refund.id}`,
+              notes: `Pool conversion ID: ${conversion.id}`,
               created_at: timestamp
             });
 
           if (insertError) {
-            errors.push(`Refund ${refund.id} - Points ledger insert: ${insertError.message}`);
+            await this.supabase
+              .from('pool_point_conversions')
+              .update({ status: 'failed', error_message: insertError.message, updated_at: timestamp })
+              .eq('id', conversion.id);
+
+            errors.push(`Conversion ${conversion.id} - Points ledger insert: ${insertError.message}`);
             continue;
           }
 
-          // Mark refund as converted
           const { error: updateError } = await this.supabase
-            .from('pool_refunds')
+            .from('pool_point_conversions')
             .update({
-              converted_to_points_at: timestamp,
-              points_awarded: points
+              status: 'converted',
+              converted_at: timestamp,
+              points_awarded: points,
+              error_message: null,
+              updated_at: timestamp
             })
-            .eq('id', refund.id);
+            .eq('id', conversion.id);
 
           if (updateError) {
-            errors.push(`Refund ${refund.id} - Update: ${updateError.message}`);
+            errors.push(`Conversion ${conversion.id} - Update: ${updateError.message}`);
             continue;
           }
 
           converted++;
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err);
-          errors.push(`Pool refund ${refund.id}: ${errorMsg}`);
+          errors.push(`Pool conversion ${conversion.id}: ${errorMsg}`);
         }
       }
 
-      return { converted, errors, timestamp };
+      return { converted, queued: queuedResult.created, errors, timestamp };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       errors.push(`Conversion task failed: ${errorMsg}`);
@@ -193,19 +196,161 @@ export class RefundService {
     }
   }
 
+  async syncEligiblePoolPointConversions(expiryDays: number = 30): Promise<{ created: number; errors: string[] }> {
+    const errors: string[] = [];
+    let created = 0;
+
+    try {
+      const threshold = new Date();
+      threshold.setUTCDate(threshold.getUTCDate() - expiryDays);
+      const thresholdDate = threshold.toISOString().slice(0, 10);
+
+      const { data: pools, error: poolsError } = await this.supabase
+        .from('birthday_pools')
+        .select('id, birthday_student_id, birthday_date, status, collected_amount')
+        .lte('birthday_date', thresholdDate)
+        .gt('collected_amount', 0);
+
+      if (poolsError) {
+        return { created: 0, errors: [`Pool fetch error: ${poolsError.message}`] };
+      }
+
+      const eligiblePools = ((pools || []) as BirthdayPoolCandidateRow[]).filter((pool) =>
+        !['DELIVERED', 'REFUNDED'].includes(pool.status)
+      );
+
+      for (const pool of eligiblePools) {
+        const { data: existingConversions } = await this.supabase
+          .from('pool_point_conversions')
+          .select('contributor_profile_id')
+          .eq('pool_id', pool.id);
+
+        const existingProfiles = new Set((existingConversions || []).map((item) => item.contributor_profile_id));
+
+        const { data: studentRow, error: studentError } = await this.supabase
+          .from('students')
+          .select('school_id')
+          .eq('id', pool.birthday_student_id)
+          .maybeSingle();
+
+        if (studentError || !studentRow?.school_id) {
+          errors.push(`Pool ${pool.id}: Missing school for birthday student`);
+          continue;
+        }
+
+        const { data: contributions, error: contributionError } = await this.supabase
+          .from('pool_contributions')
+          .select('contributor_id, amount')
+          .eq('pool_id', pool.id);
+
+        if (contributionError) {
+          errors.push(`Pool ${pool.id}: Contribution fetch error: ${contributionError.message}`);
+          continue;
+        }
+
+        const eligibleAt = new Date(`${pool.birthday_date}T12:00:00.000Z`);
+        eligibleAt.setUTCDate(eligibleAt.getUTCDate() + expiryDays);
+
+        for (const contribution of (contributions || []) as PoolContributionRow[]) {
+          if (existingProfiles.has(contribution.contributor_id)) {
+            continue;
+          }
+
+          const contributorContext = await this._getContributorContext(contribution.contributor_id, studentRow.school_id);
+
+          const { error: insertError } = await this.supabase
+            .from('pool_point_conversions')
+            .insert({
+              pool_id: pool.id,
+              contributor_profile_id: contribution.contributor_id,
+              contributor_student_id: contributorContext.contributorStudentId,
+              school_id: contributorContext.schoolId,
+              original_contribution_amount: contribution.amount,
+              conversion_rate: 1.0,
+              multiplier_applied: 1.0,
+              status: 'pending',
+              eligible_at: eligibleAt.toISOString(),
+              notes: 'Generated automatically from expired birthday pool',
+            });
+
+          if (insertError) {
+            errors.push(`Pool ${pool.id} / contributor ${contribution.contributor_id}: ${insertError.message}`);
+            continue;
+          }
+
+          created++;
+        }
+      }
+
+      return { created, errors };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      return { created, errors: [...errors, errorMsg] };
+    }
+  }
+
+  async getPoolPointConversions(filters?: {
+    schoolId?: string;
+    status?: 'pending' | 'converted' | 'failed' | 'cancelled';
+    poolId?: string;
+  }): Promise<PoolPointConversion[]> {
+    try {
+      let query = this.supabase.from('pool_point_conversions').select('*');
+
+      if (filters?.schoolId) query = query.eq('school_id', filters.schoolId);
+      if (filters?.status) query = query.eq('status', filters.status);
+      if (filters?.poolId) query = query.eq('pool_id', filters.poolId);
+
+      const { data, error } = await query.order('eligible_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching pool point conversions:', error);
+        return [];
+      }
+
+      return (data as PoolPointConversion[]) || [];
+    } catch (err) {
+      console.error('Exception fetching pool point conversions:', err);
+      return [];
+    }
+  }
+
   /**
    * Calculate points from refund amount based on school settings
    * Private helper method
    */
-  private async _calculatePoolToPoints(amount: number, schoolId: string): Promise<number> {
+  private async _calculatePoolToPoints(
+    amount: number,
+    schoolId: string,
+    exchangeRate: number = 1
+  ): Promise<number> {
     const { data: schoolSettings } = await this.supabase
       .from('school_settings')
       .select('pool_points_multiplier')
       .eq('school_id', schoolId)
-      .single();
+      .maybeSingle();
 
     const multiplier = schoolSettings?.pool_points_multiplier || 1.0;
-    return Math.round(amount * multiplier);
+    return Math.round(amount * exchangeRate * multiplier);
+  }
+
+  private async _getContributorContext(profileId: string, fallbackSchoolId: string): Promise<ContributorContext> {
+    const { data: profile } = await this.supabase
+      .from('profiles')
+      .select('school_id')
+      .eq('id', profileId)
+      .maybeSingle();
+
+    const { data: student } = await this.supabase
+      .from('students')
+      .select('id')
+      .eq('user_id', profileId)
+      .maybeSingle();
+
+    return {
+      schoolId: profile?.school_id || fallbackSchoolId,
+      contributorStudentId: student?.id || null,
+    };
   }
 
   // =========== SCHOOL REFUNDS ===========
@@ -244,7 +389,7 @@ export class RefundService {
         .eq('school_id', params.schoolId)
         .order('batch_number', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       const newBatchNumber = batchError ? 1 : (lastBatch?.batch_number || 0) + 1;
 
@@ -545,19 +690,43 @@ export class RefundService {
    * Returns: PlatformSettings object
    */
   async getPlatformSettings(): Promise<PlatformSettings | null> {
+    return this.ensurePlatformSettings();
+  }
+
+  async ensurePlatformSettings(): Promise<PlatformSettings | null> {
     try {
       const { data, error } = await this.supabase
         .from('platform_settings')
         .select('*')
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching platform settings:', error);
         return null;
       }
 
-      return data as PlatformSettings;
+      if (data) {
+        return data as PlatformSettings;
+      }
+
+      const { data: created, error: insertError } = await this.supabase
+        .from('platform_settings')
+        .insert({
+          pool_to_points_exchange_rate: 1.0,
+          pool_points_expiry_days: 30,
+          school_refund_batch_interval_days: 15,
+          default_pos_accepts_cash: false,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error bootstrapping platform settings:', insertError);
+        return null;
+      }
+
+      return created as PlatformSettings;
     } catch (err) {
       console.error('Exception fetching platform settings:', err);
       return null;
@@ -577,6 +746,12 @@ export class RefundService {
     updatedBy: string
   ): Promise<ApprovePendingRefundResult> {
     try {
+      const existing = await this.ensurePlatformSettings();
+
+      if (!existing) {
+        return { success: false, error: 'Platform settings not available' };
+      }
+
       const { error } = await this.supabase
         .from('platform_settings')
         .update({
@@ -584,7 +759,7 @@ export class RefundService {
           updated_by: updatedBy,
           updated_at: new Date().toISOString()
         })
-        .limit(1);
+        .eq('id', existing.id);
 
       if (error) {
         return { success: false, error: error.message };
@@ -606,20 +781,26 @@ export class RefundService {
         .from('school_settings')
         .select('*')
         .eq('school_id', schoolId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // Not found, create default
-          const { data: newSettings } = await this.supabase
-            .from('school_settings')
-            .insert({ school_id: schoolId })
-            .select()
-            .single();
-          return (newSettings as SchoolSettings) || null;
-        }
         console.error('Error fetching school settings:', error);
         return null;
+      }
+
+      if (!data) {
+        const { data: newSettings, error: insertError } = await this.supabase
+          .from('school_settings')
+          .insert({ school_id: schoolId })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error creating school settings:', insertError);
+          return null;
+        }
+
+        return (newSettings as SchoolSettings) || null;
       }
 
       return data as SchoolSettings;
@@ -627,6 +808,19 @@ export class RefundService {
       console.error('Exception fetching school settings:', err);
       return null;
     }
+  }
+
+  async initializeSchoolSettings(schoolIds: string[]): Promise<number> {
+    let initialized = 0;
+
+    for (const schoolId of schoolIds) {
+      const settings = await this.getSchoolSettings(schoolId);
+      if (settings) {
+        initialized++;
+      }
+    }
+
+    return initialized;
   }
 
   /**
