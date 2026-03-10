@@ -59,7 +59,7 @@ export const StudentFavorites: React.FC<StudentFavoritesProps> = ({
     try {
       if (!user?.id) return;
       await socialService.removeFavorite(user.id, productId);
-      setFavorites(favorites.filter(f => f.product_id !== productId));
+      setFavorites(favorites.filter(f => f.productId !== productId));
     } catch (err) {
       console.error('Error removing favorite:', err);
       setError('Error eliminando favorito');
@@ -67,11 +67,11 @@ export const StudentFavorites: React.FC<StudentFavoritesProps> = ({
   };
 
   const handleSendGift = (favorite: StudentFavorite) => {
-    if (onSendGift && favorite.product_id) {
+    if (onSendGift && favorite.productId) {
       onSendGift(
-        favorite.product_id,
-        favorite.product_name || 'Producto',
-        favorite.product_image
+        favorite.productId,
+        favorite.productName || 'Producto',
+        favorite.productImage
       );
     }
   };
@@ -122,11 +122,11 @@ export const StudentFavorites: React.FC<StudentFavoritesProps> = ({
             className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition"
           >
             {/* Product Image */}
-            {favorite.product_image && (
+            {favorite.productImage && (
               <div className="mb-2">
                 <img
-                  src={favorite.product_image}
-                  alt={favorite.product_name}
+                  src={favorite.productImage}
+                  alt={favorite.productName}
                   className="w-full h-24 object-cover rounded"
                 />
               </div>
@@ -134,14 +134,14 @@ export const StudentFavorites: React.FC<StudentFavoritesProps> = ({
 
             {/* Product Name */}
             <p className="font-semibold text-sm text-gray-800 mb-2">
-              {favorite.product_name}
+              {favorite.productName}
             </p>
 
             {/* Action Buttons */}
             <div className="flex gap-2">
               {viewingOwnFavorites ? (
                 <button
-                  onClick={() => handleRemoveFavorite(favorite.product_id)}
+                  onClick={() => handleRemoveFavorite(favorite.productId)}
                   className="flex items-center gap-1 flex-1 px-3 py-2 text-sm bg-red-50 text-red-600 hover:bg-red-100 rounded transition"
                 >
                   <Trash2 className="w-4 h-4" />

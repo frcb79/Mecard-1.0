@@ -8,7 +8,7 @@ import {
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
   ChevronRight, Gift, Star, Menu, X, MapPin, Briefcase,
   Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText,
-  Shield, Megaphone, TrendingUp, HandCoins, Calculator, Cake
+  Shield, Megaphone, TrendingUp, HandCoins, Calculator, Cake, Heart
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -40,6 +40,7 @@ function getNavSections(role: UserRole): NavSection[] {
           { path: '/admin', label: 'Dashboard', icon: <Globe size={18} /> },
           { path: '/admin/schools', label: 'Escuelas', icon: <Building2 size={18} /> },
           { path: '/admin/onboarding', label: 'Onboarding', icon: <Rocket size={18} /> },
+          { path: '/admin/schools-directory', label: 'Directorio', icon: <Layers size={18} /> },
           { path: '/admin/settlement', label: 'Settlement', icon: <Banknote size={18} /> },
           { path: '/admin/reports', label: 'Reportes', icon: <PieChart size={18} /> },
           { path: '/admin/rewards-config', label: 'Rewards Config', icon: <Trophy size={18} /> },
@@ -164,6 +165,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/parent/notifications', label: 'Notificaciones', icon: <MessageSquare size={18} /> },
         { path: '/parent/permissions', label: 'Permisos de Salida', icon: <ShieldCheck size={18} /> },
         { path: '/parent/gifts', label: 'Regalos', icon: <Gift size={18} /> },
+        { path: '/parent/birthday', label: 'Cumpleaños', icon: <Cake size={18} /> },
         { path: '/parent/rewards', label: 'Premios', icon: <Star size={18} /> },
         { path: '/parent/trips', label: 'Viajes', icon: <MapPin size={18} /> },
         { path: '/parent/settings', label: 'Configuración', icon: <Settings size={18} /> },
@@ -182,6 +184,7 @@ function getNavSections(role: UserRole): NavSection[] {
       { path: '/student/preorder', label: 'Pre-Orden', icon: <ShoppingCart size={18} /> },
       { path: '/student/gifts', label: 'Regalos', icon: <Gift size={18} /> },
       { path: '/student/birthday', label: 'Cumpleaños', icon: <Cake size={18} /> },
+      { path: '/student/favorites', label: 'Favoritos', icon: <Heart size={18} /> },
       { path: '/student/rewards', label: 'Premios', icon: <Star size={18} /> },
       { path: '/student/notifications', label: 'Notificaciones', icon: <MessageSquare size={18} /> },
       { path: '/student/reports', label: 'Reportes', icon: <PieChart size={18} /> },

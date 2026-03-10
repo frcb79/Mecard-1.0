@@ -120,6 +120,10 @@ const StudentPreOrderView = lazyWithRetry(() => import('../components/StudentPre
 const PreOrderQueueView = lazyWithRetry(() => import('../components/PreOrderQueueView'));
 const DashboardPlaceholder = lazyWithRetry(() => import('../components/DashboardPlaceholder'));
 
+// Phase 2 integrations
+const StudentFavoritesView = lazyWithRetry(() => import('../_phase2/StudentFavorites'));
+const SchoolsDirectory = lazyWithRetry(() => import('../_phase2/Schools'));
+
 // ========== SUSPENSE FALLBACK ==========
 function RouteLoader() {
   return (
@@ -260,6 +264,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
             <RoleBasedLayout>
               <SchoolOnboardingDashboard />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/schools-directory"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <SchoolsDirectory />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
@@ -642,6 +656,16 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/parent/birthday"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.PARENT]}>
+            <RoleBasedLayout>
+              <BirthdayGifts />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ====== STUDENT ROUTES ====== */}
       <Route
@@ -700,6 +724,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
               <BirthdayGifts />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/favorites"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentFavoritesView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

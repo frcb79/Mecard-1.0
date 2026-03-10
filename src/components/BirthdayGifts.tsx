@@ -16,41 +16,7 @@ import {
   Star, PartyPopper, ShoppingBag, Sparkles, Check, X,
   CreditCard, Clock, TrendingUp, AlertCircle
 } from 'lucide-react';
-
-// ─── Types ──────────────────────────────────────────
-
-interface BirthdayStudent {
-  id: string;
-  fullName: string;
-  grade: string;
-  photo?: string;
-  birthday: string; // ISO date
-  wishlist: WishlistItem[];
-  daysUntil: number;
-}
-
-interface WishlistItem {
-  id: string;
-  name: string;
-  emoji: string;
-  price: number;
-  image?: string;
-  category: string;
-}
-
-interface BirthdayPool {
-  id: string;
-  birthdayStudentId: string;
-  birthdayStudentName: string;
-  birthdayDate: string;
-  targetItem: WishlistItem;
-  targetAmount: number;
-  collectedAmount: number;
-  contributors: { id: string; name: string; amount: number; date: string }[];
-  status: 'OPEN' | 'FUNDED' | 'DELIVERED' | 'EXPIRED' | 'REFUNDED';
-  createdAt: string;
-  expiresAt: string;
-}
+import type { BirthdayStudent, WishlistItem, BirthdayPool } from '../types';
 
 // ─── Mock Data ──────────────────────────────────────
 
@@ -114,10 +80,10 @@ const MOCK_POOLS: BirthdayPool[] = [
     targetAmount: 450,
     collectedAmount: 320,
     contributors: [
-      { id: 'stu_004', name: 'Valentina M.', amount: 80, date: addDays(today, -2) },
-      { id: 'stu_006', name: 'Camila T.', amount: 100, date: addDays(today, -1) },
-      { id: 'parent_02', name: 'Mamá de Mateo', amount: 90, date: addDays(today, -1) },
-      { id: 'stu_007', name: 'Emiliano R.', amount: 50, date: addDays(today, 0) },
+      { id: 'c1', poolId: 'pool_01', contributorId: 'stu_004', contributorType: 'STUDENT' as const, contributorName: 'Valentina M.', amount: 80, refunded: false, createdAt: addDays(today, -2) },
+      { id: 'c2', poolId: 'pool_01', contributorId: 'stu_006', contributorType: 'STUDENT' as const, contributorName: 'Camila T.', amount: 100, refunded: false, createdAt: addDays(today, -1) },
+      { id: 'c3', poolId: 'pool_01', contributorId: 'parent_02', contributorType: 'PARENT' as const, contributorName: 'Mamá de Mateo', amount: 90, refunded: false, createdAt: addDays(today, -1) },
+      { id: 'c4', poolId: 'pool_01', contributorId: 'stu_007', contributorType: 'STUDENT' as const, contributorName: 'Emiliano R.', amount: 50, refunded: false, createdAt: addDays(today, 0) },
     ],
     status: 'OPEN',
     createdAt: addDays(today, -5),
@@ -132,8 +98,8 @@ const MOCK_POOLS: BirthdayPool[] = [
     targetAmount: 290,
     collectedAmount: 120,
     contributors: [
-      { id: 'stu_003', name: 'Diego R.', amount: 60, date: addDays(today, -1) },
-      { id: 'parent_01', name: 'Papá de Santiago', amount: 60, date: addDays(today, 0) },
+      { id: 'c5', poolId: 'pool_02', contributorId: 'stu_003', contributorType: 'STUDENT' as const, contributorName: 'Diego R.', amount: 60, refunded: false, createdAt: addDays(today, -1) },
+      { id: 'c6', poolId: 'pool_02', contributorId: 'parent_01', contributorType: 'PARENT' as const, contributorName: 'Papá de Santiago', amount: 60, refunded: false, createdAt: addDays(today, 0) },
     ],
     status: 'OPEN',
     createdAt: addDays(today, -3),
@@ -190,10 +156,14 @@ export default function BirthdayGifts() {
         collectedAmount: newCollected,
         status: newCollected >= p.targetAmount ? 'FUNDED' as const : p.status,
         contributors: [...p.contributors, {
-          id: 'current_user',
-          name: 'Tú',
+          id: `c_${Date.now()}`,
+          poolId: poolId,
+          contributorId: 'current_user',
+          contributorType: 'STUDENT' as const,
+          contributorName: 'Tú',
           amount,
-          date: new Date().toISOString().slice(0, 10),
+          refunded: false,
+          createdAt: new Date().toISOString().slice(0, 10),
         }],
       };
     }));
@@ -508,7 +478,7 @@ export default function BirthdayGifts() {
                       <div className="flex flex-wrap gap-1">
                         {pool.contributors.map((c, i) => (
                           <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-50 rounded-lg text-[10px] text-slate-600 border border-slate-100">
-                            {c.name} <span className="font-bold text-pink-600">{fmt(c.amount)}</span>
+                            {c.contributorName} <span className="font-bold text-pink-600">{fmt(c.amount)}</span>
                           </span>
                         ))}
                       </div>

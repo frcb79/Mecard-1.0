@@ -150,6 +150,9 @@ CREATE TABLE IF NOT EXISTS students (
   -- Transporte
   bus_route TEXT,
   
+  -- Cumpleaños
+  date_of_birth DATE,
+
   -- Foto & metadata
   photo_url TEXT,
   enrollment_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -1337,3 +1340,64 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_notif_recipient ON notifications(recipient_id);
 CREATE INDEX IF NOT EXISTS idx_notif_unread ON notifications(recipient_id) WHERE read_at IS NULL;
+
+-- ============================================
+-- BIRTHDAY POOLS (Colectas de cumpleaños)
+-- ============================================
+CREATE TABLE IF NOT EXISTS birthday_pools (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  birthday_student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  creator_id UUID NOT NULL,
+  creator_type TEXT NOT NULL CHECK (creator_type IN ('STUDENT', 'PARENT')),
+  target_product_id UUID,
+  target_product_name TEXT NOT NULL,
+  target_product_image TEXT,
+  target_amount DECIMAL(12,2) NOT NULL,
+  collected_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'FUNDED', 'DELIVERED', 'EXPIRED', 'REFUNDED')),
+  birthday_date DATE NOT NULL,
+  message TEXT,
+  expires_at TIMESTAMPTZ NOT NULL,
+  funded_at TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pools_student ON birthday_pools(birthday_student_id);
+CREATE INDEX IF NOT EXISTS idx_pools_status ON birthday_pools(status) WHERE status = 'OPEN';
+
+-- POOL CONTRIBUTIONS
+CREATE TABLE IF NOT EXISTS pool_contributions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pool_id UUID NOT NULL REFERENCES birthday_pools(id) ON DELETE CASCADE,
+  contributor_id UUID NOT NULL,
+  contributor_type TEXT NOT NULL CHECK (contributor_type IN ('STUDENT', 'PARENT')),
+  contributor_name TEXT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL CHECK (amount > 0),
+  refunded BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contributions_pool ON pool_contributions(pool_id);
+
+-- ============================================
+-- AUTO-RELOAD CONFIG
+-- ============================================
+CREATE TABLE IF NOT EXISTS auto_reload_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  parent_id UUID NOT NULL,
+  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  threshold_amount DECIMAL(12,2) NOT NULL DEFAULT 100,
+  reload_amount DECIMAL(12,2) NOT NULL DEFAULT 300,
+  payment_method TEXT NOT NULL DEFAULT 'CARD' CHECK (payment_method IN ('CARD', 'SPEI')),
+  max_daily_reloads INTEGER NOT NULL DEFAULT 1,
+  last_reload_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(parent_id, student_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_autoreload_parent ON auto_reload_config(parent_id);
+CREATE INDEX IF NOT EXISTS idx_autoreload_active ON auto_reload_config(student_id) WHERE enabled = TRUE;

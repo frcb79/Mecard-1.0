@@ -272,6 +272,9 @@ export interface StudentProfile {
   parentIds?: string[];       // Multi-parent support
   parentName: string;
   parentEmail?: string;
+
+  // Cumpleaños
+  dateOfBirth?: string;       // ISO date (YYYY-MM-DD)
   
   // Transporte
   busRoute?: string;          // Ruta de camión asignada (ej: "Ruta 3 - Satélite")
@@ -2519,6 +2522,69 @@ export interface CustomRole {
   permissions: AppPermission[];
   isSystem: boolean;             // true = default role, can't delete
   color: string;                 // badge color hex
+  createdAt: string;
+  updatedAt: string;
+}
+
+// =============================================
+// BIRTHDAY / COLECTA TYPES
+// =============================================
+
+export interface WishlistItem {
+  id: string;
+  name: string;
+  emoji: string;
+  price: number;
+  image?: string;
+  category: string;
+}
+
+export interface BirthdayStudent {
+  id: string;
+  fullName: string;
+  grade: string;
+  photo?: string;
+  birthday: string;
+  wishlist: WishlistItem[];
+  daysUntil: number;
+}
+
+export interface PoolContribution {
+  id: string;
+  poolId: string;
+  contributorId: string;
+  contributorType: 'STUDENT' | 'PARENT';
+  contributorName: string;
+  amount: number;
+  refunded: boolean;
+  createdAt: string;
+}
+
+export interface BirthdayPool {
+  id: string;
+  birthdayStudentId: string;
+  birthdayStudentName: string;
+  birthdayDate: string;
+  targetItem: WishlistItem;
+  targetAmount: number;
+  collectedAmount: number;
+  contributors: PoolContribution[];
+  status: 'OPEN' | 'FUNDED' | 'DELIVERED' | 'EXPIRED' | 'REFUNDED';
+  message?: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface AutoReloadConfig {
+  id: string;
+  parentId: string;
+  studentId: string;
+  enabled: boolean;
+  thresholdAmount: number;
+  reloadAmount: number;
+  paymentMethod: 'CARD' | 'SPEI';
+  maxDailyReloads: number;
+  lastReloadAt?: string;
   createdAt: string;
   updatedAt: string;
 }
