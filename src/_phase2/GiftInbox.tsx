@@ -19,6 +19,7 @@ interface GiftInboxProps {
  */
 export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
   const { user } = useAuth();
+  const currentStudentId = user?.studentId || user?.id;
 
   const [gifts, setGifts] = useState<GiftType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,11 +28,11 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
 
   useEffect(() => {
     const loadGifts = async () => {
-      if (!user?.id) return;
+      if (!currentStudentId) return;
 
       try {
         setLoading(true);
-        const { data, error: loadError } = await socialService.getReceivedGifts(user.id);
+        const { data, error: loadError } = await socialService.getReceivedGifts(currentStudentId);
 
         if (loadError) {
           setError('Error cargando regalos');
@@ -49,26 +50,29 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
     };
 
     loadGifts();
-  }, [user?.id]);
+  }, [currentStudentId]);
 
   const handleAcceptGift = (gift: GiftType) => {
-    if (onGiftAccepted && gift.id && gift.redemption_code) {
-      onGiftAccepted(gift.id, gift.redemption_code);
+    if (onGiftAccepted && gift.id && gift.redemptionCode) {
+      onGiftAccepted(gift.id, gift.redemptionCode);
     }
   };
 
   const handleDeclineGift = async (gift: GiftType) => {
-    if (!gift.id) return;
+    if (!gift.id || !currentStudentId) return;
 
     if (!confirm('¿Rechazar este regalo? Se devolverá al remitente sin cargos.')) {
       return;
     }
 
     try {
+      setLoading(true);
       setError(null);
+      await socialService.declineGift(gift.id, currentStudentId);
+
       // Remove gift from list (marks as declined)
       setGifts(gifts.filter(g => g.id !== gift.id));
-      setSuccessMessage(`Regalo de ${gift.sender_name} rechazado`);
+      setSuccessMessage(`Regalo de ${gift.senderName} rechazado`);
 
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -77,6 +81,8 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
     } catch (err) {
       console.error('Error declining gift:', err);
       setError('No se pudo rechazar el regalo. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,11 +146,11 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
           >
             <div className="flex gap-4">
               {/* Product Image */}
-              {gift.product_image && (
+              {gift.productImage && (
                 <div className="flex-shrink-0">
                   <img
-                    src={gift.product_image}
-                    alt={gift.product_name}
+                    src={gift.productImage}
+                    alt={gift.productName}
                     className="w-20 h-20 object-cover rounded"
                   />
                 </div>
@@ -155,10 +161,10 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-semibold text-gray-900">
-                      {gift.product_name}
+                      {gift.productName}
                     </p>
                     <p className="text-sm text-gray-600">
-                      De: <span className="font-medium">{gift.sender_name}</span>
+                      De: <span className="font-medium">{gift.senderName}</span>
                     </p>
                   </div>
                   <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
@@ -177,7 +183,7 @@ export const GiftInbox: React.FC<GiftInboxProps> = ({ onGiftAccepted }) => {
                 <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded">
                   <p className="text-xs text-gray-600 mb-1">Código para canjear en POS:</p>
                   <p className="font-mono text-lg font-bold text-gray-900">
-                    {gift.redemption_code}
+                    {gift.redemptionCode}
                   </p>
                 </div>
 

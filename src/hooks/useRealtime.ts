@@ -37,7 +37,7 @@ export function useRealtimeTransactions(schoolId: string) {
       try {
         const { data, error } = await supabase
           .from('transactions')
-          .select(`*, student:profiles!transactions_student_id_fkey (full_name, student_id, balance)`)
+          .select(`*, student:students!transactions_student_id_fkey (full_name, student_id, balance)`)
           .eq('school_id', schoolId)
           .order('created_at', { ascending: false })
           .limit(50);
@@ -57,7 +57,7 @@ export function useRealtimeTransactions(schoolId: string) {
           async (payload) => {
             const { data } = await supabase
               .from('transactions')
-              .select(`*, student:profiles!transactions_student_id_fkey (full_name, student_id, balance)`)
+              .select(`*, student:students!transactions_student_id_fkey (full_name, student_id, balance)`)
               .eq('id', payload.new.id)
               .single();
             if (data) setTransactions(prev => [data, ...prev]);

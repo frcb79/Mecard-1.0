@@ -21,6 +21,7 @@ interface GiftSenderProps {
 export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
   const { user } = useAuth();
   const schoolId = (user as any)?.schoolId || 'mx_01';
+  const currentStudentId = user?.studentId || user?.id;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
@@ -83,7 +84,7 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
 
   // Step 3: Send gift
   const handleSendGift = async () => {
-    if (!selectedFriend || !selectedFavorite || !user?.id) {
+    if (!selectedFriend || !selectedFavorite || !currentStudentId) {
       setError('Selecciona un amigo y un producto');
       return;
     }
@@ -99,7 +100,7 @@ export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
 
       // Call sendGift service
       const { giftId, code } = await socialService.sendGift(
-        user.id,
+        currentStudentId,
         selectedFriend.id,
         {
           id: selectedFavorite.productId,

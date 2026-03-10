@@ -11,16 +11,16 @@ export const socialService = {
   async findPotentialFriend(schoolId: string, searchTerm: string): Promise<{ data: Friend | null; error: any }> {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, student_id, favorites, favorites_public, status, grade')
+        .from('students')
+        .select('id, full_name, student_id, school_id, grade, balance, status')
         .eq('school_id', schoolId)
-        .eq('status', 'Active')
+        .eq('status', 'ACTIVE')
         .or(`student_id.eq.${searchTerm},id.eq.${searchTerm},full_name.ilike.%${searchTerm}%`)
         .limit(1)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return { data: data as Friend, error: null };
+      return { data: data ? mapFriendFromStudentRow(data) : null, error: null };
     } catch (error) {
       console.error('Error finding potential friend:', error);
       return { data: null, error };
@@ -104,32 +104,39 @@ export const socialService = {
       .from('friendships')
       .select(`
         friend:profiles!friendships_friend_id_fkey (
-          id, full_name, student_id, favorites, favorites_public, status, grade, allergies
+          id, full_name, student_id, school_id, favorites, favorites_public, status, grade, allergies
         )
       `)
       .eq('user_id', userId)
       .eq('status', 'accepted');
 
     if (error) throw error;
-    return (data || []).map((f: any) => f.friend).filter((f: any) => f !== null);
+    return (data || [])
+      .map((f: any) => mapFriendFromProfileRow(f.friend))
+      .filter((f: Friend | null) => f !== null) as Friend[];
   },
 
   /**
    * Obtiene regalos recibidos
    */
   async getReceivedGifts(userId: string): Promise<{ data: Gift[] | null; error: any }> {
+    const receiver = await resolveStudentRecord(userId);
+    if (!receiver) {
+      return { data: [], error: null };
+    }
+
     const { data, error } = await supabase
       .from('gifts')
       .select(`
         *,
-        item:inventory_items(name, price, image_url),
-        sender:profiles!gifts_sender_id_fkey(full_name, student_id)
+        item:products!gifts_inventory_item_id_fkey(name, price, image_url),
+        sender:students!gifts_sender_id_fkey(full_name, student_id)
       `)
-      .eq('receiver_id', userId)
-      .eq('status', 'pending')
+      .eq('receiver_id', receiver.id)
+      .eq('status', 'PENDING')
       .order('created_at', { ascending: false });
 
-    return { data: data as Gift[], error };
+    return { data: (data || []).map(mapGiftRow), error };
   },
 
   /**
@@ -144,6 +151,14 @@ export const socialService = {
     schoolId: string,
     message?: string
   ): Promise<{ giftId: string; code: string }> {
+    const sender = await resolveStudentRecord(senderId, schoolId);
+    const receiver = await resolveStudentRecord(receiverId, schoolId);
+
+    if (!sender) throw new Error('No se pudo resolver el estudiante remitente');
+    if (!receiver) throw new Error('No se pudo resolver el estudiante destinatario');
+
+    const product = await loadProductSnapshot(item.id);
+
     // Generate unique redemption code
     const redemptionCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -151,13 +166,18 @@ export const socialService = {
     const { data, error } = await supabase
       .from('gifts')
       .insert({
-        sender_id: senderId,
-        receiver_id: receiverId,
-        inventory_item_id: item.id,
-        product_name: item.name,
-        amount: item.price,
-        school_id: schoolId,
-        status: 'pending',
+        sender_id: sender.id,
+        sender_name: sender.full_name,
+        sender_student_id: sender.student_id,
+        receiver_id: receiver.id,
+        receiver_name: receiver.full_name,
+        receiver_student_id: receiver.student_id,
+        inventory_item_id: product.id,
+        product_name: product.name,
+        product_image: product.image_url || null,
+        amount: item.price > 0 ? item.price : product.price,
+        school_id: sender.school_id || schoolId,
+        status: 'PENDING',
         message: message || null,
         redemption_code: redemptionCode,
         created_at: new Date().toISOString(),
@@ -184,7 +204,7 @@ export const socialService = {
       .from('gifts')
       .select('*')
       .eq('redemption_code', code.toUpperCase())
-      .eq('status', 'pending')
+      .eq('status', 'PENDING')
       .single();
 
     if (fetchError) {
@@ -195,7 +215,6 @@ export const socialService = {
     if (!giftData) throw new Error('Código no encontrado o ya canjeado.');
 
     // Create wallet transactions: sender charged, receiver credited
-    const transactionId = crypto.randomUUID();
     const now = new Date().toISOString();
 
     // Insert two transactions: GIFT_SENT (sender debit) and GIFT_RECEIVED (receiver credit)
@@ -204,23 +223,25 @@ export const socialService = {
       .insert([
         {
           id: crypto.randomUUID(),
-          user_id: giftData.sender_id,
-          transaction_type: 'GIFT_SENT',
+          student_id: giftData.sender_id,
+          type: 'GIFT_SENT',
           amount: -giftData.amount,
+          unit_id: unitId,
           description: `Regalaste ${giftData.product_name} a un compañero`,
-          gift_id: giftData.id,
+          metadata: { giftId: giftData.id, redemptionCode: code.toUpperCase() },
+          status: 'COMPLETED',
           created_at: now,
-          school_id: giftData.school_id
         },
         {
           id: crypto.randomUUID(),
-          user_id: giftData.receiver_id,
-          transaction_type: 'GIFT_RECEIVED',
+          student_id: giftData.receiver_id,
+          type: 'GIFT_RECEIVED',
           amount: 0, // Receiver doesn't pay, gets product
+          unit_id: unitId,
           description: `Recibiste ${giftData.product_name} como regalo`,
-          gift_id: giftData.id,
+          metadata: { giftId: giftData.id, redemptionCode: code.toUpperCase() },
+          status: 'COMPLETED',
           created_at: now,
-          school_id: giftData.school_id
         }
       ]);
 
@@ -230,20 +251,41 @@ export const socialService = {
     const { data: redeemedGift, error: updateError } = await supabase
       .from('gifts')
       .update({
-        status: 'redeemed',
+        status: 'REDEEMED',
+        redeeming_student_id: giftData.receiver_id,
+        location_id: unitId,
         redeemed_at: now
       })
       .eq('redemption_code', code.toUpperCase())
       .select(`
         *,
-        item:inventory_items(name, price, image_url),
-        receiver:profiles!gifts_receiver_id_fkey(full_name, student_id)
+        item:products!gifts_inventory_item_id_fkey(name, price, image_url),
+        receiver:students!gifts_receiver_id_fkey(full_name, student_id)
       `)
       .single();
 
     if (updateError) throw updateError;
 
-    return redeemedGift as Gift;
+    return mapGiftRow(redeemedGift);
+  },
+
+  /**
+   * Rechaza un regalo pendiente sin generar cargos.
+   */
+  async declineGift(giftId: string, receiverId: string): Promise<void> {
+    const receiver = await resolveStudentRecord(receiverId);
+    if (!receiver) {
+      throw new Error('No se pudo resolver el estudiante destinatario');
+    }
+
+    const { error } = await supabase
+      .from('gifts')
+      .update({ status: 'CANCELLED' })
+      .eq('id', giftId)
+      .eq('receiver_id', receiver.id)
+      .eq('status', 'PENDING');
+
+    if (error) throw error;
   },
 
   // ============================================
@@ -347,3 +389,145 @@ export const socialService = {
     }
   }
 };
+
+type StudentRow = {
+  id: string;
+  full_name: string;
+  student_id: string;
+  school_id: string;
+  grade?: string | null;
+  balance?: number | null;
+  status?: string | null;
+};
+
+type ProfileRow = {
+  id: string;
+  full_name: string;
+  student_id?: string | null;
+  school_id?: string | null;
+  grade?: string | null;
+  balance?: number | null;
+  favorites?: string[] | null;
+  favorites_public?: boolean | null;
+  allergies?: string[] | null;
+  status?: string | null;
+};
+
+function mapFriendFromStudentRow(row: StudentRow): Friend {
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    studentId: row.student_id,
+    grade: row.grade || undefined,
+    balance: Number(row.balance || 0),
+    favorites: null,
+    favoritesPublic: true,
+    allergies: null,
+    status: (row.status as any) || 'ACTIVE',
+    schoolId: row.school_id,
+  };
+}
+
+function mapFriendFromProfileRow(row: ProfileRow | null | undefined): Friend | null {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    studentId: row.student_id || '',
+    grade: row.grade || undefined,
+    balance: Number(row.balance || 0),
+    favorites: row.favorites || null,
+    favoritesPublic: row.favorites_public ?? true,
+    allergies: row.allergies || null,
+    status: (row.status as any) || 'ACTIVE',
+    schoolId: row.school_id || '',
+  };
+}
+
+function mapGiftRow(row: any): Gift {
+  return {
+    id: row.id,
+    senderId: row.sender_id,
+    senderName: row.sender_name || row.sender?.full_name || '',
+    senderStudentId: row.sender_student_id || row.sender?.student_id || '',
+    receiverId: row.receiver_id,
+    receiverName: row.receiver_name || row.receiver?.full_name || '',
+    receiverStudentId: row.receiver_student_id || row.receiver?.student_id || '',
+    inventoryItemId: row.inventory_item_id,
+    productName: row.product_name,
+    productImage: row.product_image || row.item?.image_url || undefined,
+    amount: Number(row.amount || row.item?.price || 0),
+    redemptionCode: row.redemption_code,
+    status: row.status,
+    message: row.message || undefined,
+    thankYouMessage: row.thank_you_message || undefined,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    redeemableAt: row.redeemable_at || undefined,
+    redeemedAt: row.redeemed_at || undefined,
+    redeemingStudentId: row.redeeming_student_id || undefined,
+    locationId: row.location_id || undefined,
+    metadata: row.metadata || undefined,
+  };
+}
+
+async function resolveStudentRecord(identifier: string, schoolId?: string): Promise<StudentRow | null> {
+  const directStudent = await supabase
+    .from('students')
+    .select('id, full_name, student_id, school_id, grade, balance, status')
+    .eq('id', identifier)
+    .maybeSingle();
+
+  if (directStudent.data) {
+    return directStudent.data;
+  }
+
+  const byStudentCodeDirect = await supabase
+    .from('students')
+    .select('id, full_name, student_id, school_id, grade, balance, status')
+    .eq('student_id', identifier)
+    .maybeSingle();
+
+  if (byStudentCodeDirect.data) {
+    if (!schoolId || byStudentCodeDirect.data.school_id === schoolId) {
+      return byStudentCodeDirect.data;
+    }
+  }
+
+  const profileLookup = await supabase
+    .from('profiles')
+    .select('student_id, school_id')
+    .eq('id', identifier)
+    .maybeSingle();
+
+  const studentCode = profileLookup.data?.student_id;
+  const profileSchoolId = profileLookup.data?.school_id || schoolId;
+
+  if (!studentCode || !profileSchoolId) {
+    return null;
+  }
+
+  const byStudentCode = await supabase
+    .from('students')
+    .select('id, full_name, student_id, school_id, grade, balance, status')
+    .eq('student_id', studentCode)
+    .eq('school_id', profileSchoolId)
+    .maybeSingle();
+
+  return byStudentCode.data || null;
+}
+
+async function loadProductSnapshot(productId: string): Promise<{ id: string; name: string; price: number; image_url?: string | null }> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, price, image_url')
+    .eq('id', productId)
+    .single();
+
+  if (error || !data) {
+    throw new Error('No se pudo cargar el producto del regalo');
+  }
+
+  return data;
+}

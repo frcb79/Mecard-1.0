@@ -1626,12 +1626,34 @@ CREATE INDEX IF NOT EXISTS idx_gifts_school ON gifts(school_id);
 -- HELPER FUNCTION: Decrement inventory stock (used by POS)
 -- ============================================
 CREATE OR REPLACE FUNCTION decrement_inventory_stock(p_item_id UUID, p_quantity INTEGER)
-RETURNS VOID AS $$
+RETURNS BOOLEAN AS $$
+DECLARE
+  current_stock INTEGER;
 BEGIN
+  SELECT stock
+  INTO current_stock
+  FROM inventory_items
+  WHERE id = p_item_id
+  FOR UPDATE;
+
+  IF current_stock IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  IF current_stock < p_quantity THEN
+    RETURN FALSE;
+  END IF;
+
   UPDATE inventory_items
-  SET stock = GREATEST(stock - p_quantity, 0),
+  SET stock = stock - p_quantity,
+      status = CASE
+        WHEN (stock - p_quantity) = 0 THEN 'out_of_stock'
+        ELSE status
+      END,
       updated_at = NOW()
   WHERE id = p_item_id;
+  
+  RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
