@@ -10,13 +10,15 @@
  * @route /student/birthday, /parent/birthday
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Cake, Gift, Heart, Plus, Users, Search, ChevronRight,
   Star, PartyPopper, ShoppingBag, Sparkles, Check, X,
-  CreditCard, Clock, TrendingUp, AlertCircle
+  CreditCard, Clock, TrendingUp, AlertCircle, Loader2
 } from 'lucide-react';
 import type { BirthdayStudent, WishlistItem, BirthdayPool } from '../types';
+import { birthdayService } from '../services/birthdayService';
+import { useAuth } from '../hooks/useAuth';
 
 // ─── Mock Data ──────────────────────────────────────
 
@@ -120,6 +122,9 @@ const fmtDate = (iso: string) => {
 type Tab = 'upcoming' | 'mywishlist' | 'pools';
 
 export default function BirthdayGifts() {
+  const { user } = useAuth();
+  const schoolId = (user as any)?.schoolId || 'mx_01';
+
   const [tab, setTab] = useState<Tab>('upcoming');
   const [search, setSearch] = useState('');
   const [myWishlist, setMyWishlist] = useState<WishlistItem[]>([
@@ -131,47 +136,136 @@ export default function BirthdayGifts() {
   const [contributePoolId, setContributePoolId] = useState<string | null>(null);
   const [contributeAmount, setContributeAmount] = useState('');
   const [pools, setPools] = useState<BirthdayPool[]>(MOCK_POOLS);
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState<BirthdayStudent[]>(MOCK_UPCOMING_BIRTHDAYS);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Fetch from service, fallback to mocks
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [bdayRes, poolRes] = await Promise.all([
+        birthdayService.getUpcomingBirthdays(schoolId),
+        birthdayService.getActivePools(schoolId),
+      ]);
+      if (bdayRes.data.length > 0) setUpcomingBirthdays(bdayRes.data);
+      if (poolRes.data.length > 0) setPools(poolRes.data);
+    } catch {
+      // Keep mock fallback
+    } finally {
+      setLoading(false);
+    }
+  }, [schoolId]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const filteredBirthdays = useMemo(() => {
-    if (!search) return MOCK_UPCOMING_BIRTHDAYS;
-    return MOCK_UPCOMING_BIRTHDAYS.filter(s =>
+    if (!search) return upcomingBirthdays;
+    return upcomingBirthdays.filter(s =>
       s.fullName.toLowerCase().includes(search.toLowerCase())
     );
-  }, [search]);
+  }, [search, upcomingBirthdays]);
 
   const availableMarketplaceItems = useMemo(() => {
     const idsInWishlist = new Set(myWishlist.map(w => w.id));
     return MOCK_MARKETPLACE_ITEMS.filter(item => !idsInWishlist.has(item.id));
   }, [myWishlist]);
 
-  const handleContribute = (poolId: string) => {
+  const handleContribute = async (poolId: string) => {
     const amount = parseFloat(contributeAmount);
     if (!amount || amount <= 0) return;
 
-    setPools(prev => prev.map(p => {
-      if (p.id !== poolId) return p;
-      const newCollected = Math.min(p.collectedAmount + amount, p.targetAmount);
-      return {
-        ...p,
-        collectedAmount: newCollected,
-        status: newCollected >= p.targetAmount ? 'FUNDED' as const : p.status,
-        contributors: [...p.contributors, {
-          id: `c_${Date.now()}`,
-          poolId: poolId,
-          contributorId: 'current_user',
-          contributorType: 'STUDENT' as const,
-          contributorName: 'Tú',
-          amount,
-          refunded: false,
-          createdAt: new Date().toISOString().slice(0, 10),
-        }],
-      };
-    }));
+    setActionLoading(true);
+    try {
+      const result = await birthdayService.contribute({
+        poolId,
+        contributorId: user?.id || 'current_user',
+        contributorType: (user as any)?.role === 'PARENT' ? 'PARENT' : 'STUDENT',
+        contributorName: user?.fullName || 'Tú',
+        amount,
+      });
+      if (result.success && result.pool) {
+        setPools(prev => prev.map(p => p.id === poolId ? result.pool! : p));
+      } else {
+        // Fallback: update locally
+        setPools(prev => prev.map(p => {
+          if (p.id !== poolId) return p;
+          const newCollected = Math.min(p.collectedAmount + amount, p.targetAmount);
+          return {
+            ...p,
+            collectedAmount: newCollected,
+            status: newCollected >= p.targetAmount ? 'FUNDED' as const : p.status,
+            contributors: [...p.contributors, {
+              id: `c_${Date.now()}`,
+              poolId,
+              contributorId: user?.id || 'current_user',
+              contributorType: 'STUDENT' as const,
+              contributorName: user?.fullName || 'Tú',
+              amount,
+              refunded: false,
+              createdAt: new Date().toISOString().slice(0, 10),
+            }],
+          };
+        }));
+      }
+    } catch {
+      // Fallback: update locally
+      setPools(prev => prev.map(p => {
+        if (p.id !== poolId) return p;
+        const newCollected = Math.min(p.collectedAmount + amount, p.targetAmount);
+        return {
+          ...p,
+          collectedAmount: newCollected,
+          status: newCollected >= p.targetAmount ? 'FUNDED' as const : p.status,
+          contributors: [...p.contributors, {
+            id: `c_${Date.now()}`,
+            poolId,
+            contributorId: user?.id || 'current_user',
+            contributorType: 'STUDENT' as const,
+            contributorName: user?.fullName || 'Tú',
+            amount,
+            refunded: false,
+            createdAt: new Date().toISOString().slice(0, 10),
+          }],
+        };
+      }));
+    } finally {
+      setActionLoading(false);
+    }
     setContributeAmount('');
     setContributePoolId(null);
   };
 
-  const handleStartPool = (student: BirthdayStudent, item: WishlistItem) => {
+  const handleStartPool = async (student: BirthdayStudent, item: WishlistItem) => {
+    setActionLoading(true);
+    try {
+      const result = await birthdayService.createPool({
+        birthdayStudentId: student.id,
+        creatorId: user?.id || 'current_user',
+        creatorType: (user as any)?.role === 'PARENT' ? 'PARENT' : 'STUDENT',
+        targetProductName: item.name,
+        targetProductId: item.id,
+        targetAmount: item.price,
+        birthdayDate: student.birthday,
+        expiresAt: student.birthday,
+      });
+      if (result.data) {
+        const pool = { ...result.data, birthdayStudentName: student.fullName, targetItem: item };
+        setPools(prev => [pool, ...prev]);
+      } else {
+        // Fallback: local pool
+        createLocalPool(student, item);
+      }
+    } catch {
+      createLocalPool(student, item);
+    } finally {
+      setActionLoading(false);
+    }
+    setSelectedStudent(null);
+    setTab('pools');
+  };
+
+  const createLocalPool = (student: BirthdayStudent, item: WishlistItem) => {
     const newPool: BirthdayPool = {
       id: `pool_${Date.now()}`,
       birthdayStudentId: student.id,
@@ -186,12 +280,10 @@ export default function BirthdayGifts() {
       expiresAt: student.birthday,
     };
     setPools(prev => [newPool, ...prev]);
-    setSelectedStudent(null);
-    setTab('pools');
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { id: 'upcoming', label: 'Próximos', icon: <Cake size={16} />, badge: MOCK_UPCOMING_BIRTHDAYS.filter(b => b.daysUntil <= 7).length },
+    { id: 'upcoming', label: 'Próximos', icon: <Cake size={16} />, badge: upcomingBirthdays.filter(b => b.daysUntil <= 7).length },
     { id: 'mywishlist', label: 'Mi Wishlist', icon: <Heart size={16} /> },
     { id: 'pools', label: 'Colectas', icon: <Users size={16} />, badge: pools.filter(p => p.status === 'OPEN').length },
   ];
@@ -224,6 +316,14 @@ export default function BirthdayGifts() {
             </button>
           ))}
         </div>
+
+        {/* Loading indicator */}
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-pink-500" />
+            <span className="ml-2 text-sm text-slate-500">Cargando...</span>
+          </div>
+        )}
 
         {/* ═══ TAB: Upcoming Birthdays ═══ */}
         {tab === 'upcoming' && (
@@ -503,7 +603,7 @@ export default function BirthdayGifts() {
                             </div>
                             <button
                               onClick={() => handleContribute(pool.id)}
-                              disabled={!contributeAmount || parseFloat(contributeAmount) <= 0}
+                              disabled={!contributeAmount || parseFloat(contributeAmount) <= 0 || actionLoading}
                               className="px-4 py-2 bg-pink-600 text-white rounded-xl text-xs font-bold disabled:bg-slate-300"
                             >
                               <Check size={14} />

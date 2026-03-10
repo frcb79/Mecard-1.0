@@ -229,6 +229,7 @@ export interface AuthUser {
   schoolId?: string;
   campusId?: string;
   unitId?: string;
+  studentId?: string;
   photo?: string;
   customRoleId?: string;
   permissions?: AppPermission[];

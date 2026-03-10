@@ -123,6 +123,10 @@ const DashboardPlaceholder = lazyWithRetry(() => import('../components/Dashboard
 // Phase 2 integrations
 const StudentFavoritesView = lazyWithRetry(() => import('../_phase2/StudentFavorites'));
 const SchoolsDirectory = lazyWithRetry(() => import('../_phase2/Schools'));
+const RewardsMarketplacePage = lazyWithRetry(() => import('../components/RewardsMarketplacePage'));
+const StudentRewardsDashboardPage = lazyWithRetry(() => import('../components/StudentRewardsDashboardPage'));
+const GiftSenderPage = lazyWithRetry(() => import('../_phase2/GiftSender').then(m => ({ default: m.GiftSender })));
+const GiftInboxPage = lazyWithRetry(() => import('../_phase2/GiftInbox').then(m => ({ default: m.GiftInbox })));
 
 // ========== SUSPENSE FALLBACK ==========
 function RouteLoader() {
@@ -734,6 +738,46 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
               <StudentFavoritesView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/marketplace"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <RewardsMarketplacePage />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/rewards-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <StudentRewardsDashboardPage />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/send-gift"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <GiftSenderPage />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/inbox"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <GiftInboxPage />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

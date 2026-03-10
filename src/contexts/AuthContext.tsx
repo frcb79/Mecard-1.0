@@ -187,6 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       schoolId: 'school-001',
       campusId: undefined,
       unitId: role === UserRole.UNIT_MANAGER ? 'unit-001' : undefined,
+      studentId: role === UserRole.STUDENT ? 'student-demo-001' : undefined,
       photo: undefined
     };
     setUser(demoUser);

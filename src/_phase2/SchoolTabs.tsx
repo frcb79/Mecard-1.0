@@ -1,7 +1,7 @@
 import SchoolCampusTab from "./SchoolCampusTab";
 import { useState } from "react";
 import { Building2, DollarSign, MapPin, Terminal } from "lucide-react";
-import { BusinessModelConfiguration } from "./BusinessModelConfiguration";
+import { BusinessModelConfiguration } from "../components/BusinessModelConfiguration";
 
 const TABS = [
   { id: "general", label: "General", icon: Building2 },

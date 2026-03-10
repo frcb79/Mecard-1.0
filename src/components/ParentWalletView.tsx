@@ -13,6 +13,7 @@ import { useParentStudents } from '../hooks/useParentStudents';
 import ParentNoStudentsState from './ParentNoStudentsState';
 import { getSpendingAnalysis, getSmartAlerts } from '../services/geminiService';
 import { calculateDepositFee, getBillingConfig, formatCurrency } from '../services/BillingService';
+import { autoReloadService } from '../services/autoReloadService';
 import { DepositMethod, DepositWithFeeCalculation, SchoolBillingConfig } from '../types';
 
 export default function ParentWalletView() {
@@ -92,6 +93,25 @@ export default function ParentWalletView() {
 
     // Load AI Insights on mount
     loadAIInsights();
+
+    // Load Auto-Reload configs from Supabase
+    if (user?.id) {
+      autoReloadService.getAllConfigs(user.id).then(({ data }) => {
+        if (data && data.length > 0) {
+          const configs: Record<string, any> = {};
+          data.forEach(c => {
+            configs[c.studentId] = {
+              enabled: c.enabled,
+              threshold: c.thresholdAmount,
+              reloadAmount: c.reloadAmount,
+              paymentMethod: c.paymentMethod === 'CARD' ? 'card' : 'spei',
+              lastReload: c.lastReloadAt,
+            };
+          });
+          setAutoReloadConfigs(prev => ({ ...prev, ...configs }));
+        }
+      });
+    }
   }, [children, paymentService]);
 
   // ========================================
@@ -793,10 +813,22 @@ export default function ParentWalletView() {
 
                               {/* Save button */}
                               <Button
-                                onClick={() => {
-                                  updateConfig({ lastReload: undefined });
-                                  setSuccessMessage(`Recarga automática configurada para ${child.name}`);
-                                  setTimeout(() => setSuccessMessage(''), 4000);
+                                onClick={async () => {
+                                  if (!user?.id) return;
+                                  try {
+                                    await autoReloadService.saveConfig({
+                                      parentId: user.id,
+                                      studentId: child.id,
+                                      enabled: config.enabled,
+                                      thresholdAmount: config.threshold,
+                                      reloadAmount: config.reloadAmount,
+                                      paymentMethod: config.paymentMethod === 'card' ? 'CARD' : 'SPEI',
+                                    });
+                                    setSuccessMessage(`Recarga automática configurada para ${child.name}`);
+                                  } catch {
+                                    setErrorMessage('Error al guardar configuración');
+                                  }
+                                  setTimeout(() => { setSuccessMessage(''); setErrorMessage(''); }, 4000);
                                 }}
                                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg uppercase text-[10px] tracking-[2px]"
                               >
