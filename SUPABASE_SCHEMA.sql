@@ -1401,3 +1401,257 @@ CREATE TABLE IF NOT EXISTS auto_reload_config (
 
 CREATE INDEX IF NOT EXISTS idx_autoreload_parent ON auto_reload_config(parent_id);
 CREATE INDEX IF NOT EXISTS idx_autoreload_active ON auto_reload_config(student_id) WHERE enabled = TRUE;
+
+-- ============================================
+-- PROFILES (Auth user profiles — maps auth.users to app data)
+-- ============================================
+-- Used by: supabaseAuth.ts, supabaseSocial.ts, useTransactions.ts
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY,  -- matches auth.users.id
+  email TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  student_id TEXT,       -- matrícula (nullable for staff)
+  
+  role TEXT NOT NULL DEFAULT 'STUDENT' CHECK (role IN (
+    'SUPER_ADMIN', 'SCHOOL_ADMIN', 'SCHOOL_FINANCE',
+    'UNIT_MANAGER', 'POS_OPERATOR', 'CAFETERIA_STAFF',
+    'STATIONERY_STAFF', 'CASHIER', 'PARENT', 'STUDENT'
+  )),
+  
+  school_id UUID REFERENCES schools(id) ON DELETE SET NULL,
+  campus_id UUID REFERENCES campuses(id) ON DELETE SET NULL,
+  grade TEXT,
+  
+  -- Wallet (denormalized for fast reads)
+  balance DECIMAL(12,2) NOT NULL DEFAULT 0,
+  
+  -- Social features
+  favorites TEXT[] DEFAULT '{}',         -- product IDs
+  favorites_public BOOLEAN NOT NULL DEFAULT TRUE,
+  allergies TEXT[] DEFAULT '{}',
+  
+  status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Suspended')),
+  photo_url TEXT,
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_school ON profiles(school_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
+CREATE INDEX IF NOT EXISTS idx_profiles_student_id ON profiles(student_id);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Users can read their own profile
+DROP POLICY IF EXISTS "profiles_own_read" ON profiles;
+CREATE POLICY "profiles_own_read" ON profiles FOR SELECT
+  USING (id = (SELECT auth.uid()));
+
+-- Users can update their own profile
+DROP POLICY IF EXISTS "profiles_own_update" ON profiles;
+CREATE POLICY "profiles_own_update" ON profiles FOR UPDATE
+  USING (id = (SELECT auth.uid()));
+
+-- Same-school users can search each other (for friend lookup)
+DROP POLICY IF EXISTS "profiles_school_read" ON profiles;
+CREATE POLICY "profiles_school_read" ON profiles FOR SELECT
+  USING (school_id IN (
+    SELECT school_id FROM profiles WHERE id = (SELECT auth.uid())
+  ));
+
+-- Super admins full access
+DROP POLICY IF EXISTS "profiles_super_admin" ON profiles;
+CREATE POLICY "profiles_super_admin" ON profiles FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ));
+
+-- ============================================
+-- FRIENDSHIPS (Social graph between students)
+-- ============================================
+-- Used by: supabaseSocial.ts (addFriend, getFriends)
+CREATE TABLE IF NOT EXISTS friendships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  friend_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'accepted' CHECK (status IN ('pending', 'accepted', 'blocked')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  UNIQUE(user_id, friend_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_friendships_user ON friendships(user_id);
+CREATE INDEX IF NOT EXISTS idx_friendships_friend ON friendships(friend_id);
+CREATE INDEX IF NOT EXISTS idx_friendships_status ON friendships(user_id, status);
+
+ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
+
+-- Users can manage their own friendships
+DROP POLICY IF EXISTS "friendships_own" ON friendships;
+CREATE POLICY "friendships_own" ON friendships FOR ALL
+  USING (user_id = (SELECT auth.uid()) OR friend_id = (SELECT auth.uid()));
+
+-- ============================================
+-- INVENTORY ITEMS (Products available in units)
+-- ============================================
+-- Used by: supabaseInventory.ts, supabaseSocial.ts (gift item join)
+CREATE TABLE IF NOT EXISTS inventory_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  unit_id UUID NOT NULL REFERENCES operating_units(id) ON DELETE CASCADE,
+  school_id UUID REFERENCES schools(id) ON DELETE SET NULL,
+  
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  
+  price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+  cost DECIMAL(10,2),
+  
+  stock INTEGER NOT NULL DEFAULT 0,
+  min_stock INTEGER NOT NULL DEFAULT 5,
+  max_stock INTEGER,
+  
+  image_url TEXT,
+  barcode TEXT,
+  
+  -- Nutritional / dietary
+  allergens TEXT[] DEFAULT '{}',
+  is_healthy BOOLEAN NOT NULL DEFAULT FALSE,
+  calories INTEGER,
+  
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'out_of_stock', 'discontinued')),
+  
+  metadata JSONB DEFAULT '{}',
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_unit ON inventory_items(unit_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_school ON inventory_items(school_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_status ON inventory_items(status) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_inventory_category ON inventory_items(category);
+
+ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
+
+-- Authenticated users can view active inventory
+DROP POLICY IF EXISTS "inventory_read_auth" ON inventory_items;
+CREATE POLICY "inventory_read_auth" ON inventory_items FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+-- Unit managers and staff can manage their unit's inventory
+DROP POLICY IF EXISTS "inventory_manage_unit" ON inventory_items;
+CREATE POLICY "inventory_manage_unit" ON inventory_items FOR ALL
+  USING (unit_id IN (
+    SELECT ou.id FROM operating_units ou
+    JOIN user_roles ur ON ur.school_id = ou.school_id
+    WHERE ur.user_id = (SELECT auth.uid())
+      AND ur.role IN ('UNIT_MANAGER', 'CAFETERIA_STAFF', 'STATIONERY_STAFF', 'SCHOOL_ADMIN')
+  ));
+
+-- ============================================
+-- TRANSACTIONS (POS sales, purchases, deposits)
+-- ============================================
+-- Used by: supabasePos.ts, useTransactions.ts, useRealtime.ts
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  unit_id UUID REFERENCES operating_units(id) ON DELETE SET NULL,
+  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  
+  type TEXT NOT NULL CHECK (type IN ('sale', 'purchase', 'deposit', 'refund', 'adjustment', 'gift')),
+  status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed', 'refunded', 'cancelled')),
+  
+  amount DECIMAL(12,2) NOT NULL,
+  items JSONB DEFAULT '[]',  -- Cart snapshot [{ id, name, qty, price }]
+  
+  payment_method TEXT CHECK (payment_method IN ('nfc', 'qr', 'cash', 'card', 'wallet', 'spei')),
+  
+  -- Reference data
+  receipt_number TEXT,
+  notes TEXT,
+  metadata JSONB DEFAULT '{}',
+  
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_student ON transactions(student_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_school ON transactions(school_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_unit ON transactions(unit_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_created ON transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
+
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+
+-- Students see their own transactions
+DROP POLICY IF EXISTS "transactions_student_own" ON transactions;
+CREATE POLICY "transactions_student_own" ON transactions FOR SELECT
+  USING (student_id IN (
+    SELECT id FROM students WHERE user_id = (SELECT auth.uid())
+  ));
+
+-- POS operators can insert transactions for their unit
+DROP POLICY IF EXISTS "transactions_pos_insert" ON transactions;
+CREATE POLICY "transactions_pos_insert" ON transactions FOR INSERT
+  WITH CHECK (school_id IN (
+    SELECT school_id FROM user_roles
+    WHERE user_id = (SELECT auth.uid())
+      AND role IN ('POS_OPERATOR', 'CAFETERIA_STAFF', 'STATIONERY_STAFF', 'CASHIER', 'UNIT_MANAGER')
+  ));
+
+-- School admins can see all school transactions
+DROP POLICY IF EXISTS "transactions_school_admin" ON transactions;
+CREATE POLICY "transactions_school_admin" ON transactions FOR SELECT
+  USING (school_id IN (
+    SELECT school_id FROM user_roles
+    WHERE user_id = (SELECT auth.uid())
+      AND role IN ('SCHOOL_ADMIN', 'SCHOOL_FINANCE')
+  ));
+
+-- Super admins see everything
+DROP POLICY IF EXISTS "transactions_super_admin" ON transactions;
+CREATE POLICY "transactions_super_admin" ON transactions FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ));
+
+-- ============================================
+-- ALTER gifts — add school_id for social service
+-- ============================================
+ALTER TABLE gifts ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES schools(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_gifts_school ON gifts(school_id);
+
+-- ============================================
+-- HELPER FUNCTION: Decrement inventory stock (used by POS)
+-- ============================================
+CREATE OR REPLACE FUNCTION decrement_inventory_stock(p_item_id UUID, p_quantity INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE inventory_items
+  SET stock = GREATEST(stock - p_quantity, 0),
+      updated_at = NOW()
+  WHERE id = p_item_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- TRIGGER: Auto-create profile on auth signup
+-- ============================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1))
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
