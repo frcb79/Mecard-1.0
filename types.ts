@@ -1330,3 +1330,88 @@ export function isSale(transaction: WalletTransaction | Sale): transaction is Sa
 export function isDeposit(transaction: WalletTransaction | Deposit): transaction is Deposit {
   return 'method' in transaction && 'allocations' in transaction;
 }
+
+// ============================================
+// 23. REFUND POLICY TYPES (PHASE 1)
+// ============================================
+
+export interface PlatformSettings {
+  id: string;
+  pool_to_points_exchange_rate: number;  // 1.0 = 1:1
+  pool_points_expiry_days: number;  // 30
+  school_refund_batch_interval_days: number;  // 15
+  default_pos_accepts_cash: boolean;
+  updated_at: string;
+  updated_by?: string;
+}
+
+export interface SchoolSettings {
+  id: string;
+  school_id: string;
+  pool_points_multiplier: number;  // 1.0 = 1:1, can be customized per school
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PointsLedgerEntry {
+  id: string;
+  student_id: string;
+  school_id: string;
+  transaction_type: 'POOL_CONVERSION' | 'MARKETPLACE_PURCHASE' | 'MARKETPLACE_REDEMPTION' | 'MARKETPLACE_REVERSAL' | 'ADMIN_ADJUSTMENT' | 'GIFT_POINTS';
+  amount: number;  // Positive = earn, Negative = spend
+  source_module: 'pool' | 'marketplace' | 'gift' | 'admin';
+  source_id?: string;
+  source_description?: string;
+  balance_after: number;
+  notes?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface PendingSchoolRefundItem {
+  amount: number;
+  description: string;
+  originalTransactionId?: string;
+  date: string;
+}
+
+export interface PendingSchoolRefund {
+  id: string;
+  school_id: string;
+  concessionaire_id?: string;
+  batch_number: number;
+  batch_start_date: string;  // YYYY-MM-DD
+  batch_due_date: string;  // YYYY-MM-DD (start + 15 days)
+  refund_reason: 'service_not_used' | 'partial_service' | 'error_correction' | 'other';
+  description: string;
+  total_amount_pending: number;
+  items: PendingSchoolRefundItem[];
+  status: 'pending' | 'approved' | 'rejected' | 'settled';
+  approved_at?: string;
+  approved_by?: string;
+  rejection_reason?: string;
+  settled_at?: string;
+  settled_by?: string;
+  settlement_reference?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SchoolRefundSettlement {
+  id: string;
+  school_id: string;
+  concessionaire_id?: string;
+  batch_id: string;  // PendingSchoolRefund.id
+  total_settled_amount: number;
+  settlement_method: 'bank_transfer' | 'wallet_credit' | 'check' | 'cash' | 'other';
+  settlement_reference: string;
+  status: 'pending' | 'in_transit' | 'completed' | 'failed' | 'disputed';
+  settled_at: string;
+  confirmed_at?: string;
+  confirmed_by?: string;
+  notes?: string;
+  metadata?: Record<string, any>;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
