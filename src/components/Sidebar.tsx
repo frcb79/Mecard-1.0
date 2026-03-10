@@ -8,7 +8,7 @@ import {
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
   ChevronRight, Gift, Star, Menu, X, MapPin, Briefcase,
   Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText,
-  Shield, Megaphone
+  Shield, Megaphone, TrendingUp, HandCoins, Calculator
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -55,6 +55,14 @@ function getNavSections(role: UserRole): NavSection[] {
           { path: '/admin/billing/operations', label: 'Operaciones', icon: <FileText size={18} /> },
           { path: '/admin/billing/analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
           { path: '/admin/billing/blocking', label: 'Bloqueos', icon: <Ban size={18} /> },
+          { path: '/admin/billing/collections', label: 'Cobros', icon: <HandCoins size={18} /> },
+        ],
+      },
+      {
+        label: 'Ventas',
+        icon: <TrendingUp size={10} />,
+        items: [
+          { path: '/admin/sales/simulator', label: 'Simulador', icon: <Calculator size={18} /> },
         ],
       },
       {
@@ -90,6 +98,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
         { path: '/school/students', label: 'Estudiantes', icon: <Users size={18} /> },
         { path: '/school/fees', label: 'Colegiaturas', icon: <Receipt size={18} /> },
+        { path: '/school/collections', label: 'Cobranza', icon: <HandCoins size={18} /> },
         { path: '/school/reports', label: 'Reportes', icon: <BarChart3 size={18} /> },
         { path: '/school/invoices', label: 'Facturas', icon: <FileText size={18} /> },
       ],
@@ -106,6 +115,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school/staff', label: 'Personal', icon: <UserCircle size={18} /> },
         { path: '/school/roles', label: 'Roles', icon: <Shield size={18} /> },
         { path: '/school/fees', label: 'Colegiaturas', icon: <Receipt size={18} /> },
+        { path: '/school/collections', label: 'Cobranza', icon: <HandCoins size={18} /> },
         { path: '/school/announcements', label: 'Circulares', icon: <Megaphone size={18} /> },
         { path: '/school/reports', label: 'Reportes', icon: <BarChart3 size={18} /> },
         { path: '/school/access', label: 'Accesos', icon: <Shield size={18} /> },
@@ -124,6 +134,7 @@ function getNavSections(role: UserRole): NavSection[] {
       items: [
         { path: '/unit', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
         { path: '/unit/inventory', label: 'Inventario', icon: <ShoppingCart size={18} /> },
+        { path: '/unit/demand', label: 'Predicción Demanda', icon: <TrendingUp size={18} /> },
         { path: '/unit/staff', label: 'Personal', icon: <Users size={18} /> },
       ],
     }];

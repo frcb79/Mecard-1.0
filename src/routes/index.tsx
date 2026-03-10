@@ -63,8 +63,11 @@ const SchoolBlockingManagement = lazyWithRetry(() => import('../components/Super
 const SchoolOnboardingDashboard = lazyWithRetry(() => import('../components/SchoolOnboardingDashboard'));
 const AdminRewardsConfig = lazyWithRetry(() => import('../components/AdminRewardsConfig'));
 const SupportSystem = lazyWithRetry(() => import('../components/SupportSystem'));
+const CommercialSimulator = lazyWithRetry(() => import('../components/SuperAdmin/CommercialSimulator'));
+const CollectionsMonitor = lazyWithRetry(() => import('../components/SuperAdmin/CollectionsMonitor'));
 
 // School Admin
+const SchoolCollectionsDashboard = lazyWithRetry(() => import('../components/SchoolCollectionsDashboard'));
 const SchoolAdminContainer = lazyWithRetry(() => import('../components/SchoolAdminContainer'));
 const StudentManagementView = lazyWithRetry(() => import('../components/StudentManagementView'));
 const SmartStaffManager = lazyWithRetry(() => import('../components/SmartStaffManager'));
@@ -81,6 +84,7 @@ const CustomRolesManager = lazyWithRetry(() => import('../components/CustomRoles
 // Unit Manager
 const ConcessionaireDashboard = lazyWithRetry(() => import('../components/ConcessionaireDashboard'));
 const InventoryManagementView = lazyWithRetry(() => import('../components/InventoryManagementView'));
+const CafeteriaDemandForecast = lazyWithRetry(() => import('../components/CafeteriaDemandForecast'));
 
 // POS
 const PosView = lazyWithRetry(() => import('../components/PosView'));
@@ -279,6 +283,26 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/sales/simulator"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <CommercialSimulator />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/billing/collections"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+            <RoleBasedLayout>
+              <CollectionsMonitor />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ====== SCHOOL ADMIN ROUTES ====== */}
       <Route
@@ -411,6 +435,16 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/school/collections"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolCollectionsDashboard />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ====== UNIT MANAGER ROUTES ====== */}
       <Route
@@ -439,6 +473,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.UNIT_MANAGER]}>
             <RoleBasedLayout>
               <SmartStaffManager />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/unit/demand"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.UNIT_MANAGER]}>
+            <RoleBasedLayout>
+              <CafeteriaDemandForecast />
             </RoleBasedLayout>
           </ProtectedRoute>
         }
