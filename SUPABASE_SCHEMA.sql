@@ -1360,6 +1360,8 @@ CREATE TABLE IF NOT EXISTS birthday_pools (
   expires_at TIMESTAMPTZ NOT NULL,
   funded_at TIMESTAMPTZ,
   delivered_at TIMESTAMPTZ,
+  product_change_count INT NOT NULL DEFAULT 0,
+  last_product_change_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -1380,6 +1382,87 @@ CREATE TABLE IF NOT EXISTS pool_contributions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_contributions_pool ON pool_contributions(pool_id);
+
+-- ============================================
+-- PRODUCT CHANGE HISTORY (Audit trail for birthday pool product swaps)
+-- ============================================
+CREATE TABLE IF NOT EXISTS product_change_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pool_id UUID NOT NULL REFERENCES birthday_pools(id) ON DELETE CASCADE,
+  old_product_id UUID,
+  old_product_name TEXT,
+  new_product_id UUID NOT NULL,
+  new_product_name TEXT NOT NULL,
+  old_price DECIMAL(10,2),
+  new_price DECIMAL(10,2) NOT NULL,
+  changed_by UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
+  refund_total DECIMAL(12,2),
+  change_reason TEXT,
+  is_rejected BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pch_pool ON product_change_history(pool_id);
+CREATE INDEX IF NOT EXISTS idx_pch_changed_by ON product_change_history(changed_by);
+CREATE INDEX IF NOT EXISTS idx_pch_created ON product_change_history(created_at DESC);
+
+-- ============================================
+-- POOL REFUNDS (Pro-rata refunds from product swaps)
+-- ============================================
+CREATE TABLE IF NOT EXISTS pool_refunds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pool_id UUID NOT NULL REFERENCES birthday_pools(id) ON DELETE CASCADE,
+  product_change_id UUID NOT NULL REFERENCES product_change_history(id) ON DELETE CASCADE,
+  contributor_id UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
+  original_amount_contributed DECIMAL(12,2) NOT NULL,
+  refund_amount DECIMAL(12,2) NOT NULL CHECK (refund_amount > 0),
+  refund_method TEXT NOT NULL DEFAULT 'wallet' CHECK (refund_method IN ('wallet', 'original_payment')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processed', 'failed', 'cancelled')),
+  processed_at TIMESTAMPTZ,
+  transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_refunds_pool ON pool_refunds(pool_id);
+CREATE INDEX IF NOT EXISTS idx_refunds_contributor ON pool_refunds(contributor_id);
+CREATE INDEX IF NOT EXISTS idx_refunds_status ON pool_refunds(status) WHERE status IN ('pending', 'failed');
+CREATE INDEX IF NOT EXISTS idx_refunds_product_change ON pool_refunds(product_change_id);
+
+ALTER TABLE pool_refunds ENABLE ROW LEVEL SECURITY;
+
+-- Pool contributors can see refunds for pools they contributed to
+DROP POLICY IF EXISTS "refunds_own_contribution" ON pool_refunds;
+CREATE POLICY "refunds_own_contribution" ON pool_refunds FOR SELECT
+  USING (contributor_id = (SELECT auth.uid()));
+
+-- Parents can see refunds for pools they created
+DROP POLICY IF EXISTS "refunds_pool_creator" ON pool_refunds;
+CREATE POLICY "refunds_pool_creator" ON pool_refunds FOR SELECT
+  USING (pool_id IN (
+    SELECT bp.id FROM birthday_pools bp
+    WHERE bp.creator_id = (SELECT auth.uid())
+  ));
+
+-- School admins see all refunds for their school
+DROP POLICY IF EXISTS "refunds_school_admin" ON pool_refunds;
+CREATE POLICY "refunds_school_admin" ON pool_refunds FOR ALL
+  USING (pool_id IN (
+    SELECT bp.id FROM birthday_pools bp
+    JOIN students s ON bp.birthday_student_id = s.id
+    WHERE s.school_id IN (
+      SELECT school_id FROM user_roles
+      WHERE user_id = (SELECT auth.uid())
+        AND role IN ('SCHOOL_ADMIN', 'SCHOOL_FINANCE')
+    )
+  ));
+
+-- Super admins have full access
+DROP POLICY IF EXISTS "refunds_super_admin" ON pool_refunds;
+CREATE POLICY "refunds_super_admin" ON pool_refunds FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = (SELECT auth.uid()) AND role = 'SUPER_ADMIN'
+  ));
 
 -- ============================================
 -- AUTO-RELOAD CONFIG

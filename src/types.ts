@@ -2590,6 +2590,71 @@ export interface AutoReloadConfig {
   updatedAt: string;
 }
 
+// ============================================
+// BIRTHDAY POOL PRODUCT SWAP TYPES
+// ============================================
+
+/**
+ * Audit trail for product changes in birthday pools
+ * Tracks when a product was swapped, who made the change, and refund calculations
+ */
+export interface ProductChangeHistory {
+  id: string;
+  poolId: string;
+  oldProductId: string | null;
+  oldProductName: string | null;
+  newProductId: string;
+  newProductName: string;
+  oldPrice: number | null;
+  newPrice: number;
+  changedBy: string;
+  refundTotal: number | null;
+  changeReason: string | null;
+  isRejected: boolean;
+  createdAt: string;
+}
+
+/**
+ * Pro-rata refund record for pool product swaps
+ * Created when a pool product is swapped to a cheaper item
+ */
+export interface PoolRefund {
+  id: string;
+  poolId: string;
+  productChangeId: string;
+  contributorId: string;
+  originalAmountContributed: number;
+  refundAmount: number;
+  refundMethod: 'wallet' | 'original_payment';
+  status: 'pending' | 'processed' | 'failed' | 'cancelled';
+  processedAt: string | null;
+  transactionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Extended BirthdayPool with product swap tracking
+ */
+export interface BirthdayPoolExtended extends BirthdayPool {
+  productChangeCount: number;
+  lastProductChangeAt: string | null;
+  productChangeHistory?: ProductChangeHistory[];
+  refunds?: PoolRefund[];
+}
+
+/**
+ * Result of a product swap operation
+ */
+export interface PoolProductSwapResult {
+  success: boolean;
+  message: string;
+  poolData?: any;
+  refundTotal?: number;
+  affectedContributors?: number;
+  error?: string;
+}
+
 // Default permission map for built-in roles
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
   [UserRole.SUPER_ADMIN]: Object.values(AppPermission),
