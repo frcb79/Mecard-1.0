@@ -109,6 +109,7 @@ const TransactionHistory = lazyWithRetry(() => import('../components/Transaction
 const StudentCredentialView = lazyWithRetry(() => import('../components/StudentCredentialView'));
 const StudentMenuView = lazyWithRetry(() => import('../components/StudentMenuView'));
 const StudentGiftsView = lazyWithRetry(() => import('../components/StudentGiftsView'));
+const BirthdayGifts = lazyWithRetry(() => import('../components/BirthdayGifts'));
 const StudentRewardsView = lazyWithRetry(() => import('../components/StudentRewardsView'));
 const StudentNotificationsView = lazyWithRetry(() => import('../components/StudentNotificationsView'));
 const StudentReportsView = lazyWithRetry(() => import('../components/StudentReportsView'));
@@ -689,6 +690,16 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
             <RoleBasedLayout>
               <StudentGiftsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/birthday"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+            <RoleBasedLayout>
+              <BirthdayGifts />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

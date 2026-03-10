@@ -10,7 +10,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   TrendingUp, Users, Building2, DollarSign, Calculator,
-  BarChart3, ArrowRight, RefreshCw, ChevronDown, ChevronUp
+  BarChart3, ArrowRight, RefreshCw, ChevronDown, ChevronUp,
+  Landmark, Percent
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -27,6 +28,12 @@ interface SchoolProfile {
   buyerPercent: number;
   operatingDays: number;
   depositMix: { card: number; spei: number; oxxo: number; cash: number };
+  // Financial parameters
+  avgBalancePerStudent: number;  // Saldo promedio por alumno
+  annualYieldRate: number;       // Tasa rendimiento CETES %
+  breakagePercent: number;       // % saldo no redimido anual
+  giftVolumePercent: number;     // % del volumen que viene de gifts/colectas
+  giftMarginPercent: number;     // Margen MeCard sobre gifts marketplace
 }
 
 interface PricingModel {
@@ -53,6 +60,13 @@ interface RevenueBreakdown {
   depositOXXO: number;
   cafeteria: number;
   cards: number;
+  // Financial revenue streams
+  floatIncome: number;
+  breakage: number;
+  giftMargin: number;
+  // Totals
+  operationalTotal: number;
+  financialTotal: number;
   total: number;
 }
 
@@ -100,8 +114,17 @@ function calcRevenue(profile: SchoolProfile, model: PricingModel): RevenueBreakd
   const cafeteria = grossCafeteria * (model.cafeteriaFeePercent / 100) * (model.mecardMargin / 100);
   const cards = profile.students * model.yearlyCardCost;
 
-  const total = setup + rent + saas + depositCard + depositSPEI + depositOXXO + cafeteria + cards;
-  return { setup, rent, saas, depositCard, depositSPEI, depositOXXO, cafeteria, cards, total };
+  // Financial revenue streams
+  const totalFloat = profile.students * profile.avgBalancePerStudent;
+  const floatIncome = totalFloat * (profile.annualYieldRate / 100);
+  const breakage = annualVolume * (profile.breakagePercent / 100);
+  const giftVolume = annualVolume * (profile.giftVolumePercent / 100);
+  const giftMargin = giftVolume * (profile.giftMarginPercent / 100);
+
+  const operationalTotal = setup + rent + saas + depositCard + depositSPEI + depositOXXO + cafeteria + cards;
+  const financialTotal = floatIncome + breakage + giftMargin;
+  const total = operationalTotal + financialTotal;
+  return { setup, rent, saas, depositCard, depositSPEI, depositOXXO, cafeteria, cards, floatIncome, breakage, giftMargin, operationalTotal, financialTotal, total };
 }
 
 // ─── Formatters ──────────────────────────────────────
@@ -141,6 +164,8 @@ export default function CommercialSimulator() {
   const [profile, setProfile] = useState<SchoolProfile>({
     name: '', students: 500, units: 2, avgTicket: 60, buyerPercent: 60,
     operatingDays: 22, depositMix: { card: 50, spei: 30, oxxo: 10, cash: 10 },
+    avgBalancePerStudent: 400, annualYieldRate: 10.5, breakagePercent: 6,
+    giftVolumePercent: 5, giftMarginPercent: 20,
   });
 
   // Active model tab
@@ -170,9 +195,9 @@ export default function CommercialSimulator() {
 
   // Charts data
   const comparisonData = useMemo(() => {
-    const sources = ['rent', 'saas', 'depositCard', 'depositSPEI', 'depositOXXO', 'cafeteria', 'cards'] as const;
+    const sources = ['rent', 'saas', 'depositCard', 'depositSPEI', 'depositOXXO', 'cafeteria', 'cards', 'floatIncome', 'breakage', 'giftMargin'] as const;
     return sources.map((src) => ({
-      name: { rent: 'Renta', saas: 'SaaS', depositCard: 'Dep. Card', depositSPEI: 'Dep. SPEI', depositOXXO: 'Dep. OXXO', cafeteria: 'Comisión Caf.', cards: 'Tarjetas' }[src],
+      name: { rent: 'Renta', saas: 'SaaS', depositCard: 'Dep. Card', depositSPEI: 'Dep. SPEI', depositOXXO: 'Dep. OXXO', cafeteria: 'Comisión Caf.', cards: 'Tarjetas', floatIncome: 'Float', breakage: 'Breakage', giftMargin: 'Gifts' }[src],
       'Renta Fija': revenues.rent[src],
       'SaaS': revenues.saas[src],
       'Comisión': revenues.commission[src],
@@ -180,10 +205,13 @@ export default function CommercialSimulator() {
   }, [revenues]);
 
   const projectionData = useMemo(() => {
-    const monthly = (currentRevenue.total - currentRevenue.setup) / 12;
+    const monthlyOp = (currentRevenue.operationalTotal - currentRevenue.setup) / 12;
+    const monthlyFin = currentRevenue.financialTotal / 12;
     return Array.from({ length: 12 }, (_, i) => ({
       mes: `Mes ${i + 1}`,
-      acumulado: Math.round((i === 0 ? currentRevenue.setup : 0) + monthly * (i + 1)),
+      operacional: Math.round((i === 0 ? currentRevenue.setup : 0) + monthlyOp * (i + 1)),
+      financiero: Math.round(monthlyFin * (i + 1)),
+      total: Math.round((i === 0 ? currentRevenue.setup : 0) + monthlyOp * (i + 1) + monthlyFin * (i + 1)),
     }));
   }, [currentRevenue]);
 
@@ -254,6 +282,34 @@ export default function CommercialSimulator() {
               <p className="text-lg font-bold text-indigo-900">
                 {fmt(profile.students * profile.avgTicket * (profile.buyerPercent / 100) * profile.operatingDays)}
               </p>
+            </div>
+          </div>
+
+          {/* Financial Parameters Card */}
+          <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Landmark size={16} className="text-emerald-600" />
+              <h2 className="text-sm font-semibold text-slate-800">Revenue Financiero</h2>
+            </div>
+            <p className="text-[10px] text-slate-500">Ingresos por float, breakage y marketplace de regalos</p>
+
+            <Slider label="Saldo promedio/alumno" value={profile.avgBalancePerStudent} min={100} max={2000} step={50} suffix="$" onChange={(v) => updateProfile({ avgBalancePerStudent: v })} />
+            <Slider label="Tasa rendimiento anual (CETES)" value={profile.annualYieldRate} min={4} max={15} step={0.5} suffix="%" onChange={(v) => updateProfile({ annualYieldRate: v })} />
+            <Slider label="Breakage (saldo no redimido)" value={profile.breakagePercent} min={0} max={15} step={0.5} suffix="%" onChange={(v) => updateProfile({ breakagePercent: v })} />
+
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-xs font-semibold text-slate-700 mb-2">Regalos & Colectas</p>
+              <Slider label="% volumen destinado a gifts" value={profile.giftVolumePercent} min={0} max={20} step={1} suffix="%" onChange={(v) => updateProfile({ giftVolumePercent: v })} />
+              <Slider label="Margen MeCard sobre gifts" value={profile.giftMarginPercent} min={5} max={40} step={1} suffix="%" onChange={(v) => updateProfile({ giftMarginPercent: v })} />
+            </div>
+
+            <div className="bg-emerald-50 rounded-xl p-3 space-y-2">
+              <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider">Float total estimado</p>
+              <p className="text-lg font-bold text-emerald-900">{fmt(profile.students * profile.avgBalancePerStudent)}</p>
+              <div className="flex items-center justify-between text-[10px] text-emerald-600">
+                <span>Rendimiento anual</span>
+                <span className="font-bold">{fmt(profile.students * profile.avgBalancePerStudent * (profile.annualYieldRate / 100))}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -348,12 +404,14 @@ export default function CommercialSimulator() {
         {/* ═══ RIGHT PANEL — Financial Projection ═══ */}
         <div className="lg:col-span-5 space-y-4">
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Revenue Anual', value: fmt(currentRevenue.total), color: 'indigo', icon: TrendingUp },
-              { label: 'Revenue Mensual', value: fmt((currentRevenue.total - currentRevenue.setup) / 12), color: 'emerald', icon: DollarSign },
-              { label: 'Revenue/Alumno/Año', value: fmt(currentRevenue.total / Math.max(profile.students, 1)), color: 'purple', icon: Users },
-              { label: `ROI Setup ${roiMonths > 0 ? `(${roiMonths} meses)` : '(sin setup)'}`, value: roiMonths > 0 ? `${roiMonths} meses` : 'N/A', color: 'amber', icon: BarChart3 },
+              { label: 'Revenue Total Anual', value: fmt(currentRevenue.total), color: 'indigo', icon: TrendingUp },
+              { label: 'Operacional', value: fmt(currentRevenue.operationalTotal), color: 'blue', icon: DollarSign },
+              { label: 'Financiero', value: fmt(currentRevenue.financialTotal), color: 'emerald', icon: Landmark },
+              { label: 'Revenue Mensual', value: fmt((currentRevenue.total - currentRevenue.setup) / 12), color: 'purple', icon: BarChart3 },
+              { label: 'Revenue/Alumno/Año', value: fmt(currentRevenue.total / Math.max(profile.students, 1)), color: 'amber', icon: Users },
+              { label: `ROI Setup ${roiMonths > 0 ? `(${roiMonths}m)` : '(N/A)'}`, value: roiMonths > 0 ? `${roiMonths} meses` : 'Sin setup', color: 'slate', icon: Calculator },
             ].map((kpi) => (
               <div key={kpi.label} className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-4">
                 <div className="flex items-center gap-2 mb-1">
@@ -393,6 +451,8 @@ export default function CommercialSimulator() {
             </button>
             {showBreakdown && (
               <div className="mt-3 space-y-2">
+                {/* Operational Revenue */}
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-1">Revenue Operacional</p>
                 {[
                   ['Setup Fee (one-time)', currentRevenue.setup],
                   ['Renta Mensual × 12', currentRevenue.rent],
@@ -408,7 +468,30 @@ export default function CommercialSimulator() {
                     <span className="font-semibold text-slate-800">{fmt(value as number)}</span>
                   </div>
                 ))}
-                <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200 font-bold">
+                <div className="flex items-center justify-between text-xs py-1.5 border-t border-slate-200 font-bold">
+                  <span className="text-blue-700">Subtotal Operacional</span>
+                  <span className="text-blue-700">{fmt(currentRevenue.operationalTotal)}</span>
+                </div>
+
+                {/* Financial Revenue */}
+                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider pt-2">Revenue Financiero</p>
+                {[
+                  ['Rendimiento Float (CETES)', currentRevenue.floatIncome],
+                  ['Breakage (saldo no redimido)', currentRevenue.breakage],
+                  ['Margen Gifts & Colectas', currentRevenue.giftMargin],
+                ].map(([label, value]) => (
+                  <div key={label as string} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-50 last:border-0">
+                    <span className="text-emerald-700">{label as string}</span>
+                    <span className="font-semibold text-emerald-800">{fmt(value as number)}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between text-xs py-1.5 border-t border-slate-200 font-bold">
+                  <span className="text-emerald-700">Subtotal Financiero</span>
+                  <span className="text-emerald-700">{fmt(currentRevenue.financialTotal)}</span>
+                </div>
+
+                {/* Grand Total */}
+                <div className="flex items-center justify-between text-sm pt-2 border-t-2 border-slate-300 font-bold">
                   <span className="text-indigo-700">TOTAL ANUAL</span>
                   <span className="text-indigo-700">{fmt(currentRevenue.total)}</span>
                 </div>
@@ -419,13 +502,16 @@ export default function CommercialSimulator() {
           {/* 12-month Projection */}
           <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-5">
             <h3 className="text-sm font-semibold text-slate-800 mb-4">Proyección Acumulada 12 Meses</h3>
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={200}>
               <LineChart data={projectionData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="mes" tick={{ fontSize: 9 }} />
                 <YAxis tick={{ fontSize: 9 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => fmt(v)} />
-                <Line type="monotone" dataKey="acumulado" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Line type="monotone" dataKey="total" name="Total" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="operacional" name="Operacional" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" dot={false} />
+                <Line type="monotone" dataKey="financiero" name="Financiero" stroke="#10b981" strokeWidth={1.5} strokeDasharray="4 2" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

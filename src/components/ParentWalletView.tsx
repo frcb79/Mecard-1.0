@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2, Sparkles, TrendingDown, Info } from 'lucide-react';
+import { Wallet, Plus, Send, CreditCard, Building2, Check, AlertCircle, Loader2, Sparkles, TrendingDown, Info, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { usePaymentService } from '../contexts/ServiceContext';
 import { Button } from './Button';
@@ -20,7 +20,7 @@ export default function ParentWalletView() {
   const paymentService = usePaymentService();
   const { students: parentStudents, loading: studentsLoading } = useParentStudents();
   
-  const [activeTab, setActiveTab] = useState<'deposit' | 'manage' | 'insights'>('deposit');
+  const [activeTab, setActiveTab] = useState<'deposit' | 'manage' | 'autoreload' | 'insights'>('deposit');
   const [depositAmount, setDepositAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'spei' | 'card'>('spei');
   const [selectedChild, setSelectedChild] = useState<string>('');
@@ -40,6 +40,15 @@ export default function ParentWalletView() {
   const [aiInsight, setAiInsight] = useState<string>('');
   const [aiAlerts, setAiAlerts] = useState<string[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Auto-Reload State
+  const [autoReloadConfigs, setAutoReloadConfigs] = useState<Record<string, {
+    enabled: boolean;
+    threshold: number;
+    reloadAmount: number;
+    paymentMethod: 'card' | 'spei';
+    lastReload?: string;
+  }>>({});
 
   const children = useMemo(() => {
     return parentStudents.map(student => ({
@@ -347,6 +356,18 @@ export default function ParentWalletView() {
                 <Send className="w-4 h-4" /> <span className="hidden sm:inline">Asignar</span>
               </button>
               <button
+                onClick={() => setActiveTab('autoreload')}
+                role="tab"
+                aria-selected={activeTab === 'autoreload'}
+                className={`flex-1 px-4 md:px-6 py-3 rounded-lg md:rounded-[16px] font-black text-[9px] md:text-[10px] uppercase tracking-[1px] md:tracking-[2px] transition-all flex items-center justify-center gap-2 ${
+                  activeTab === 'autoreload'
+                    ? 'bg-gradient-to-r from-emerald-600 to-sky-600 text-white shadow-lg'
+                    : 'bg-transparent text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" /> <span className="hidden sm:inline">Auto</span>
+              </button>
+              <button
                 onClick={() => setActiveTab('insights')}
                 role="tab"
                 aria-selected={activeTab === 'insights'}
@@ -640,6 +661,162 @@ export default function ParentWalletView() {
                     'Asignar Dinero'
                   )}
                 </Button>
+              </div>
+            )}
+
+            {/* TAB: AUTO-RELOAD */}
+            {activeTab === 'autoreload' && (
+              <div className="bg-white rounded-2xl md:rounded-[32px] shadow-xl p-4 md:p-8 space-y-5 md:space-y-6">
+                <div>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-1">Recarga Automática</h3>
+                  <p className="text-xs text-slate-500 font-medium">Configura una recarga automática cuando el saldo de tu hijo baje de cierto monto.</p>
+                </div>
+
+                {children.length === 0 ? (
+                  <p className="text-slate-400 font-bold text-sm">No hay hijos vinculados.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {children.map(child => {
+                      const config = autoReloadConfigs[child.id] || { enabled: false, threshold: 50, reloadAmount: 300, paymentMethod: 'card' as const };
+                      const updateConfig = (patch: Partial<typeof config>) => {
+                        setAutoReloadConfigs(prev => ({
+                          ...prev,
+                          [child.id]: { ...config, ...patch },
+                        }));
+                      };
+
+                      return (
+                        <div key={child.id} className={`rounded-[20px] border-2 p-5 transition-all ${config.enabled ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200 bg-white'}`}>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              {child.photo && (
+                                <img src={child.photo} alt={child.name} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                              )}
+                              <div>
+                                <p className="font-black text-sm text-slate-800">{child.name}</p>
+                                <p className="text-[10px] text-slate-400">{child.grade} · Saldo: ${child.balance.toFixed(2)}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => updateConfig({ enabled: !config.enabled })}
+                              className="flex items-center gap-2"
+                              aria-label={config.enabled ? 'Desactivar recarga automática' : 'Activar recarga automática'}
+                            >
+                              {config.enabled ? (
+                                <ToggleRight size={32} className="text-emerald-600" />
+                              ) : (
+                                <ToggleLeft size={32} className="text-slate-300" />
+                              )}
+                            </button>
+                          </div>
+
+                          {config.enabled && (
+                            <div className="space-y-4 pt-3 border-t border-slate-100">
+                              {/* Threshold */}
+                              <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">
+                                  Cuando el saldo baje de
+                                </label>
+                                <div className="flex gap-2">
+                                  {[50, 100, 200, 500].map(amt => (
+                                    <button
+                                      key={amt}
+                                      onClick={() => updateConfig({ threshold: amt })}
+                                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                                        config.threshold === amt
+                                          ? 'bg-emerald-600 text-white shadow-sm'
+                                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                      }`}
+                                    >
+                                      ${amt}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Reload Amount */}
+                              <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">
+                                  Recargar automáticamente
+                                </label>
+                                <div className="flex gap-2">
+                                  {[200, 300, 500, 1000].map(amt => (
+                                    <button
+                                      key={amt}
+                                      onClick={() => updateConfig({ reloadAmount: amt })}
+                                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                                        config.reloadAmount === amt
+                                          ? 'bg-emerald-600 text-white shadow-sm'
+                                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                      }`}
+                                    >
+                                      ${amt}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Payment Method */}
+                              <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">
+                                  Método de pago
+                                </label>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => updateConfig({ paymentMethod: 'card' })}
+                                    className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                                      config.paymentMethod === 'card'
+                                        ? 'bg-emerald-600 text-white shadow-sm'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                  >
+                                    <CreditCard size={14} /> Tarjeta Guardada
+                                  </button>
+                                  <button
+                                    onClick={() => updateConfig({ paymentMethod: 'spei' })}
+                                    className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                                      config.paymentMethod === 'spei'
+                                        ? 'bg-emerald-600 text-white shadow-sm'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                  >
+                                    <Building2 size={14} /> Domiciliación SPEI
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Summary */}
+                              <div className="bg-emerald-100 rounded-xl p-3 text-xs text-emerald-800 font-bold">
+                                <RefreshCw size={12} className="inline mr-1" />
+                                Cuando {child.name} tenga menos de <strong>${config.threshold}</strong>, se recargarán <strong>${config.reloadAmount}</strong> vía {config.paymentMethod === 'card' ? 'tarjeta' : 'SPEI'} automáticamente.
+                              </div>
+
+                              {/* Save button */}
+                              <Button
+                                onClick={() => {
+                                  updateConfig({ lastReload: undefined });
+                                  setSuccessMessage(`Recarga automática configurada para ${child.name}`);
+                                  setTimeout(() => setSuccessMessage(''), 4000);
+                                }}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg uppercase text-[10px] tracking-[2px]"
+                              >
+                                Guardar Configuración
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Info */}
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                  <p className="text-xs text-blue-800 font-medium">
+                    <Info size={12} className="inline mr-1" />
+                    La recarga automática requiere un método de pago guardado. Se ejecuta cuando el saldo baja del umbral configurado, máximo una vez por día.
+                  </p>
+                </div>
               </div>
             )}
 

@@ -8,7 +8,7 @@ import {
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
   ChevronRight, Gift, Star, Menu, X, MapPin, Briefcase,
   Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText,
-  Shield, Megaphone, TrendingUp, HandCoins, Calculator
+  Shield, Megaphone, TrendingUp, HandCoins, Calculator, Cake
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -181,6 +181,7 @@ function getNavSections(role: UserRole): NavSection[] {
       { path: '/student/menu', label: 'Menú', icon: <UtensilsCrossed size={18} /> },
       { path: '/student/preorder', label: 'Pre-Orden', icon: <ShoppingCart size={18} /> },
       { path: '/student/gifts', label: 'Regalos', icon: <Gift size={18} /> },
+      { path: '/student/birthday', label: 'Cumpleaños', icon: <Cake size={18} /> },
       { path: '/student/rewards', label: 'Premios', icon: <Star size={18} /> },
       { path: '/student/notifications', label: 'Notificaciones', icon: <MessageSquare size={18} /> },
       { path: '/student/reports', label: 'Reportes', icon: <PieChart size={18} /> },
