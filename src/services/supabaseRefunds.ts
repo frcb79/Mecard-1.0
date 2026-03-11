@@ -478,20 +478,54 @@ export class RefundService {
     approvedBy: string
   ): Promise<ApprovePendingRefundResult> {
     try {
+      // SECURITY FIX (CRIT-007): Verify user is SUPER_ADMIN before allowing approval
+      const { data: roleCheck, error: roleError } = await this.supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', approvedBy)
+        .eq('role', 'SUPER_ADMIN')
+        .maybeSingle();
+
+      if (roleError || !roleCheck) {
+        return { success: false, error: 'Only SUPER_ADMIN can approve refunds' };
+      }
+
+      // SECURITY FIX (CRIT-006): Use optimistic locking to prevent duplicate approval
+      // Only update if status is still 'pending'
       const now = new Date().toISOString();
 
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from('pending_school_refunds')
         .update({
           status: 'approved',
           approved_at: now,
           approved_by: approvedBy
         })
-        .eq('id', refundId);
+        .eq('id', refundId)
+        .eq('status', 'pending')  // <-- KEY: Only update if still pending
+        .select();
 
       if (error) {
         return { success: false, error: error.message };
       }
+
+      // Check if update actually happened (optimistic lock)
+      if (!data || data.length === 0) {
+        return {
+          success: false,
+          error: 'Refund not found or already processed. Approval may have already been completed.'
+        };
+      }
+
+      // Log approval action for audit trail
+      await this.supabase.from('financial_audit_log').insert({
+        user_id: approvedBy,
+        action: 'APPROVAL',
+        entity_type: 'REFUND',
+        entity_id: refundId,
+        new_values: { status: 'approved' },
+        result: 'SUCCESS'
+      }).then(() => {}, (err) => console.warn('Audit log failed:', err));
 
       return { success: true, approvedAt: now };
     } catch (err) {
@@ -557,10 +591,28 @@ export class RefundService {
       reference: string;  // CLABE, check number, etc.
       notes?: string;
     },
-    settledBy: string
+    settledBy: string,
+    userRole?: string
   ): Promise<SettleRefundResult> {
     try {
-      // Get the pending refund
+      // SECURITY FIX (CRIT-007): Verify authorization at service layer
+      if (!userRole) {
+        return { success: false, error: 'Authorization required' };
+      }
+
+      // Check if user is SUPER_ADMIN
+      const { data: roleCheck, error: roleError } = await this.supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', settledBy)
+        .eq('role', 'SUPER_ADMIN')
+        .single();
+
+      if (roleError || !roleCheck) {
+        return { success: false, error: 'Only SUPER_ADMIN can settle refunds' };
+      }
+
+      // Get the pending refund to verify school ownership
       const { data: pendingRefund, error: fetchError } = await this.supabase
         .from('pending_school_refunds')
         .select('*')
@@ -571,50 +623,46 @@ export class RefundService {
         return { success: false, error: 'Refund not found' };
       }
 
-      if (pendingRefund.status !== 'approved') {
-        return { success: false, error: `Refund status is ${pendingRefund.status}, not approved` };
+      // SECURITY FIX (CRIT-006): Add idempotency key for preventing duplicate settlements
+      const idempotencyKey = `settlement-${refundId}-${Date.now()}`;
+
+      // Call atomic settlement function instead of manual updates
+      // SECURITY FIX (CRIT-003): Use settling atómico with idempotency
+      const { data: result, error: rpcError } = await this.supabase
+        .rpc('settle_refund_idempotent', {
+          p_refund_id: refundId,
+          p_settled_by: settledBy,
+          p_method: settlementParams.method,
+          p_reference: settlementParams.reference,
+          p_idempotency_key: idempotencyKey
+        });
+
+      if (rpcError) {
+        return { success: false, error: `Settlement failed: ${rpcError.message}` };
       }
 
-      const now = new Date().toISOString();
-
-      // Create settlement record
-      const { data: settlement, error: insertError } = await this.supabase
-        .from('school_refund_settlements')
-        .insert({
-          school_id: pendingRefund.school_id,
-          concessionaire_id: pendingRefund.concessionaire_id,
-          batch_id: refundId,
-          total_settled_amount: pendingRefund.total_amount_pending,
-          settlement_method: settlementParams.method,
-          settlement_reference: settlementParams.reference,
-          status: 'pending',
-          settled_at: now,
-          notes: settlementParams.notes,
-          created_by: settledBy
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        return { success: false, error: insertError.message };
+      if (!result.success) {
+        return { success: false, error: result.error };
       }
 
-      // Mark pending refund as settled
-      const { error: updateError } = await this.supabase
-        .from('pending_school_refunds')
-        .update({
-          status: 'settled',
-          settled_at: now,
-          settled_by: settledBy,
-          settlement_reference: settlementParams.reference
-        })
-        .eq('id', refundId);
+      // Log settlement action for audit trail
+      await this.supabase.from('financial_audit_log').insert({
+        user_id: settledBy,
+        action: 'SETTLEMENT',
+        entity_type: 'REFUND',
+        entity_id: refundId,
+        new_values: {
+          amount: result.amount,
+          method: settlementParams.method,
+          reference: settlementParams.reference
+        },
+        result: 'SUCCESS'
+      }).then(() => {}, (err) => console.warn('Audit log failed:', err));
 
-      if (updateError) {
-        console.error('Warning: Settlement created but pending refund not updated:', updateError);
-      }
-
-      return { success: true, settlementId: settlement?.id };
+      return {
+        success: true,
+        settlementId: result.settlement_id
+      };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       return { success: false, error: errorMsg };
