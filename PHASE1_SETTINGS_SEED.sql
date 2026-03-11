@@ -2,6 +2,9 @@
 -- PHASE 1: REFUND POLICY SETTINGS SEED
 -- ============================================
 
+ALTER TABLE school_settings
+  ALTER COLUMN pool_points_multiplier TYPE DECIMAL(6,2);
+
 INSERT INTO platform_settings (
   pool_to_points_exchange_rate,
   pool_points_expiry_days,
