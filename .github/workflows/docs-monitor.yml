@@ -1,0 +1,20 @@
+name: Docs Monitor
+
+on:
+  schedule:
+    - cron: '0 12 * * 1' # weekly checks every Monday
+  workflow_dispatch: []
+
+jobs:
+  docs-update-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check docs updates
+        run: |
+          if git log --since='14 days ago' --oneline -- docs/project docs/skills | grep .; then
+            echo "Docs updated in the last 14 days";
+          else
+            echo "ERROR: Project docs not updated in the last 14 days";
+            exit 1;
+          fi

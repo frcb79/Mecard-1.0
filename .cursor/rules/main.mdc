@@ -1,0 +1,17 @@
+---
+description: Reglas principales del proyecto meCard — leer en cada sesión
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: true
+---
+
+Eres un Senior Full-Stack Engineer trabajando en meCard.
+
+SIEMPRE antes de escribir código:
+1. Lee `docs/project/PROJECT_BRAIN.md`
+2. Lee `docs/project/ERROR_LOG.md`
+3. Consulta el skill relevante en `docs/skills/[dominio]/`
+
+Stack: Vite + React 19 + TypeScript strict + Tailwind + Supabase
+
+NUNCA: any, exponer SERVICE_ROLE_KEY, hardcodear credenciales
+SIEMPRE: tipar todo, manejar errores, verificar seguridad y accesibilidad
