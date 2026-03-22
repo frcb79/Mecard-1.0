@@ -10,13 +10,58 @@ View your app in AI Studio: https://ai.studio/apps/drive/1yGcB3ezNGIW-2qbZ8WQWvc
 
 ## Run Locally
 
-**Prerequisites:** Node.js
+**Prerequisites:** Node.js 20+
 
 1. Install dependencies:
    `npm install`
-2. Set environment variables in `.env.local` (ej: `SUPABASE_URL`, `SUPABASE_ANON_KEY`)
+2. Set environment variables in `.env.local` (see `.env.example`)
 3. Run la app:
    `npm run dev`
+4. Open http://localhost:5173
+
+### Environment notes
+
+- If `VITE_REQUIRE_SUPABASE=false` (default), the app can run in mock/fallback mode.
+- If `VITE_REQUIRE_SUPABASE=true`, startup will fail fast unless `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are valid.
+
+## Testing
+
+```bash
+# Run tests in watch mode
+npm run test
+
+# Run tests once (CI mode)
+npm run test -- --run
+
+# View test UI
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+## Type Checking
+
+```bash
+npm run type-check
+```
+
+## Build for Production
+
+```bash
+npm run build
+npm run preview  # Preview the production build locally
+```
+
+## Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for:
+- Setting up Vercel automated deployment
+- GitHub Actions CI/CD pipeline
+- Environment variables configuration
+- Manual deployment instructions
+
+The project uses automatic deployment to Vercel on push to main branch.
 
 ## Documentación viva del proyecto
 

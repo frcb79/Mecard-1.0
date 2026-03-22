@@ -1,0 +1,12 @@
+.env.local
+.env.*.local
+.git
+.gitignore
+node_modules/
+npm-debug.log
+dist/
+src/**/*.test.tsx
+src/**/*.test.ts
+vitest.config.ts
+.github/workflows/*.yml
+docs/
