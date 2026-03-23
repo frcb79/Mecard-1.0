@@ -32,6 +32,8 @@
 ### CI/CD
 - GitHub Actions: type-check + tests + build en cada PR a main
 - Deploy automático a Vercel en push a main
+- Instalación de dependencias alineada en CI/Vercel con `--legacy-peer-deps`
+- Previews de Vercel ignoradas para ramas `dependabot/*` para reducir ruido operativo
 
 ### Calidad (2026-03-21)
 - Validación centralizada de variables de entorno: `src/lib/env.ts`
@@ -46,7 +48,7 @@
 ## Lo que está EN PROGRESO 🔄
 - [ ] Cobertura de tests de integración (auth, POS → Supabase, RLS multi-tenant)
 - [ ] Observabilidad: logging estructurado y trazabilidad de errores en producción
-- [ ] Entorno staging: Supabase DEV + Vercel preview configurados
+- [ ] Entorno staging: Supabase DEV + Vercel preview configurados (sin ruido de ramas dependabot)
 
 ## Lo que está PENDIENTE 📋
 - Integración real de pagos SPEI (actualmente MockPaymentService)

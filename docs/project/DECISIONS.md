@@ -16,6 +16,13 @@
 - Se formaliza `docs/skills/testing/README.md` como playbook oficial para escribir tests en el proyecto.
 - Define pirámide de testing, convención de archivos, flujos P0/P1/P2 obligatorios y reglas de código.
 
+## [2026-03-22] Estabilización de deploys automáticos (Dependabot + Vercel)
+- Se endurece `.github/dependabot.yml` para agrupar updates acoplados (`react-stack`, `test-stack`) y limitar PRs abiertas.
+- Se ignoran updates **major** automáticas de `tailwindcss` y `@types/node` para tratarlas como migraciones planificadas.
+- Se define `engines` en `package.json` y `.nvmrc` para alinear runtime local/CI/Vercel con Node 20.
+- Se configura `vercel.json` con `installCommand` explícito y `ignoreCommand` para evitar previews en ramas `dependabot/*`.
+- Se alinea `deploy.yml` para instalar con `npm ci --legacy-peer-deps`, igual que Vercel.
+
 ## [2026-01-XX] Decisión sobre stack
 - Se valida mantener Vite + React 19 según requisitos actuales de rendimiento y simplicidad.
 
