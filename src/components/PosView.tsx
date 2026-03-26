@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth';
 import { CartOrder } from '../services/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { logger } from '../lib/logger';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -282,7 +283,12 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al procesar transacción';
       setTransactionError(errorMessage);
-      console.error('Transaction error:', error);
+      logger.error('pos.checkout', 'Transaction error', error, {
+        studentId: student.id,
+        cartItems: cart.length,
+        total,
+        mode,
+      });
     } finally {
       setIsProcessing(false);
     }

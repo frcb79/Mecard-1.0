@@ -4,11 +4,20 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./styles/globals.css";
 import { validateClientEnv } from "./lib/env";
+import { logger } from "./lib/logger";
+import { installTelemetryListener } from "./lib/telemetry";
+
+installTelemetryListener();
 
 const envReport = validateClientEnv(import.meta.env);
 
 if (envReport.messages.length > 0) {
-  envReport.messages.forEach((message) => console.warn(`[Env] ${message}`));
+  envReport.messages.forEach((message) => {
+    logger.warn("env", message, {
+      configured: envReport.isConfigured,
+      requireSupabase: envReport.requireSupabase,
+    });
+  });
 }
 
 if (envReport.requireSupabase && !envReport.isConfigured) {

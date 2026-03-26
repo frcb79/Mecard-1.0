@@ -16,6 +16,7 @@ import {
   SettlementServiceInterface,
 } from '../services/types';
 import { createServiceFactory, getServiceFactoryConfigFromEnv } from '../services/factory';
+import { logger } from '../lib/logger';
 
 // ========== CONTEXT TYPE ==========
 
@@ -62,7 +63,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
         error: null,
       };
     } catch (error) {
-      console.error('Error creating service factory:', error);
+      logger.error('services.factory', 'Error creating service factory', error);
       return {
         paymentService: null as any,
         inventoryService: null as any,

@@ -44,6 +44,7 @@
   - `src/services/__tests__/RoleService.test.ts`
   - `src/services/__tests__/factory.test.ts`
 - Skill de testing documentado: `docs/skills/testing/README.md`
+- Observabilidad frontend base: `src/lib/logger.ts` con eventos `mecard:log` y adopción inicial en arranque, auth y error boundary
 
 ## Lo que está EN PROGRESO 🔄
 - [ ] Cobertura de tests de integración (auth, POS → Supabase, RLS multi-tenant)

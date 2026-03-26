@@ -4,6 +4,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserRole, AuthUser } from '../types';
+import { logger } from '../lib/logger';
 
 // Import supabase client (consolidated single client)
 import { supabase as supabaseClient, isSupabaseConfigured } from '../lib/supabaseClient';
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Error checking user:', error);
+      logger.error('auth.session', 'Error checking user', error);
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(authUser);
       }
     } catch (error: unknown) {
-      console.error('Error loading user profile:', error);
+      logger.error('auth.profile', 'Error loading user profile', error, {
+        userId,
+      });
       if (supabase) {
         throw new Error('No se pudo cargar el perfil del usuario');
       }
@@ -151,7 +154,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await loadUserProfile(data.user.id);
       }
     } catch (error: unknown) {
-      console.error('Login error:', error);
+      logger.error('auth.login', 'Login error', error, {
+        email,
+      });
       throw new Error(error instanceof Error ? error.message : 'Error al iniciar sesión');
     }
   }
@@ -165,7 +170,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(null);
     } catch (error: unknown) {
-      console.error('Logout error:', error);
+      logger.error('auth.logout', 'Logout error', error, {
+        userId: user?.id,
+      });
       throw new Error('Error al cerrar sesión');
     }
   }

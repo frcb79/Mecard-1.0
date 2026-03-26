@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { logger } from '../lib/logger';
 import { SchoolFeeService, type FeeStats } from '../services/SchoolFeeService';
 import { AccessControlService } from '../services/AccessControlService';
 import { NotificationService } from '../services/notificationService';
@@ -261,7 +262,10 @@ export function useDashboard(schoolId: string = 'mx_01') {
           lastUpdated: new Date(),
         });
       } catch (err) {
-        console.error('[useDashboard] Error fetching metrics:', err);
+        logger.error('hooks.dashboard', 'Error fetching dashboard metrics', err, {
+          schoolId,
+          schoolsCount: schools.length,
+        });
         setState(prev => ({
           ...prev,
           loading: false,

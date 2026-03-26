@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Notification, NotificationType } from '../types';
+import { logger } from '../lib/logger';
 
 interface UseNotificationsProps {
   userId: string;
@@ -47,7 +48,10 @@ export function useNotifications({ userId, role }: UseNotificationsProps) {
           setUnreadCount(mapped.filter(n => !n.readAt).length);
         }
       } catch (err) {
-        console.error('Error loading notifications:', err);
+        logger.error('hooks.notifications', 'Error loading notifications', err, {
+          userId,
+          role,
+        });
       } finally {
         setLoading(false);
       }
@@ -101,7 +105,10 @@ export function useNotifications({ userId, role }: UseNotificationsProps) {
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
-      console.error('Error marking notification as read:', err);
+      logger.error('hooks.notifications', 'Error marking notification as read', err, {
+        userId,
+        notificationId,
+      });
     }
   };
 
@@ -122,7 +129,10 @@ export function useNotifications({ userId, role }: UseNotificationsProps) {
       );
       setUnreadCount(0);
     } catch (err) {
-      console.error('Error marking all as read:', err);
+      logger.error('hooks.notifications', 'Error marking all notifications as read', err, {
+        userId,
+        unreadCount,
+      });
     }
   };
 

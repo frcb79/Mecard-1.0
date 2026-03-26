@@ -23,6 +23,12 @@
 - Se configura `vercel.json` con `installCommand` explícito y `ignoreCommand` para evitar previews en ramas `dependabot/*`.
 - Se alinea `deploy.yml` para instalar con `npm ci --legacy-peer-deps`, igual que Vercel.
 
+## [2026-03-24] Observabilidad frontend mínima centralizada
+- Se crea `src/lib/logger.ts` para normalizar logs de frontend con `scope`, `level`, `timestamp` y error serializado.
+- Se emite el evento global `mecard:log` para habilitar futura integración con telemetry/Sentry sin volver a tocar todos los call sites.
+- Se reemplazan `console.*` en puntos críticos de entrada: `main.tsx`, `ErrorBoundary.tsx`, `AuthContext.tsx` y `ServiceContext.tsx`.
+- **Impacto**: errores de arranque y autenticación quedan estructurados y listos para captura centralizada.
+
 ## [2026-01-XX] Decisión sobre stack
 - Se valida mantener Vite + React 19 según requisitos actuales de rendimiento y simplicidad.
 

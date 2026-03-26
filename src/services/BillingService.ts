@@ -16,6 +16,7 @@ import {
   BlockingReason,
   RevenueTrackingRecord
 } from '../types'
+import { logger } from '../lib/logger'
 
 // ============================================
 // MOCK DATA FOR DEVELOPMENT
@@ -509,7 +510,10 @@ export async function executeMonthlyBillingCycle(): Promise<Invoice[]> {
       const invoice = await generateAndSaveMonthlyInvoice(schoolId, period, config)
       generatedInvoices.push(invoice)
     } catch (error) {
-      console.error(`Error generando invoice para ${schoolId}:`, error)
+      logger.error('services.billing', 'Error generando invoice mensual', error, {
+        schoolId,
+        period,
+      })
     }
   }
 

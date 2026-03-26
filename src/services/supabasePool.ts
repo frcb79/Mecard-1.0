@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabaseClient';
 import { Product, BirthdayPool, PoolContribution } from '../types';
 import { NotificationService } from './notificationService';
+import { logger } from '../lib/logger';
 
 export interface ProductChangeHistoryRow {
   id: string;
@@ -48,7 +49,9 @@ export const poolService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching product change history:', error);
+      logger.error('services.pool', 'Error fetching product change history', error, {
+        poolId,
+      });
       return [];
     }
   },
@@ -67,7 +70,9 @@ export const poolService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching pool refunds:', error);
+      logger.error('services.pool', 'Error fetching pool refunds', error, {
+        poolId,
+      });
       return [];
     }
   },
@@ -203,7 +208,10 @@ export const poolService = {
           .insert(refunds);
 
         if (refundError) {
-          console.error('Error creating refund records:', refundError);
+          logger.error('services.pool.swap', 'Error creating refund records', refundError, {
+            poolId,
+            changeHistoryId: changeHistoryData.id,
+          });
           // No lanzar error aquí porque el cambio de producto fue exitoso
           // pero notificar al usuario que los reembolsos pueden fallar
         }
@@ -226,7 +234,10 @@ export const poolService = {
       // 10. Si hay reembolsos, procesarlos asincronamente
       if (refundTotal > 0) {
         await poolService.processPoolRefunds(poolId, changeHistoryData.id).catch((err) => {
-          console.error('Error processing refunds:', err);
+          logger.error('services.pool.swap', 'Error processing refunds after swap', err, {
+            poolId,
+            changeHistoryId: changeHistoryData.id,
+          });
         });
       }
 
@@ -239,7 +250,9 @@ export const poolService = {
           refundTotal
         );
       } catch (notifyError) {
-        console.error('Error sending notifications:', notifyError);
+        logger.error('services.pool.swap', 'Error sending notifications to contributors', notifyError, {
+          poolId,
+        });
       }
 
       return {
@@ -252,7 +265,11 @@ export const poolService = {
         affectedContributors: poolData.pool_contributions?.length || 0,
       };
     } catch (error) {
-      console.error('Error swapping pool product:', error);
+      logger.error('services.pool.swap', 'Error swapping pool product', error, {
+        poolId,
+        creatorId,
+        newProductId,
+      });
       return {
         success: false,
         message: 'Error al cambiar el producto del pool',
@@ -361,7 +378,10 @@ export const poolService = {
             })
             .eq('id', refund.id);
         } catch (error) {
-          console.error(`Error processing refund ${refund.id}:`, error);
+          logger.error('services.pool.refunds', 'Error processing individual refund', error, {
+            poolId,
+            refundId: refund.id,
+          });
           await supabase
             .from('pool_refunds')
             .update({ status: 'failed' })
@@ -369,7 +389,10 @@ export const poolService = {
         }
       }
     } catch (error) {
-      console.error('Error in processPoolRefunds:', error);
+      logger.error('services.pool.refunds', 'Error in processPoolRefunds', error, {
+        poolId,
+        productChangeId,
+      });
       throw error;
     }
   },
@@ -413,7 +436,10 @@ export const poolService = {
           .eq('id', poolId);
       }
     } catch (error) {
-      console.error('Error rejecting pool swap:', error);
+      logger.error('services.pool.swap', 'Error rejecting pool swap', error, {
+        poolId,
+        changeHistoryId,
+      });
       throw error;
     }
   },
@@ -461,11 +487,16 @@ export const poolService = {
               },
             });
         } catch (error) {
-          console.error(`Error notifying contributor ${contrib.contributor_id}:`, error);
+          logger.error('services.pool.notifications', 'Error notifying contributor', error, {
+            poolId,
+            contributorId: contrib.contributor_id,
+          });
         }
       }
     } catch (error) {
-      console.error('Error notifying contributors of change:', error);
+      logger.error('services.pool.notifications', 'Error notifying contributors of change', error, {
+        poolId,
+      });
     }
   },
 
@@ -489,7 +520,9 @@ export const poolService = {
 
       return pool;
     } catch (error) {
-      console.error('Error fetching pool details:', error);
+      logger.error('services.pool', 'Error fetching pool details', error, {
+        poolId,
+      });
       return null;
     }
   },

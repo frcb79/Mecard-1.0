@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import type { AutoReloadConfig } from '../types';
+import { logger } from '../lib/logger';
 
 /**
  * Auto-Reload Service
@@ -25,7 +26,10 @@ export const autoReloadService = {
       if (error) throw error;
       return { data: data ? mapConfigRow(data) : null, error: null };
     } catch (error) {
-      console.error('Error fetching auto-reload config:', error);
+      logger.error('services.auto-reload', 'Error fetching auto-reload config', error, {
+        parentId,
+        studentId,
+      });
       return { data: null, error };
     }
   },
@@ -43,7 +47,9 @@ export const autoReloadService = {
       if (error) throw error;
       return { data: (data || []).map(mapConfigRow), error: null };
     } catch (error) {
-      console.error('Error fetching auto-reload configs:', error);
+      logger.error('services.auto-reload', 'Error fetching auto-reload configs', error, {
+        parentId,
+      });
       return { data: [], error };
     }
   },
@@ -80,7 +86,10 @@ export const autoReloadService = {
       if (error) throw error;
       return { data: mapConfigRow(data), error: null };
     } catch (error) {
-      console.error('Error saving auto-reload config:', error);
+      logger.error('services.auto-reload', 'Error saving auto-reload config', error, {
+        parentId: config.parentId,
+        studentId: config.studentId,
+      });
       return { data: null, error };
     }
   },
@@ -102,7 +111,10 @@ export const autoReloadService = {
       if (error) throw error;
       return { success: true };
     } catch (error) {
-      console.error('Error deleting auto-reload config:', error);
+      logger.error('services.auto-reload', 'Error deleting auto-reload config', error, {
+        parentId,
+        studentId,
+      });
       return { success: false, error };
     }
   },
@@ -181,7 +193,9 @@ export const autoReloadService = {
 
       return { reloaded: true };
     } catch (error) {
-      console.error('Error in auto-reload check:', error);
+      logger.error('services.auto-reload', 'Error in auto-reload check', error, {
+        studentId,
+      });
       return { reloaded: false, error };
     }
   },

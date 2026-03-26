@@ -22,6 +22,7 @@ import type {
   SchoolRefundSettlement,
   SchoolSettings,
 } from '../types';
+import { logger } from '../lib/logger';
 
 export interface RefundConversionResult {
   converted: number;
@@ -304,13 +305,17 @@ export class RefundService {
       const { data, error } = await query.order('eligible_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching pool point conversions:', error);
+        logger.error('refunds.pool-conversions', 'Error fetching pool point conversions', error, {
+          filters,
+        });
         return [];
       }
 
       return (data as PoolPointConversion[]) || [];
     } catch (err) {
-      console.error('Exception fetching pool point conversions:', err);
+      logger.error('refunds.pool-conversions', 'Exception fetching pool point conversions', err, {
+        filters,
+      });
       return [];
     }
   }
@@ -417,13 +422,19 @@ export class RefundService {
         .single();
 
       if (error) {
-        console.error('Error creating pending refund:', error);
+        logger.error('refunds.pending.create', 'Error creating pending refund', error, {
+          schoolId: params.schoolId,
+          reason: params.reason,
+        });
         return null;
       }
 
       return data as PendingSchoolRefund;
     } catch (err) {
-      console.error('Exception creating pending refund:', err);
+      logger.error('refunds.pending.create', 'Exception creating pending refund', err, {
+        schoolId: params.schoolId,
+        reason: params.reason,
+      });
       return null;
     }
   }
@@ -451,13 +462,17 @@ export class RefundService {
       const { data, error } = await query.order('batch_due_date', { ascending: true });
 
       if (error) {
-        console.error('Error fetching pending refunds:', error);
+        logger.error('refunds.pending.list', 'Error fetching pending refunds', error, {
+          filters,
+        });
         return [];
       }
 
       return (data as PendingSchoolRefund[]) || [];
     } catch (err) {
-      console.error('Exception fetching pending refunds:', err);
+      logger.error('refunds.pending.list', 'Exception fetching pending refunds', err, {
+        filters,
+      });
       return [];
     }
   }
@@ -525,7 +540,13 @@ export class RefundService {
         entity_id: refundId,
         new_values: { status: 'approved' },
         result: 'SUCCESS'
-      }).then(() => {}, (err) => console.warn('Audit log failed:', err));
+      }).then(() => {}, (err) => {
+        logger.warn('refunds.audit', 'Audit log failed on approval', {
+          refundId,
+          approvedBy,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
 
       return { success: true, approvedAt: now };
     } catch (err) {
@@ -657,7 +678,13 @@ export class RefundService {
           reference: settlementParams.reference
         },
         result: 'SUCCESS'
-      }).then(() => {}, (err) => console.warn('Audit log failed:', err));
+      }).then(() => {}, (err) => {
+        logger.warn('refunds.audit', 'Audit log failed on settlement', {
+          refundId,
+          settledBy,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
 
       return {
         success: true,
@@ -687,13 +714,17 @@ export class RefundService {
       const { data, error } = await query.order('settled_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching settlements:', error);
+        logger.error('refunds.settlements.list', 'Error fetching settlements', error, {
+          filters,
+        });
         return [];
       }
 
       return (data as SchoolRefundSettlement[]) || [];
     } catch (err) {
-      console.error('Exception fetching settlements:', err);
+      logger.error('refunds.settlements.list', 'Exception fetching settlements', err, {
+        filters,
+      });
       return [];
     }
   }
@@ -725,7 +756,10 @@ export class RefundService {
       };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('Error validating POS cash acceptance:', errorMsg);
+      logger.error('refunds.pos.validate-cash', 'Error validating POS cash acceptance', err, {
+        unitId,
+        errorMessage: errorMsg,
+      });
       return { success: false, acceptsCash: false };
     }
   }
@@ -750,7 +784,7 @@ export class RefundService {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching platform settings:', error);
+        logger.error('refunds.platform-settings', 'Error fetching platform settings', error);
         return null;
       }
 
@@ -770,13 +804,13 @@ export class RefundService {
         .single();
 
       if (insertError) {
-        console.error('Error bootstrapping platform settings:', insertError);
+        logger.error('refunds.platform-settings', 'Error bootstrapping platform settings', insertError);
         return null;
       }
 
       return created as PlatformSettings;
     } catch (err) {
-      console.error('Exception fetching platform settings:', err);
+      logger.error('refunds.platform-settings', 'Exception fetching platform settings', err);
       return null;
     }
   }
@@ -832,7 +866,9 @@ export class RefundService {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching school settings:', error);
+        logger.error('refunds.school-settings', 'Error fetching school settings', error, {
+          schoolId,
+        });
         return null;
       }
 
@@ -844,7 +880,9 @@ export class RefundService {
           .single();
 
         if (insertError) {
-          console.error('Error creating school settings:', insertError);
+          logger.error('refunds.school-settings', 'Error creating school settings', insertError, {
+            schoolId,
+          });
           return null;
         }
 
@@ -853,7 +891,9 @@ export class RefundService {
 
       return data as SchoolSettings;
     } catch (err) {
-      console.error('Exception fetching school settings:', err);
+      logger.error('refunds.school-settings', 'Exception fetching school settings', err, {
+        schoolId,
+      });
       return null;
     }
   }

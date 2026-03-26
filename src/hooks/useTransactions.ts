@@ -5,6 +5,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { WalletTransaction, TransactionType } from '../types';
+import { logger } from '../lib/logger';
 
 interface UseTransactionsProps {
   studentId: string;
@@ -102,7 +103,10 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
           }));
         }
       } catch (err: unknown) {
-        console.error('Error loading transactions:', err);
+        logger.error('hooks.transactions', 'Error loading transactions', err, {
+          studentId,
+          limit,
+        });
         setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
