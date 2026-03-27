@@ -32,25 +32,33 @@ export class InventoryService {
     let currentItem: InventoryItem;
 
     if (itemIndex === -1) {
+      const now = new Date().toISOString();
       currentItem = {
+        id: `${productId}_${unitId}`,
         productId,
         unitId,
         currentStock: quantityChange,
         minStock: 10,
-        unitCost: 0
+        unitCost: 0,
+        createdAt: now,
+        updatedAt: now,
       };
       inventory.push(currentItem);
     } else {
       currentItem = inventory[itemIndex];
       currentItem.currentStock += quantityChange;
+      currentItem.updatedAt = new Date().toISOString();
     }
 
     this.recordMovement({
       inventoryItemId: `${productId}_${unitId}`,
+      productId,
       type,
       quantity: quantityChange,
+      stockBefore: currentItem.currentStock - quantityChange,
       stockAfter: currentItem.currentStock,
-      reason
+      reason,
+      createdBy: 'system',
     });
 
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(inventory));

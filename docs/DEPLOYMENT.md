@@ -94,6 +94,19 @@ npm run test:coverage
 
 ## Troubleshooting
 
+### "npm ci" fails with "package.json and package-lock.json are not in sync"
+This is a lockfile drift issue.
+
+Fix sequence:
+1. `npm install --legacy-peer-deps`
+2. `npm ci --legacy-peer-deps`
+3. `npm run verify:deploy`
+4. Commit updated `package-lock.json` (and `package.json` if changed)
+
+Notes:
+- Vercel uses `npm ci` (via `vercel.json`), so lockfile sync is mandatory.
+- Keep Node version aligned with project policy (`20.x`) across local, CI and Vercel.
+
 ### "VERCEL_TOKEN not found"
 Ensure you've added the secret to GitHub repository settings.
 
@@ -130,3 +143,10 @@ vercel deploy --prod
 - [ ] Add environment variables to Vercel
 - [ ] Push code to main branch
 - [ ] Monitor first deployment in Actions tab
+
+## Pre-Deploy Checklist (60 seconds)
+1. `npm ci --legacy-peer-deps`
+2. `npm run type-check`
+3. `npm run test -- --run`
+4. `npm run build`
+5. Optional one-shot: `npm run verify:deploy`

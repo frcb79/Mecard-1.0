@@ -3,8 +3,8 @@
 // ============================================
 
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { WalletTransaction, TransactionType } from '../../types';
+import { supabase } from '../src/lib/supabaseClient';
+import { WalletTransaction, TransactionType } from '../types';
 
 interface UseTransactionsProps {
   studentId: string;
@@ -66,12 +66,12 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
               const prevTx = data[i];
               if (prevTx.type === 'DEPOSIT') {
                 balanceAfter -= prevTx.amount;
-              } else if (prevTx.type === 'SALE' || prevTx.type === 'PURCHASE') {
+              } else if (prevTx.type === TransactionType.PURCHASE) {
                 balanceAfter += prevTx.amount;
               }
             }
 
-            const balanceBefore = tx.type === 'DEPOSIT' 
+            const balanceBefore = tx.type === TransactionType.DEPOSIT
               ? balanceAfter - tx.amount 
               : balanceAfter + tx.amount;
 
@@ -87,7 +87,7 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
               referenceType: tx.type,
               unitId: tx.unit_id,
               unitName: '', // Se puede cargar desde otra tabla si existe
-              description: tx.type === 'SALE' || tx.type === 'PURCHASE'
+              description: tx.type === TransactionType.PURCHASE
                 ? `Compra - ${tx.payment_method}`
                 : tx.type,
               category: tx.items?.[0]?.category || '',
@@ -144,10 +144,8 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
 
   // Estadísticas - ADAPTADO A TU ESTRUCTURA
   const stats = useMemo(() => {
-    const purchases = filteredTransactions.filter(tx => 
-      tx.type === 'SALE' || tx.type === 'PURCHASE'
-    );
-    const deposits = filteredTransactions.filter(tx => tx.type === 'DEPOSIT');
+    const purchases = filteredTransactions.filter(tx => tx.type === TransactionType.PURCHASE);
+    const deposits = filteredTransactions.filter(tx => tx.type === TransactionType.DEPOSIT);
 
     return {
       totalTransactions: filteredTransactions.length,

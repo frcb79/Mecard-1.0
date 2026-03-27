@@ -1,4 +1,6 @@
 
+/// <reference types="vite/client" />
+
 import { GoogleGenAI } from "@google/genai";
 import { Product, SalesData, Category, School, OperatingUnit, CartItem } from '../types';
 

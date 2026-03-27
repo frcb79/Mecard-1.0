@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Clock, ChevronRight, BarChart3 } from 'lucide-react';
 import { MOCK_STUDENT_TRANSACTIONS } from '../constants';
+import { TransactionType } from '../types';
 
 type Period = 'today' | 'week' | 'month';
 
@@ -42,7 +43,7 @@ export default function StudentReportsView() {
       return d >= monthAgo;
     });
 
-    const purchases = filtered.filter(t => t.amount < 0 && t.type !== 'GIFT_SENT');
+    const purchases = filtered.filter(t => t.amount < 0 && t.type !== TransactionType.GIFT_SENT);
     const deposits = filtered.filter(t => t.amount > 0);
     const totalSpent = purchases.reduce((s, t) => s + Math.abs(t.amount), 0);
     const totalDeposited = deposits.reduce((s, t) => s + t.amount, 0);

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
-import { School, OperatingUnit, Settlement, User, UserRole } from '../types';
+import { School, OperatingUnit, Settlement, User, UserRole, UserStatus } from '../types';
 import { MOCK_SCHOOLS, MOCK_UNITS } from '../constants';
 
 type NewSchool = Omit<School, 'id' | 'balance'> & { id?: string };
@@ -158,10 +158,16 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const login = async (email: string, role: string) => {
     const mockUser: User = {
         id: 'user_123',
-        name: 'Admin Usuario',
+        fullName: 'Admin Usuario',
         email: email,
+        passwordHash: 'demo-hash',
         role: role as UserRole,
-        schoolId: 'mx_01'
+        status: UserStatus.ACTIVE,
+        schoolId: 'mx_01',
+        twoFactorEnabled: false,
+        loginAttempts: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     };
     setCurrentUser(mockUser);
   };

@@ -66,9 +66,9 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
           for (let i = 0; i < data.length; i++) {
             balances[i] = runningBalance;
             const tx = data[i];
-            if (tx.type === 'DEPOSIT') {
+            if (tx.type === TransactionType.DEPOSIT) {
               runningBalance -= tx.amount;
-            } else if (tx.type === 'SALE' || tx.type === 'PURCHASE') {
+            } else if (tx.type === TransactionType.PURCHASE) {
               runningBalance += tx.amount;
             }
           }
@@ -76,7 +76,7 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
           setTransactions(data.map((tx: any, index: number) => {
             const balanceAfter = balances[index];
 
-            const balanceBefore = tx.type === 'DEPOSIT' 
+            const balanceBefore = tx.type === TransactionType.DEPOSIT
               ? balanceAfter - tx.amount 
               : balanceAfter + tx.amount;
 
@@ -92,7 +92,7 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
               referenceType: tx.type,
               unitId: tx.unit_id,
               unitName: '', // Se puede cargar desde otra tabla si existe
-              description: tx.type === 'SALE' || tx.type === 'PURCHASE'
+              description: tx.type === TransactionType.PURCHASE
                 ? `Compra - ${tx.payment_method}`
                 : tx.type,
               category: tx.items?.[0]?.category || '',
@@ -152,10 +152,8 @@ export function useTransactions({ studentId, limit }: UseTransactionsProps) {
 
   // Estadísticas - ADAPTADO A TU ESTRUCTURA
   const stats = useMemo(() => {
-    const purchases = filteredTransactions.filter(tx => 
-      tx.type === 'SALE' || tx.type === 'PURCHASE'
-    );
-    const deposits = filteredTransactions.filter(tx => tx.type === 'DEPOSIT');
+    const purchases = filteredTransactions.filter(tx => tx.type === TransactionType.PURCHASE);
+    const deposits = filteredTransactions.filter(tx => tx.type === TransactionType.DEPOSIT);
 
     return {
       totalTransactions: filteredTransactions.length,

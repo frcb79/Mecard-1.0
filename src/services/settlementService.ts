@@ -1,5 +1,5 @@
 
-import { Transaction, School, OperatingUnit, Settlement, SettlementStatus, Disbursement } from '../types';
+import { Transaction, School, OperatingUnit, Settlement, SettlementStatus, Disbursement, TransactionType, EntityOwner } from '../types';
 
 export class SettlementService {
   /**
@@ -12,9 +12,12 @@ export class SettlementService {
     periodStart: Date,
     periodEnd: Date
   ): Settlement {
+    const settlementId = `set_${Date.now()}`;
+    const createdAt = new Date().toISOString();
+
     const periodTransactions = transactions.filter(tx => {
       const txDate = new Date(tx.date);
-      return tx.type === 'purchase' && txDate >= periodStart && txDate <= periodEnd;
+      return tx.type === TransactionType.PURCHASE && txDate >= periodStart && txDate <= periodEnd;
     });
 
     const grossRevenue = periodTransactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
@@ -31,7 +34,7 @@ export class SettlementService {
       
       if (unitRevenue <= 0) return;
 
-      if (unit.ownerType === 'SCHOOL') {
+      if (unit.ownerType === EntityOwner.SCHOOL) {
         const netForSchool = unitRevenue - (unitRevenue * 0.045);
         totalSchoolShare += netForSchool;
       } else {
@@ -43,11 +46,13 @@ export class SettlementService {
 
         disbursements.push({
           id: `disb_${Date.now()}_${unit.id}`,
+          settlementId,
           recipientType: 'VENDOR',
           recipientName: unit.vendorName || unit.name,
+          recipientCLABE: unit.vendorCLABE || '000000000000000000',
           amount: vendorNet,
-          clabe: unit.vendorCLABE || '000000000000000000',
-          status: 'PENDING'
+          status: 'PENDING',
+          createdAt,
         });
       }
     });
@@ -56,17 +61,20 @@ export class SettlementService {
     if (totalSchoolShare > 0) {
       disbursements.push({
         id: `disb_school_${Date.now()}`,
+        settlementId,
         recipientType: 'SCHOOL',
         recipientName: school.name,
+        recipientCLABE: school.settlementCLABE || '000000000000000000',
         amount: totalSchoolShare,
-        clabe: school.settlementCLABE || '000000000000000000',
-        status: 'PENDING'
+        status: 'PENDING',
+        createdAt,
       });
     }
 
     return {
-      id: `set_${Date.now()}`,
+      id: settlementId,
       schoolId: school.id,
+      schoolName: school.name,
       periodStart: periodStart.toISOString(),
       periodEnd: periodEnd.toISOString(),
       grossRevenue,
@@ -75,7 +83,7 @@ export class SettlementService {
       vendorShare: totalVendorShare,
       status: SettlementStatus.PENDING,
       disbursements,
-      createdAt: new Date().toISOString()
+      createdAt,
     };
   }
 }

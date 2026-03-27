@@ -108,7 +108,12 @@ export class MockSettlementService implements SettlementServiceInterface {
 
     // Calculate gross revenue from actual transaction amounts
     const grossRevenue = request.transactions.reduce(
-      (sum, txn) => sum + Math.abs(txn.amount ?? 0),
+      (sum, txn) => {
+        const delta = (txn.previousBalance !== undefined && txn.newBalance !== undefined)
+          ? txn.newBalance - txn.previousBalance
+          : 0;
+        return sum + Math.abs(delta);
+      },
       0
     );
 

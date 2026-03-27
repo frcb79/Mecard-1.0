@@ -1,5 +1,5 @@
 
-import { Notification, NotificationType } from '../types';
+import { Notification, NotificationType, UserRole } from '../types';
 
 export class NotificationService {
   private static STORAGE_KEY = 'mecard_notifications_v1';
@@ -15,6 +15,7 @@ export class NotificationService {
     const newNotification: Notification = {
       id: `not_${Date.now()}`,
       recipientId,
+      recipientRole: UserRole.PARENT,
       type,
       title,
       body,

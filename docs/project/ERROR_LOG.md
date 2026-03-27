@@ -2,6 +2,15 @@
 
 ## Incidentes y lecciones
 
+### [2026-03-26] - Deploy fallido en Vercel por lockfile desincronizado
+- Contexto: Vercel falló durante `npm ci` con mensajes `Missing: ... from lock file`.
+- Causa raíz: `package.json` y `package-lock.json` estaban fuera de sincronía; se actualizaron dependencias sin regenerar lock.
+- Acción correctiva: regenerar lock con `npm install --legacy-peer-deps`, validar con `npm ci --legacy-peer-deps`, commit de `package-lock.json`.
+- Prevención:
+	- ejecutar `npm run verify:deploy` antes de push a `main`.
+	- no fusionar cambios de dependencias sin `package-lock.json` actualizado.
+	- alinear Node 20 en local/CI/Vercel.
+
 ### [YYYY-MM-DD] - Error de validación de tipo en transacción
 - Contexto: error en `src/services/transactions` con campo `amount` optional.
 - Causa raíz: falta de esquema Zod en payloads externos.

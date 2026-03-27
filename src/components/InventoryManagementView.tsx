@@ -10,17 +10,17 @@ import { Button } from './Button';
 import { useToast } from './ui/Toast';
 
 interface InventoryManagementViewProps {
-  products: Product[];
-  onUpdateProducts: (products: Product[]) => void;
-  allowedCategories: Category[];
-  entityName: string;
+  products?: Product[];
+  onUpdateProducts?: (products: Product[]) => void;
+  allowedCategories?: Category[];
+  entityName?: string;
 }
 
 export const InventoryManagementView: React.FC<InventoryManagementViewProps> = ({ 
-  products, 
-  onUpdateProducts, 
-  allowedCategories,
-  entityName 
+  products = [],
+  onUpdateProducts = () => {},
+  allowedCategories = Object.values(Category),
+  entityName = 'Unidad'
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState<{show: boolean, product?: Product, mode: 'create' | 'edit'}>({ show: false, mode: 'create' });
@@ -56,7 +56,9 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
             price: 50.00,
             image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
             isAvailable: true,
-            ownerType: entityName.toLowerCase().includes('cafeteria') ? EntityOwner.CONCESSIONAIRE : EntityOwner.SCHOOL
+          ownerType: entityName.toLowerCase().includes('cafeteria') ? EntityOwner.CONCESSIONAIRE : EntityOwner.SCHOOL,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         }));
         onUpdateProducts([...newItems, ...products]);
         setIsProcessing(false);

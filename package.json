@@ -15,6 +15,9 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "type-check": "tsc --noEmit",
+    "verify:quick": "npm run test -- --run && npm run build",
+    "verify:local": "powershell -ExecutionPolicy Bypass -File scripts/prepush-check.ps1",
+    "verify:deploy": "npm ci --legacy-peer-deps && npm run type-check && npm run test -- --run && npm run build",
     "refunds:init": "node scripts/init-refund-policy-settings.mjs",
     "refunds:convert": "node scripts/run-refund-conversion.mjs"
   },
@@ -29,7 +32,8 @@
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.13.0",
     "recharts": "^2.15.1",
-    "tailwind-merge": "^3.0.1"
+    "tailwind-merge": "^3.0.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",

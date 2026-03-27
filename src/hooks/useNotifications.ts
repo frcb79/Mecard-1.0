@@ -4,12 +4,12 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Notification, NotificationType } from '../types';
+import { Notification, NotificationType, UserRole } from '../types';
 import { logger } from '../lib/logger';
 
 interface UseNotificationsProps {
   userId: string;
-  role: string;
+  role: UserRole;
 }
 
 export function useNotifications({ userId, role }: UseNotificationsProps) {
@@ -73,7 +73,7 @@ export function useNotifications({ userId, role }: UseNotificationsProps) {
           id: newNotif.id,
           recipientId: newNotif.recipient_id,
           recipientRole: role,
-          type: newNotif.type,
+          type: newNotif.type as NotificationType,
           title: newNotif.title,
           body: newNotif.body,
           data: newNotif.data,

@@ -1,5 +1,5 @@
 
-import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, TripReminder, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus, SchoolFee, SchoolFeeType, FeeRecurrence, ParentPayment, ParentPaymentStatus, SchoolAnnouncement, AnnouncementPriority, AccessPoint, AccessPointType, AccessDirection, ScanMethod, AccessPointStatus, AccessEvent, AttendanceRecord, AttendanceStatus, WebhookConfig, WebhookEventType, AccessApiKey, Scholarship, ScholarshipType, DiscountType, PaymentPlan, PaymentPlanStatus, FeeReminder, FeeReminderSchedule } from './types';
+import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, TripReminder, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus, SchoolFee, SchoolFeeType, FeeRecurrence, ParentPayment, ParentPaymentStatus, SchoolAnnouncement, AnnouncementPriority, AccessPoint, AccessPointType, AccessDirection, ScanMethod, AccessPointStatus, AccessEvent, AttendanceRecord, AttendanceStatus, WebhookConfig, WebhookEventType, AccessApiKey, Scholarship, ScholarshipType, DiscountType, PaymentPlan, PaymentPlanStatus, FeeReminder, FeeReminderSchedule, TransactionType, UserRole, UserStatus } from './types';
 
 // Add missing clabePersonal property
 export const MOCK_STUDENT: StudentProfile = {
@@ -17,7 +17,7 @@ export const MOCK_STUDENT: StudentProfile = {
   parentName: 'Maria Gonzalez',
   parentId: 'parent_01',
   busRoute: 'Ruta 3 - Satélite',
-  status: 'Active',
+  status: UserStatus.ACTIVE,
   enrollmentDate: '2023-08-15',
   clabePersonal: '646180000012300015'
 };
@@ -28,25 +28,25 @@ export const MOCK_STUDENTS_LIST: StudentProfile[] = [
   { 
     id: '2024002', name: 'Ana García', grade: '2° Primaria - A', group: 'A', photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200', schoolId: 'mx_01', 
     balance: 250.00, dailyLimit: 100, spentToday: 0, restrictedCategories: [], restrictedProducts: [], allergies: [], 
-    parentName: 'Roberto Garcia', parentId: 'parent_02', busRoute: 'Ruta 1 - Lomas', status: 'Active', enrollmentDate: '2023-08-15',
+    parentName: 'Roberto Garcia', parentId: 'parent_02', busRoute: 'Ruta 1 - Lomas', status: UserStatus.ACTIVE, enrollmentDate: '2023-08-15',
     clabePersonal: '646180000012300028'
   },
   {
     id: '2024003', name: 'Diego Martínez', grade: '5° Primaria - C', group: 'C', photo: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=200', schoolId: 'mx_01',
     balance: 180.00, dailyLimit: 150, spentToday: 30, restrictedCategories: [Category.SNACKS], restrictedProducts: [], allergies: ['Gluten'],
-    parentName: 'Laura Martínez', parentId: 'parent_03', busRoute: 'Ruta 2 - Del Valle', status: 'Active', enrollmentDate: '2022-08-20',
+    parentName: 'Laura Martínez', parentId: 'parent_03', busRoute: 'Ruta 2 - Del Valle', status: UserStatus.ACTIVE, enrollmentDate: '2022-08-20',
     clabePersonal: '646180000012300035'
   },
   {
     id: '2024004', name: 'Valentina López', grade: '3° Primaria - A', group: 'A', photo: 'https://images.unsplash.com/photo-1595454223600-91e5312e3186?w=200', schoolId: 'mx_01',
     balance: 320.00, dailyLimit: 120, spentToday: 0, restrictedCategories: [], restrictedProducts: [], allergies: [],
-    parentName: 'Carlos López', parentId: 'parent_04', busRoute: 'Ruta 4 - Polanco', status: 'Active', enrollmentDate: '2024-01-10',
+    parentName: 'Carlos López', parentId: 'parent_04', busRoute: 'Ruta 4 - Polanco', status: UserStatus.ACTIVE, enrollmentDate: '2024-01-10',
     clabePersonal: '646180000012300042'
   },
   {
     id: '2024005', name: 'Mateo Hernández', grade: '6° Primaria - B', group: 'B', photo: 'https://images.unsplash.com/photo-1560785496-3c9d27877182?w=200', schoolId: 'mx_01',
     balance: 75.50, dailyLimit: 200, spentToday: 85, restrictedCategories: [], restrictedProducts: [], allergies: ['Dairy'],
-    parentName: 'Patricia Hernández', parentId: 'parent_05', busRoute: 'Ruta 5 - Interlomas', status: 'Active', enrollmentDate: '2021-08-15',
+    parentName: 'Patricia Hernández', parentId: 'parent_05', busRoute: 'Ruta 5 - Interlomas', status: UserStatus.ACTIVE, enrollmentDate: '2021-08-15',
     clabePersonal: '646180000012300059'
   },
 ];
@@ -142,7 +142,7 @@ export const MOCK_UNITS: OperatingUnit[] = [
   { id: 'unit_03', schoolId: 'mx_02', name: 'Comedor Principal', type: 'CAFETERIA', ownerType: EntityOwner.CONCESSIONAIRE }
 ];
 
-export const PRODUCTS: Product[] = [
+const BASE_PRODUCTS = [
   // ── COMBO_MEALS (Cafetería) ──
   {
     id: 'c1', name: 'Menú del Día', category: Category.COMBO_MEALS, price: 85.00,
@@ -241,6 +241,12 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
+export const PRODUCTS: Product[] = BASE_PRODUCTS.map((product) => ({
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+  ...product,
+}));
+
 export const MOCK_TICKETS: SupportTicket[] = [
   {
     id: 'T-1001',
@@ -250,7 +256,16 @@ export const MOCK_TICKETS: SupportTicket[] = [
     createdAt: '2024-10-24T10:00:00Z',
     creatorId: 'mx_01_admin',
     messages: [
-      { id: 'm1', senderId: 'mx_01_admin', senderName: 'Director Cumbres', text: 'No se están reflejando las recargas de hoy.', timestamp: '2024-10-24T10:00:00Z', isAdmin: false }
+      {
+        id: 'm1',
+        ticketId: 'T-1001',
+        senderId: 'mx_01_admin',
+        senderName: 'Director Cumbres',
+        senderRole: UserRole.SCHOOL_ADMIN,
+        text: 'No se están reflejando las recargas de hoy.',
+        timestamp: '2024-10-24T10:00:00Z',
+        isAdmin: false,
+      }
     ]
   }
 ];
@@ -264,8 +279,41 @@ export const SALES_DATA: SalesData[] = [
 ];
 
 export const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: 't1', date: 'Oct 24, 10:30 AM', item: 'Wrap de Pollo', location: 'Cafetería Central', amount: -45.00, type: 'purchase', category: 'Alimentos', studentId: '2024001' },
-  { id: 't2', date: 'Oct 23, 08:00 AM', item: 'Abono SPEI', location: 'Portal Online', amount: 200.00, type: 'deposit', studentId: '2024001' },
+  {
+    id: 't1',
+    studentId: '2024001',
+    studentName: 'Santiago Gonzalez',
+    type: TransactionType.PURCHASE,
+    amount: -45.0,
+    balanceBefore: 195.5,
+    balanceAfter: 150.5,
+    referenceType: 'sale',
+    unitName: 'Cafetería Central',
+    description: 'Wrap de Pollo',
+    category: Category.HOT_MEALS,
+    createdAt: '2026-02-24T10:30:00Z',
+    date: '2026-02-24T10:30:00Z',
+    item: 'Wrap de Pollo',
+    location: 'Cafetería Central',
+    status: 'completed',
+  },
+  {
+    id: 't2',
+    studentId: '2024001',
+    studentName: 'Santiago Gonzalez',
+    type: TransactionType.DEPOSIT,
+    amount: 200.0,
+    balanceBefore: -49.5,
+    balanceAfter: 150.5,
+    referenceType: 'deposit',
+    unitName: 'Portal Online',
+    description: 'Abono SPEI',
+    createdAt: '2026-02-23T08:00:00Z',
+    date: '2026-02-23T08:00:00Z',
+    item: 'Abono SPEI',
+    location: 'Portal Online',
+    status: 'completed',
+  },
 ];
 
 // ============================================
@@ -738,16 +786,16 @@ export const MOCK_COPARENT = {
 // STUDENT TRANSACTIONS (demo mode)
 // ============================================
 export const MOCK_STUDENT_TRANSACTIONS: Transaction[] = [
-  { id: 'txn_s01', date: '2026-02-21T12:30:00Z', type: 'PURCHASE', description: 'Torta de Jamón', amount: -45.00, balance: 105.50 },
-  { id: 'txn_s02', date: '2026-02-21T10:15:00Z', type: 'PURCHASE', description: 'Jugo de Naranja', amount: -25.00, balance: 150.50 },
-  { id: 'txn_s03', date: '2026-02-20T13:00:00Z', type: 'PURCHASE', description: 'Ensalada César + Agua', amount: -55.00, balance: 175.50 },
-  { id: 'txn_s04', date: '2026-02-20T08:30:00Z', type: 'DEPOSIT', description: 'Depósito de Mamá', amount: 500.00, balance: 230.50 },
-  { id: 'txn_s05', date: '2026-02-19T12:45:00Z', type: 'PURCHASE', description: 'Sandwich de Pollo', amount: -38.00, balance: -269.50 },
-  { id: 'txn_s06', date: '2026-02-19T10:00:00Z', type: 'GIFT_RECEIVED', description: 'Regalo de Valentina M. — Galletas', amount: 0, balance: -231.50 },
-  { id: 'txn_s07', date: '2026-02-18T13:20:00Z', type: 'PURCHASE', description: 'Pizza Pepperoni', amount: -60.00, balance: -231.50 },
-  { id: 'txn_s08', date: '2026-02-18T08:00:00Z', type: 'GIFT_SENT', description: 'Regalo a Diego R. — Brownie', amount: -35.00, balance: -171.50 },
-  { id: 'txn_s09', date: '2026-02-17T12:00:00Z', type: 'PURCHASE', description: 'Hot Dog + Limonada', amount: -42.00, balance: -136.50 },
-  { id: 'txn_s10', date: '2026-02-15T08:00:00Z', type: 'DEPOSIT', description: 'Depósito de Papá', amount: 300.00, balance: -94.50 },
+  { id: 'txn_s01', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.PURCHASE, amount: -45.0, balanceBefore: 150.5, balanceAfter: 105.5, referenceType: 'sale', description: 'Torta de Jamón', createdAt: '2026-02-21T12:30:00Z', date: '2026-02-21T12:30:00Z', item: 'Torta de Jamón', location: 'Cafetería Central', status: 'completed' },
+  { id: 'txn_s02', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.PURCHASE, amount: -25.0, balanceBefore: 175.5, balanceAfter: 150.5, referenceType: 'sale', description: 'Jugo de Naranja', category: Category.DRINKS, createdAt: '2026-02-21T10:15:00Z', date: '2026-02-21T10:15:00Z', item: 'Jugo de Naranja', location: 'Cafetería Central', status: 'completed' },
+  { id: 'txn_s03', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.PURCHASE, amount: -55.0, balanceBefore: 230.5, balanceAfter: 175.5, referenceType: 'sale', description: 'Ensalada César + Agua', category: Category.HOT_MEALS, createdAt: '2026-02-20T13:00:00Z', date: '2026-02-20T13:00:00Z', item: 'Ensalada César + Agua', location: 'Cafetería Central', status: 'completed' },
+  { id: 'txn_s04', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.DEPOSIT, amount: 500.0, balanceBefore: -269.5, balanceAfter: 230.5, referenceType: 'deposit', description: 'Depósito de Mamá', createdAt: '2026-02-20T08:30:00Z', date: '2026-02-20T08:30:00Z', item: 'Depósito de Mamá', location: 'Portal de Padres', status: 'completed' },
+  { id: 'txn_s05', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.PURCHASE, amount: -38.0, balanceBefore: -231.5, balanceAfter: -269.5, referenceType: 'sale', description: 'Sandwich de Pollo', category: Category.HOT_MEALS, createdAt: '2026-02-19T12:45:00Z', date: '2026-02-19T12:45:00Z', item: 'Sandwich de Pollo', location: 'Cafetería Central', status: 'completed' },
+  { id: 'txn_s06', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.GIFT_RECEIVED, amount: 0, balanceBefore: -231.5, balanceAfter: -231.5, referenceType: 'gift', description: 'Regalo de Valentina M. — Galletas', createdAt: '2026-02-19T10:00:00Z', date: '2026-02-19T10:00:00Z', item: 'Regalo de Valentina M. — Galletas', location: 'Social Gifts', status: 'completed' },
+  { id: 'txn_s07', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.PURCHASE, amount: -60.0, balanceBefore: -171.5, balanceAfter: -231.5, referenceType: 'sale', description: 'Pizza Pepperoni', category: Category.HOT_MEALS, createdAt: '2026-02-18T13:20:00Z', date: '2026-02-18T13:20:00Z', item: 'Pizza Pepperoni', location: 'Cafetería Central', status: 'completed' },
+  { id: 'txn_s08', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.GIFT_SENT, amount: -35.0, balanceBefore: -136.5, balanceAfter: -171.5, referenceType: 'gift', description: 'Regalo a Diego R. — Brownie', createdAt: '2026-02-18T08:00:00Z', date: '2026-02-18T08:00:00Z', item: 'Regalo a Diego R. — Brownie', location: 'Social Gifts', status: 'completed' },
+  { id: 'txn_s09', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.PURCHASE, amount: -42.0, balanceBefore: -94.5, balanceAfter: -136.5, referenceType: 'sale', description: 'Hot Dog + Limonada', category: Category.HOT_MEALS, createdAt: '2026-02-17T12:00:00Z', date: '2026-02-17T12:00:00Z', item: 'Hot Dog + Limonada', location: 'Cafetería Central', status: 'completed' },
+  { id: 'txn_s10', studentId: '2024001', studentName: 'Santiago Gonzalez', type: TransactionType.DEPOSIT, amount: 300.0, balanceBefore: -394.5, balanceAfter: -94.5, referenceType: 'deposit', description: 'Depósito de Papá', createdAt: '2026-02-15T08:00:00Z', date: '2026-02-15T08:00:00Z', item: 'Depósito de Papá', location: 'Portal de Padres', status: 'completed' },
 ];
 
 // ============================================
@@ -823,11 +871,11 @@ export const MOCK_STUDENT_GIFTS_RECEIVED: Gift[] = [
 // STUDENT FRIENDS (demo mode)
 // ============================================
 export const MOCK_STUDENT_FRIENDS: Friend[] = [
-  { id: 'stu_003', fullName: 'Diego Ramírez', studentId: 'STU-003', grade: '4° Primaria - B', balance: 180.00, favorites: ['prod_05', 'prod_06'], favoritesPublic: true, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
-  { id: 'stu_004', fullName: 'Valentina Martínez', studentId: 'STU-004', grade: '4° Primaria - A', balance: 220.00, favorites: ['prod_08', 'prod_02'], favoritesPublic: true, allergies: ['Gluten'], status: 'ACTIVE', schoolId: 'mx_01' },
-  { id: 'stu_005', fullName: 'Mateo Hernández', studentId: 'STU-005', grade: '4° Primaria - B', balance: 95.00, favorites: ['prod_01', 'prod_03'], favoritesPublic: false, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
-  { id: 'stu_006', fullName: 'Camila Torres', studentId: 'STU-006', grade: '4° Primaria - A', balance: 310.00, favorites: ['prod_01', 'prod_08', 'prod_05'], favoritesPublic: true, allergies: ['Lactosa'], status: 'ACTIVE', schoolId: 'mx_01' },
-  { id: 'stu_007', fullName: 'Emiliano Ruiz', studentId: 'STU-007', grade: '3° Primaria - C', balance: 145.00, favorites: null, favoritesPublic: false, allergies: [], status: 'ACTIVE', schoolId: 'mx_01' },
+  { id: 'stu_003', fullName: 'Diego Ramírez', studentId: 'STU-003', grade: '4° Primaria - B', balance: 180.00, favorites: ['prod_05', 'prod_06'], favoritesPublic: true, allergies: [], status: UserStatus.ACTIVE, schoolId: 'mx_01' },
+  { id: 'stu_004', fullName: 'Valentina Martínez', studentId: 'STU-004', grade: '4° Primaria - A', balance: 220.00, favorites: ['prod_08', 'prod_02'], favoritesPublic: true, allergies: ['Gluten'], status: UserStatus.ACTIVE, schoolId: 'mx_01' },
+  { id: 'stu_005', fullName: 'Mateo Hernández', studentId: 'STU-005', grade: '4° Primaria - B', balance: 95.00, favorites: ['prod_01', 'prod_03'], favoritesPublic: false, allergies: [], status: UserStatus.ACTIVE, schoolId: 'mx_01' },
+  { id: 'stu_006', fullName: 'Camila Torres', studentId: 'STU-006', grade: '4° Primaria - A', balance: 310.00, favorites: ['prod_01', 'prod_08', 'prod_05'], favoritesPublic: true, allergies: ['Lactosa'], status: UserStatus.ACTIVE, schoolId: 'mx_01' },
+  { id: 'stu_007', fullName: 'Emiliano Ruiz', studentId: 'STU-007', grade: '3° Primaria - C', balance: 145.00, favorites: null, favoritesPublic: false, allergies: [], status: UserStatus.ACTIVE, schoolId: 'mx_01' },
 ];
 
 // ── PRE-ORDERS (Demo) ──

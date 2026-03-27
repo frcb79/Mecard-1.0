@@ -5,7 +5,7 @@ import {
   ChefHat, PenTool, LayoutGrid, CheckCircle2, MoreVertical,
   Activity, PieChart, Store, ArrowUpRight, TrendingUp, AlertTriangle
 } from 'lucide-react';
-import { StudentProfile, OperatingUnit, EntityOwner } from '../types';
+import { StudentProfile, OperatingUnit, EntityOwner, TransactionType, UserStatus } from '../types';
 import { Button } from './Button';
 import { SchoolAdminStudentsView } from './SchoolAdminStudentsView';
 import { useToast } from './ui/Toast';
@@ -48,7 +48,7 @@ export const SchoolAdminView: React.FC<{
 
   // Dynamic KPIs — computed from all available mock transactions
   const allTransactions = MOCK_STUDENT_TRANSACTIONS;
-  const purchaseTransactions = allTransactions.filter(t => t.type === 'PURCHASE');
+  const purchaseTransactions = allTransactions.filter(t => t.type === TransactionType.PURCHASE);
   const totalSales = purchaseTransactions.reduce((s, t) => s + Math.abs(t.amount), 0);
   const avgTicket = purchaseTransactions.length > 0 ? totalSales / purchaseTransactions.length : 0;
   const totalBalance = allStudents.reduce((a, b) => a + b.balance, 0);
@@ -74,7 +74,7 @@ export const SchoolAdminView: React.FC<{
   const handleToggleStudent = (id: string) => {
       const student = allStudents.find(s => s.id === id);
       if (student) {
-          onUpdateStudent(id, { status: student.status === 'Active' ? 'Inactive' : 'Active' });
+          onUpdateStudent(id, { status: student.status === UserStatus.ACTIVE ? UserStatus.INACTIVE : UserStatus.ACTIVE });
       }
   };
 
@@ -99,7 +99,7 @@ export const SchoolAdminView: React.FC<{
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 {/* Master KPIs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard title="Población Red" value={allStudents.length} icon={Users} color="bg-indigo-600" trend={`${allStudents.filter(s => s.status === 'Active').length} activos`} />
+                  <StatCard title="Población Red" value={allStudents.length} icon={Users} color="bg-indigo-600" trend={`${allStudents.filter(s => s.status === UserStatus.ACTIVE).length} activos`} />
                   <StatCard title="Saldo en Red" value={`$${totalBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Landmark} color="bg-emerald-500" trend="Capital Escolar" />
                   <StatCard title="Ventas Período" value={`$${totalSales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} icon={Activity} color="bg-orange-600" trend={`${purchaseTransactions.length} compras • Ticket prom. $${avgTicket.toFixed(0)}`} />
                   <StatCard title="Salud Estudiantil" value={allergiesCount} icon={HeartPulse} color="bg-rose-500" subtitle="Alumnos con Alergias" />

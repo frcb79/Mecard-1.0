@@ -1,7 +1,7 @@
 
 import Papa from 'papaparse';
 import { CLABEService } from './clabeService';
-import { StudentProfile } from '../types';
+import { StudentProfile, UserStatus } from '../types';
 
 export interface StudentImportRow {
   nombre_completo: string;
@@ -173,7 +173,7 @@ export class StudentImportService {
         restrictedProducts: [],
         allergies: row.alergias ? row.alergias.split(',').map(a => a.trim()).filter(Boolean) : [],
         parentName: row.tutor_nombre,
-        status: 'Active',
+        status: UserStatus.ACTIVE,
         enrollmentDate: new Date().toISOString(),
         clabePersonal: CLABEService.generateStudentCLABE(stpCostCenter, studentId),
         curp: row.curp.toUpperCase()

@@ -9,7 +9,7 @@ import { BarChart3, Download, Calendar, Filter, TrendingUp } from 'lucide-react'
 import { useToast } from './ui/Toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { MOCK_STUDENT_TRANSACTIONS, PRODUCTS } from '../constants';
-import { Category } from '../types';
+import { Category, TransactionType } from '../types';
 
 // Category labels for Spanish display
 const CATEGORY_LABELS: Record<string, string> = {
@@ -31,7 +31,7 @@ export default function ReportsView() {
 
   // ── Derived data from real mock transactions ──
   const purchases = useMemo(() =>
-    MOCK_STUDENT_TRANSACTIONS.filter(t => t.type === 'PURCHASE'),
+    MOCK_STUDENT_TRANSACTIONS.filter(t => t.type === TransactionType.PURCHASE),
     []
   );
 

@@ -730,6 +730,8 @@ export function generateRevenueAnalytics(period: string): RevenueAnalytics {
     CARD_EMISSION: totalRevenue * 0.15,       // 15% from card printing
     MONTHLY_RENT: totalRevenue * 0.40,        // 40% from monthly rent
     POS_COMMISSION: totalRevenue * 0.10,      // 10% from POS commissions
+    SETUP_FEE: 0,
+    CONCESSIONAIRE_FEE: 0,
   }
 
   // School metrics
