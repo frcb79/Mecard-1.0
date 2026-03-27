@@ -24,7 +24,6 @@ import {
   getSchoolInvoices,
 } from '../../services/BillingService';
 import type {
-  SchoolBlockingRule,
   BlockingDetails,
 } from '../../services/BillingService';
 import type { Invoice } from '../../types';

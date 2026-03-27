@@ -17,10 +17,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   [Category.COMBO_MEALS]: 'Combos',
   [Category.SNACKS]: 'Snacks',
   [Category.DRINKS]: 'Bebidas',
-  [Category.SCHOOL_SUPPLIES]: 'Papelería',
+  [Category.SUPPLIES]: 'Papelería',
   [Category.UNIFORMS]: 'Uniformes',
-  [Category.ACCESSORIES]: 'Accesorios',
-  [Category.HEALTHY]: 'Saludable',
+  [Category.BOOKS]: 'Libros',
+  [Category.TECH]: 'Tecnología',
 };
 
 export default function ReportsView() {

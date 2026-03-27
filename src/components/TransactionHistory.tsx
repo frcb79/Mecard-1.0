@@ -239,7 +239,7 @@ export function TransactionHistory({ studentId, studentName }: TransactionHistor
           transactions.map(tx => {
             const config = TRANSACTION_CONFIG[tx.type as keyof typeof TRANSACTION_CONFIG] || TRANSACTION_CONFIG.PURCHASE;
             const Icon = config.icon;
-            const isNegative = tx.type === 'PURCHASE' || tx.type === 'SALE' || tx.type === 'GIFT_SENT';
+            const isNegative = tx.type === TransactionType.PURCHASE || tx.type === TransactionType.GIFT_SENT;
 
             // Parsear items si existen
             let itemsText = '';

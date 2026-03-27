@@ -78,7 +78,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   // Default student (for when no search is done)
   const defaultStudent: StudentProfile = {
     ...(defaultStudentData || {} as StudentProfile),
-    ...(user?.id && { id: user.id, name: user.name || 'Estudiante' }),
+    ...(user?.id && { id: user.id, fullName: user.fullName || 'Estudiante' }),
   };
 
   const student = activeStudent || defaultStudent;
@@ -157,7 +157,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
     const term = studentIdInput.toLowerCase().trim();
     const found = allStudentsList.find(s =>
       s.id.toLowerCase() === term ||
-      s.name.toLowerCase().includes(term)
+      s.fullName.toLowerCase().includes(term)
     );
     if (found) {
         setActiveStudent(found);
@@ -219,7 +219,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
 
           // Step 5: Update state to show points earned
           setAiUpsell(
-            `🎉 ${student.name} ganó ${pointsEarned} puntos!`
+            `🎉 ${student.fullName} ganó ${pointsEarned} puntos!`
           );
 
           // Step 6: Check tier elevation
@@ -251,7 +251,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
         const receipt = {
           items: [...cart],
           total,
-          student: student.name,
+          student: student.fullName,
           date: new Date().toLocaleString('es-MX'),
           folio,
         };
@@ -261,7 +261,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
         // Add to transaction history
         setTxHistory(prev => [{
           id: result.transactionId || `tx_${Date.now()}`,
-          student: student.name,
+          student: student.fullName,
           total,
           items: cart.reduce((s, i) => s + i.quantity, 0),
           date: new Date().toLocaleString('es-MX'),
@@ -307,7 +307,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
 
     try {
       const redeemedGift = await socialService.redeemGift(giftRedemptionCode, '');
-      setGiftRedemptionSuccess(`¡Regalo canjeado! Recibiste ${redeemedGift.product_name}`);
+      setGiftRedemptionSuccess(`¡Regalo canjeado! Recibiste ${redeemedGift.productName}`);
       setGiftRedemptionCode('');
 
       // Clear success message after 3 seconds
@@ -431,9 +431,9 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
              <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none rotate-12"><Receipt size={140}/></div>
              <div className="flex justify-between items-start relative z-10">
                  <div className="flex items-center gap-3">
-                    <img src={student.photo} alt={`Foto de ${student.name}`} className="w-12 h-12 bg-white rounded-xl object-cover border-2 border-white/10 shadow-md" />
+                    <img src={student.photo} alt={`Foto de ${student.fullName}`} className="w-12 h-12 bg-white rounded-xl object-cover border-2 border-white/10 shadow-md" />
                     <div>
-                        <h3 className="font-bold text-white text-sm leading-tight">{student.name}</h3>
+                        <h3 className="font-bold text-white text-sm leading-tight">{student.fullName}</h3>
                         <p className="text-[10px] font-medium text-surface-400 mt-0.5">{student.id} · {student.grade}</p>
                     </div>
                  </div>

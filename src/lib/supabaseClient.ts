@@ -3,11 +3,17 @@
 import { createClient } from "@supabase/supabase-js";
 import { isSupabaseConfigured as hasSupabaseConfig } from "./env";
 
+type EnvLike = {
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
+  VITE_REQUIRE_SUPABASE?: string;
+};
+
 // Variables de entorno (Vite usa import.meta.env)
 const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? "";
 
-export const isSupabaseConfigured = hasSupabaseConfig(import.meta.env);
+export const isSupabaseConfigured = hasSupabaseConfig(import.meta.env as EnvLike);
 
 // Fallback seguro para evitar crash en build
 const finalUrl = isSupabaseConfigured

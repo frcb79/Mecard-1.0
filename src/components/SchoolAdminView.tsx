@@ -52,7 +52,7 @@ export const SchoolAdminView: React.FC<{
   const totalSales = purchaseTransactions.reduce((s, t) => s + Math.abs(t.amount), 0);
   const avgTicket = purchaseTransactions.length > 0 ? totalSales / purchaseTransactions.length : 0;
   const totalBalance = allStudents.reduce((a, b) => a + b.balance, 0);
-  const allergiesCount = allStudents.filter(s => s.allergies && s.allergies.length > 0).length;
+  const allergiesCount = allStudents.filter(s => (s.restrictions?.allergens?.length ?? 0) > 0).length;
   // Per-unit revenue based on transaction distribution
   const unitDailyRevenue = (unitId: string, idx: number) => {
     const share = idx === 0 ? 0.65 : 0.35; // Cafetería gets ~65%

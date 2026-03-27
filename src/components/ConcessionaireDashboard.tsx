@@ -150,7 +150,7 @@ const TabBtn: React.FC<TabBtnProps> = ({ active, onClick, icon, label }) => (
 interface KpiCardProps {
   title: string;
   value: string;
-  icon: React.ReactElement;
+  icon: React.ReactElement<{ size?: number }>;
   color: string;
   subtitle?: string;
   trend?: string;

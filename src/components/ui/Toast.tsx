@@ -95,7 +95,7 @@ export function useToast() {
 // TOAST CONTAINER (renders in top-right)
 // =============================================
 
-function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: string) => void }) {
+export function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: string) => void }) {
   if (toasts.length === 0) return null;
 
   return (
@@ -147,7 +147,7 @@ const toastIcons: Record<ToastType, React.ReactNode> = {
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
   const [exiting, setExiting] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const styles = toastStyles[toast.type];
 
   useEffect(() => {

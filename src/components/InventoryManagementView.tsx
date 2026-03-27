@@ -85,7 +85,8 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
     };
 
     if (showModal.mode === 'create') {
-      const newProduct: Product = { ...productData, id: Date.now().toString() };
+      const now = new Date().toISOString();
+      const newProduct: Product = { ...productData, id: Date.now().toString(), createdAt: now, updatedAt: now };
       onUpdateProducts([newProduct, ...products]);
     } else if (showModal.mode === 'edit' && showModal.product) {
       onUpdateProducts(products.map(p => p.id === showModal.product?.id ? { ...p, ...productData } : p));

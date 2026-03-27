@@ -159,24 +159,46 @@ export class StudentImportService {
       
       const row = result.data;
       const studentId = row.numero_matricula || `S${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+      const now = new Date().toISOString();
+      const fullName = row.nombre_completo.trim();
+      const [firstName, ...rest] = fullName.split(' ');
+      const lastName = rest.join(' ') || '-';
       
       const student: StudentProfile = {
         id: studentId,
-        name: row.nombre_completo,
+        studentId,
+        fullName,
+        firstName,
+        lastName,
         grade: `${row.grado} ${row.seccion || ''}`.trim(),
         photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200',
         schoolId,
+        credential: {
+          id: `cred_${studentId}`,
+          studentId,
+          qrCode: `QR-${studentId}`,
+          issuedAt: now,
+          isActive: true,
+          usageCount: 0,
+        },
         balance: 0,
         dailyLimit: row.limite_diario ? parseFloat(row.limite_diario) : 100,
         spentToday: 0,
-        restrictedCategories: [],
-        restrictedProducts: [],
-        allergies: row.alergias ? row.alergias.split(',').map(a => a.trim()).filter(Boolean) : [],
+        totalSpent: 0,
+        restrictions: {
+          restrictedCategories: [],
+          restrictedProducts: [],
+          allergens: row.alergias ? row.alergias.split(',').map(a => a.trim()).filter(Boolean) : [],
+        },
+        parentId: `parent_${studentId}`,
         parentName: row.tutor_nombre,
+        parentEmail: row.tutor_email,
         status: UserStatus.ACTIVE,
-        enrollmentDate: new Date().toISOString(),
+        enrollmentDate: now,
         clabePersonal: CLABEService.generateStudentCLABE(stpCostCenter, studentId),
-        curp: row.curp.toUpperCase()
+        curp: row.curp.toUpperCase(),
+        createdAt: now,
+        updatedAt: now,
       };
       
       newStudents.push(student);

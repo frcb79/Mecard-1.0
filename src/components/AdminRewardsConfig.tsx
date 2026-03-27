@@ -123,13 +123,13 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
       const tierField = field.split('.')[1];
       updatedConfig.tierThresholds = {
         ...updatedConfig.tierThresholds,
-        [tierField]: parseInt(value) || 0
+        [tierField]: parseInt(String(value), 10) || 0
       };
     } else {
       updatedConfig = {
         ...updatedConfig,
         [field]: typeof value === 'boolean' ? value : (
-          field === 'markupPercentage' || field === 'pointsPerPeso' ? parseInt(value) || 0 : value
+          field === 'markupPercentage' || field === 'pointsPerPeso' ? parseInt(String(value), 10) || 0 : value
         )
       };
     }

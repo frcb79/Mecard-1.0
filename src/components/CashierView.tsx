@@ -21,7 +21,7 @@ export const CashierView: React.FC<CashierViewProps> = ({ student: studentProp, 
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchId === student.id || student.name.toLowerCase().includes(searchId.toLowerCase())) {
+    if (searchId === student.id || student.fullName.toLowerCase().includes(searchId.toLowerCase())) {
       setStep('deposit');
     } else {
       toast.warning('No encontrado', 'Alumno no encontrado. Intenta con ID: 2024001');
@@ -87,9 +87,9 @@ export const CashierView: React.FC<CashierViewProps> = ({ student: studentProp, 
             {step === 'deposit' && (
               <div className="bg-white p-12 rounded-[56px] shadow-sm border border-slate-100 animate-in slide-in-from-right-4 duration-300">
                 <div className="flex items-center gap-6 mb-12">
-                  <img src={student.photo} alt={`Foto de ${student.name}`} className="w-20 h-20 rounded-3xl object-cover shadow-lg" />
+                  <img src={student.photo} alt={`Foto de ${student.fullName}`} className="w-20 h-20 rounded-3xl object-cover shadow-lg" />
                   <div>
-                    <h3 className="text-2xl font-black text-slate-800">{student.name}</h3>
+                    <h3 className="text-2xl font-black text-slate-800">{student.fullName}</h3>
                     <p className="text-indigo-600 font-black text-xs uppercase tracking-widest">{student.grade}</p>
                   </div>
                   <button onClick={() => setStep('search')} className="ml-auto p-4 text-slate-300 hover:text-slate-800 transition-colors" aria-label="Volver a búsqueda">
@@ -137,7 +137,7 @@ export const CashierView: React.FC<CashierViewProps> = ({ student: studentProp, 
                   <CheckCircle2 size={48} />
                 </div>
                 <h2 className="text-4xl font-black text-slate-800 mb-4">¡Recarga Exitosa!</h2>
-                <p className="text-slate-500 font-medium text-lg mb-10">Se han abonado <span className="text-emerald-600 font-black">${lastAmount.toFixed(2)}</span> a la cuenta de {student.name}.</p>
+                <p className="text-slate-500 font-medium text-lg mb-10">Se han abonado <span className="text-emerald-600 font-black">${lastAmount.toFixed(2)}</span> a la cuenta de {student.fullName}.</p>
                 <Button onClick={() => setStep('search')} className="px-12 py-6 rounded-3xl bg-slate-900 text-white font-black uppercase tracking-widest text-[11px]">
                   Realizar otra Recarga
                 </Button>

@@ -10,7 +10,7 @@ import {
   Fingerprint, Key, GraduationCap, Eye, EyeOff, Lock, Bell, Star,
   TrendingUp, Clock, MapPin, Users
 } from 'lucide-react';
-import { Category, StudentProfile, Transaction, Product, EntityOwner, School } from '../types';
+import { Category, StudentProfile, Transaction, Product, EntityOwner, School, TransactionType } from '../types';
 import { PRODUCTS, MOCK_SCHOOLS, MOCK_STUDENTS_LIST } from '../constants';
 import { Button } from './Button';
 import { ToggleSwitch } from './ToggleSwitch';
@@ -103,9 +103,12 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
     const finalLimit = dailyLimit === '' ? student.dailyLimit : Number(dailyLimit);
     onUpdateStudent({
       dailyLimit: finalLimit,
-      restrictedCategories: restrictions,
-      restrictedProducts: restrictedProducts,
-      allergies: allergies
+      restrictions: {
+        ...student.restrictions,
+        restrictedCategories: restrictions,
+        restrictedProducts,
+        allergens: allergies,
+      },
     });
     toast.success('Guardado', '¡Configuración guardada exitosamente!');
   };
@@ -174,8 +177,8 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                   <div className="animate-in zoom-in duration-500 text-center">
                       <h3 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tighter mb-6 md:mb-12 italic uppercase">¡Encontrado!</h3>
                       <div className="bg-slate-50 p-6 md:p-12 rounded-2xl md:rounded-[56px] mb-6 md:mb-12 flex flex-col items-center border border-slate-100">
-                          <img src={foundStudent?.photo} alt={`Foto de ${foundStudent?.name}`} className="w-24 h-24 md:w-40 md:h-40 rounded-2xl md:rounded-[48px] object-cover mb-4 md:mb-8 border-4 md:border-8 border-white shadow-2xl" />
-                          <h4 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">{foundStudent?.name}</h4>
+                          <img src={foundStudent?.photo} alt={`Foto de ${foundStudent?.fullName}`} className="w-24 h-24 md:w-40 md:h-40 rounded-2xl md:rounded-[48px] object-cover mb-4 md:mb-8 border-4 md:border-8 border-white shadow-2xl" />
+                          <h4 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">{foundStudent?.fullName}</h4>
                           <p className="text-xs md:text-sm font-bold text-indigo-600 uppercase tracking-widest mt-2">{foundStudent?.grade}</p>
                       </div>
                       <div className="flex gap-3 md:gap-4">
@@ -268,11 +271,11 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                         <div key={s.id} onClick={() => onSwitchStudent(idx)} className={`bento-card group p-4 md:p-6 rounded-2xl md:rounded-[40px] border-2 cursor-pointer transition-all ${isActive ? 'bg-white border-indigo-600 shadow-2xl shadow-indigo-100' : 'bg-white/40 border-transparent hover:border-slate-200'}`}>
                             <div className="flex items-center gap-3 md:gap-5">
                                 <div className="relative">
-                                  <img src={s.photo} alt={`Foto de ${s.name?.split(' ')[0]}`} className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-[22px] object-cover border-2 border-white shadow-lg" />
+                                  <img src={s.photo} alt={`Foto de ${s.fullName.split(' ')[0]}`} className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-[22px] object-cover border-2 border-white shadow-lg" />
                                   {isActive && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-indigo-600 border-2 border-white rounded-full"></div>}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-black text-slate-800 text-base md:text-lg truncate leading-none mb-1">{s.name.split(' ')[0]}</p>
+                                  <p className="font-black text-slate-800 text-base md:text-lg truncate leading-none mb-1">{s.fullName.split(' ')[0]}</p>
                                   <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">{s.grade}</p>
                                 </div>
                                 <ChevronRight size={18} className={`transition-transform ${isActive ? 'text-indigo-600 translate-x-1' : 'text-slate-200 group-hover:text-slate-400'}`} />
@@ -291,7 +294,7 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                   <div className="absolute top-0 right-0 p-8 md:p-12 opacity-5 pointer-events-none"><UserCircle size={200}/></div>
                   <div className="relative z-10 flex flex-col sm:flex-row gap-5 md:gap-10">
                       <div className="shrink-0 flex flex-row sm:flex-col items-center gap-4 sm:gap-0">
-                          <img src={student.photo} alt={`Foto de ${student.name}`} className="w-20 h-20 md:w-40 md:h-40 rounded-2xl md:rounded-[48px] object-cover border-4 md:border-8 border-slate-50 shadow-2xl" />
+                          <img src={student.photo} alt={`Foto de ${student.fullName}`} className="w-20 h-20 md:w-40 md:h-40 rounded-2xl md:rounded-[48px] object-cover border-4 md:border-8 border-slate-50 shadow-2xl" />
                           <div className="sm:mt-4 md:mt-6 flex gap-2 flex-wrap">
                              <span className="bg-emerald-50 text-emerald-600 px-2 md:px-3 py-1 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest">Activo</span>
                              <span className="bg-indigo-50 text-indigo-600 px-2 md:px-3 py-1 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest">{activeSchool.logo} {activeSchool.id}</span>
@@ -299,7 +302,7 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                       </div>
                       <div className="flex-1 space-y-4 md:space-y-8">
                           <div>
-                            <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-none mb-2 md:mb-4">{student.name}</h2>
+                            <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-none mb-2 md:mb-4">{student.fullName}</h2>
                             <p className="text-sm md:text-xl font-bold text-indigo-600/60 uppercase tracking-[2px] md:tracking-[4px]">{student.grade}</p>
                           </div>
                           <div className="flex items-end gap-4 md:gap-12">
@@ -384,8 +387,8 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                   {transactions.slice(0, 4).map((tx) => (
                     <div key={tx.id} className="flex items-center justify-between p-4 md:p-10 hover:bg-slate-50 transition-all group cursor-default">
                         <div className="flex items-center gap-3 md:gap-8 flex-1 min-w-0">
-                            <div className={`w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-[28px] flex items-center justify-center transition-all group-hover:scale-110 shadow-sm border shrink-0 ${tx.type === 'deposit' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                                {tx.type === 'deposit' ? <ArrowUpRight size={20}/> : <ShoppingBag size={20}/>}
+                            <div className={`w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-[28px] flex items-center justify-center transition-all group-hover:scale-110 shadow-sm border shrink-0 ${tx.type === TransactionType.DEPOSIT ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                              {tx.type === TransactionType.DEPOSIT ? <ArrowUpRight size={20}/> : <ShoppingBag size={20}/>}
                             </div>
                             <div className="min-w-0">
                                 <p className="font-black text-slate-800 text-sm md:text-xl leading-none mb-1 md:mb-2 truncate">{tx.item}</p>
@@ -395,8 +398,8 @@ export const ParentPortal: React.FC<ParentPortalProps> = ({
                             </div>
                         </div>
                         <div className="text-right shrink-0 ml-2">
-                           <p className={`text-xl md:text-4xl font-black tracking-tighter ${tx.type === 'deposit' ? 'text-emerald-600' : 'text-slate-800'}`}>
-                                {tx.type === 'deposit' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                            <p className={`text-xl md:text-4xl font-black tracking-tighter ${tx.type === TransactionType.DEPOSIT ? 'text-emerald-600' : 'text-slate-800'}`}>
+                              {tx.type === TransactionType.DEPOSIT ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
                            </p>
                            <p className="text-[8px] md:text-[9px] font-bold text-slate-300 uppercase mt-1 md:mt-2 tracking-widest hidden sm:block">Transacción Exitosa</p>
                         </div>

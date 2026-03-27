@@ -16,7 +16,7 @@ import { checkTrialExpiry, getTrialWarningMessage } from '../services/trialServi
 // UI SUB-COMPONENTS
 // ============================================
 
-interface InputFieldProps { label: string; value: string | number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; type?: string; prefix?: string; suffix?: string; }
+interface InputFieldProps { label: string; value: string | number; onChange: (value: string) => void; type?: string; prefix?: string; suffix?: string; }
 const InputField = ({ label, value, onChange, type = "text", prefix = "", suffix = "" }: InputFieldProps) => {
   const fieldId = `school-field-${label.toLowerCase().replace(/\s+/g, '-')}`;
   return (
@@ -61,7 +61,7 @@ interface SchoolWizardProps {
 const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<School>>(school || {
-    name: '', legalName: '', rfc: '', contractType: 'TRIAL', trialDurationMonths: 1, status: 'PENDING', stpCostCenter: '',
+    name: '', legalName: '', rfc: '', contractType: ContractType.TRIAL, trialDurationMonths: 1, status: SchoolStatus.PENDING, stpCostCenter: '',
     address: { street: '', city: '', state: '', zipCode: '', country: 'México' },
     contact: { email: '', phone: '', contactPerson: '', position: '' },
     studentCount: 0,
@@ -78,7 +78,7 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
     } as BusinessModel
   });
 
-  const updateBusiness = (field: string, value: string | number | boolean) => {
+  const updateBusiness = (field: string, value: string | number | boolean | BusinessModel['settlement']) => {
     setFormData(prev => ({ 
         ...prev, 
         businessModel: { ...prev.businessModel!, [field]: value } as BusinessModel
@@ -166,7 +166,7 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frecuencia de Dispersión</label>
                      <select 
                         value={formData.businessModel?.settlement.frequency}
-                        onChange={(e) => updateBusiness('settlement', { ...formData.businessModel!.settlement, frequency: e.target.value })}
+                        onChange={(e) => updateBusiness('settlement', { ...formData.businessModel!.settlement, frequency: e.target.value as 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' })}
                         className="w-full bg-white border border-slate-100 rounded-2xl p-4 font-black text-[10px] uppercase tracking-widest outline-none shadow-sm"
                      >
                         <option value="WEEKLY">Semanal (Viernes)</option>

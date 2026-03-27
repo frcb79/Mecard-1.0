@@ -5,7 +5,7 @@ import {
   Power, PowerOff, Eye, Mail, Phone, Calendar, AlertCircle,
   CheckCircle, XCircle, Users, FileText, RefreshCw, X, AlertTriangle
 } from 'lucide-react';
-import { StudentProfile, Category } from '../types';
+import { StudentProfile, UserStatus, Category } from '../types';
 import { Button } from './Button';
 import { useToast } from './ui/Toast';
 import Papa from 'papaparse';
@@ -28,7 +28,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
   onToggleStatus
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | UserStatus.ACTIVE | UserStatus.INACTIVE>('all');
   const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -39,10 +39,50 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
   const [editForm, setEditForm] = useState({ name: '', grade: '', parentName: '' });
   const toast = useToast();
 
+  const buildStudentProfile = (fullName: string, grade: string, parentName: string): StudentProfile => {
+    const now = new Date().toISOString();
+    const id = `stu_${Date.now()}`;
+    const [firstName, ...rest] = fullName.trim().split(' ');
+    const lastName = rest.join(' ') || '-';
+    return {
+      id,
+      studentId: id.toUpperCase(),
+      fullName: fullName.trim(),
+      firstName,
+      lastName,
+      grade: grade.trim(),
+      schoolId,
+      credential: {
+        id: `cred_${id}`,
+        studentId: id.toUpperCase(),
+        qrCode: `QR-${id.toUpperCase()}`,
+        issuedAt: now,
+        isActive: true,
+        usageCount: 0,
+      },
+      balance: 0,
+      dailyLimit: 500,
+      spentToday: 0,
+      totalSpent: 0,
+      restrictions: {
+        restrictedCategories: [],
+        restrictedProducts: [],
+        allergens: [],
+      },
+      parentId: `parent_${id}`,
+      parentName: parentName.trim() || 'Sin tutor',
+      photo: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}`,
+      enrollmentDate: now.split('T')[0],
+      status: UserStatus.ACTIVE,
+      createdAt: now,
+      updatedAt: now,
+    };
+  };
+
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
       const matchesSearch = 
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.parentName.toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -60,7 +100,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
   const handleExportCSV = () => {
     const csvData = filteredStudents.map(s => ({
       ID: s.id,
-      Nombre: s.name,
+      Nombre: s.fullName,
       Grado: s.grade,
       Tutor: s.parentName,
       Saldo: s.balance,
@@ -97,12 +137,12 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
           <div className="flex flex-wrap gap-3 w-full lg:w-auto">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | UserStatus.ACTIVE | UserStatus.INACTIVE)}
               className="px-6 py-4 bg-slate-50 border-none rounded-2xl text-xs font-black uppercase tracking-widest text-slate-500 outline-none"
             >
               <option value="all">Estatus</option>
-              <option value="Active">Activos</option>
-              <option value="Inactive">Inactivos</option>
+              <option value={UserStatus.ACTIVE}>Activos</option>
+              <option value={UserStatus.INACTIVE}>Inactivos</option>
             </select>
 
             <select
@@ -143,9 +183,9 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
               <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
                 <td className="p-8">
                   <div className="flex items-center gap-5">
-                    <img src={student.photo} alt={student.name} className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-sm" />
+                    <img src={student.photo} alt={student.fullName} className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-sm" />
                     <div>
-                      <p className="font-black text-slate-800 text-lg leading-none mb-1">{student.name}</p>
+                      <p className="font-black text-slate-800 text-lg leading-none mb-1">{student.fullName}</p>
                       <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">ID: {student.id}</p>
                     </div>
                   </div>
@@ -160,15 +200,15 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
                   <p className={`text-2xl font-black tracking-tighter ${student.balance < 50 ? 'text-rose-500' : 'text-indigo-600'}`}>${student.balance.toFixed(2)}</p>
                 </td>
                 <td className="p-8 text-center">
-                  <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest ${student.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${student.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                    {student.status === 'Active' ? 'Vigente' : 'Suspendido'}
+                  <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest ${student.status === UserStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${student.status === UserStatus.ACTIVE ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                    {student.status === UserStatus.ACTIVE ? 'Vigente' : 'Suspendido'}
                   </span>
                 </td>
                 <td className="p-8">
                   <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setSelectedStudent(student); setShowEditModal(true); }} className="p-3 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-all" title="Editar"><Edit2 size={18} /></button>
-                    <button onClick={() => onToggleStatus(student.id)} className={`p-3 rounded-xl transition-all ${student.status === 'Active' ? 'hover:bg-rose-50 text-rose-500' : 'hover:bg-emerald-50 text-emerald-500'}`} title={student.status === 'Active' ? 'Desactivar' : 'Activar'}>{student.status === 'Active' ? <PowerOff size={18} /> : <Power size={18} />}</button>
+                    <button onClick={() => onToggleStatus(student.id)} className={`p-3 rounded-xl transition-all ${student.status === UserStatus.ACTIVE ? 'hover:bg-rose-50 text-rose-500' : 'hover:bg-emerald-50 text-emerald-500'}`} title={student.status === UserStatus.ACTIVE ? 'Desactivar' : 'Activar'}>{student.status === UserStatus.ACTIVE ? <PowerOff size={18} /> : <Power size={18} />}</button>
                     <button onClick={() => setDeleteConfirm(student)} className="p-3 hover:bg-rose-50 text-rose-500 rounded-xl transition-all" title="Eliminar"><Trash2 size={18} /></button>
                   </div>
                 </td>
@@ -199,7 +239,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
               </div>
               <Button onClick={() => {
                 if (!addForm.name.trim() || !addForm.grade.trim()) { toast.warning('Requerido', 'Nombre y grado son obligatorios'); return; }
-                onAddStudent({ id: `stu_${Date.now()}`, name: addForm.name.trim(), grade: addForm.grade.trim(), parentName: addForm.parentName.trim() || 'Sin tutor', balance: 0, status: 'Active', enrollmentDate: new Date().toISOString().split('T')[0], photo: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(addForm.name)}`, allergies: [], spendingLimit: 500 } as StudentProfile);
+                onAddStudent(buildStudentProfile(addForm.name, addForm.grade, addForm.parentName));
                 setAddForm({ name: '', grade: '', parentName: '' }); setShowAddModal(false);
                 toast.info('Registrado', `${addForm.name} fue agregado exitosamente`);
               }} className="w-full py-6 rounded-3xl bg-indigo-600 font-black uppercase">Crear Perfil Estudiantil</Button>
@@ -217,7 +257,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
             <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nombre Completo</label>
-                <input defaultValue={selectedStudent.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full p-5 bg-slate-50 rounded-2xl border-none outline-none font-bold" />
+                <input defaultValue={selectedStudent.fullName} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full p-5 bg-slate-50 rounded-2xl border-none outline-none font-bold" />
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Grado</label>
@@ -228,7 +268,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
                 <input defaultValue={selectedStudent.parentName} onChange={e => setEditForm(f => ({ ...f, parentName: e.target.value }))} className="w-full p-5 bg-slate-50 rounded-2xl border-none outline-none font-bold" />
               </div>
               <Button onClick={() => {
-                onUpdateStudent(selectedStudent.id, { name: editForm.name || selectedStudent.name, grade: editForm.grade || selectedStudent.grade, parentName: editForm.parentName || selectedStudent.parentName });
+                onUpdateStudent(selectedStudent.id, { fullName: editForm.name || selectedStudent.fullName, grade: editForm.grade || selectedStudent.grade, parentName: editForm.parentName || selectedStudent.parentName });
                 setShowEditModal(false); setSelectedStudent(null);
                 toast.info('Actualizado', 'Datos del alumno guardados');
               }} className="w-full py-6 rounded-3xl bg-indigo-600 font-black uppercase">Guardar Cambios</Button>
@@ -257,11 +297,11 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
           <div className="bg-white rounded-[32px] p-10 w-full max-w-sm shadow-2xl text-center">
             <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6"><AlertTriangle size={32} className="text-rose-500" /></div>
-            <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">¿Eliminar a {deleteConfirm.name}?</h3>
+            <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">¿Eliminar a {deleteConfirm.fullName}?</h3>
             <p className="text-sm text-slate-500 mb-8">Esta acción no se puede deshacer.</p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-xs">Cancelar</button>
-              <button onClick={() => { onDeleteStudent(deleteConfirm.id); setDeleteConfirm(null); toast.info('Eliminado', `${deleteConfirm.name} fue removido`); }} className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-bold text-xs hover:bg-rose-600 transition-all">Eliminar</button>
+              <button onClick={() => { onDeleteStudent(deleteConfirm.id); setDeleteConfirm(null); toast.info('Eliminado', `${deleteConfirm.fullName} fue removido`); }} className="flex-1 py-4 bg-rose-500 text-white rounded-2xl font-bold text-xs hover:bg-rose-600 transition-all">Eliminar</button>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { MessageSquare, Send, CheckCircle, Clock, AlertTriangle, ChevronRight, X, Bot, Sparkles } from 'lucide-react';
-import { SupportTicket, TicketMessage } from '../types';
+import { SupportTicket, TicketMessage, UserRole } from '../types';
 import { MOCK_TICKETS } from '../constants';
 import { Button } from './Button';
 
@@ -25,7 +25,9 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ tickets = MOCK_TIC
     const msg: TicketMessage = {
       id: `msg_${Date.now()}`,
       ticketId: activeTicket.id,
+      senderId: isAdmin ? 'support-agent' : 'portal-user',
       senderName: isAdmin ? 'Soporte MeCard' : 'Usuario',
+      senderRole: isAdmin ? UserRole.SUPER_ADMIN : UserRole.PARENT,
       text: newMessage.trim(),
       timestamp: new Date().toISOString(),
       isAdmin,

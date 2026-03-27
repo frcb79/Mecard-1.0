@@ -246,7 +246,7 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
   );
 };
 
-interface ValidationCardProps { title: string; value: number; icon: React.ReactNode; color: string; }
+interface ValidationCardProps { title: string; value: number; icon: React.ReactElement<{ size?: number }>; color: string; }
 const ValidationCard = ({ title, value, icon, color }: ValidationCardProps) => {
   const themes: Record<string, string> = {
     slate: 'bg-slate-50 border-slate-100 text-slate-800',

@@ -9,7 +9,11 @@ import { installTelemetryListener } from "./lib/telemetry";
 
 installTelemetryListener();
 
-const envReport = validateClientEnv(import.meta.env);
+const envReport = validateClientEnv(import.meta.env as {
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
+  VITE_REQUIRE_SUPABASE?: string;
+});
 
 if (envReport.messages.length > 0) {
   envReport.messages.forEach((message) => {

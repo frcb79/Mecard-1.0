@@ -1,54 +1,114 @@
 
-import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, TripReminder, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus, SchoolFee, SchoolFeeType, FeeRecurrence, ParentPayment, ParentPaymentStatus, SchoolAnnouncement, AnnouncementPriority, AccessPoint, AccessPointType, AccessDirection, ScanMethod, AccessPointStatus, AccessEvent, AttendanceRecord, AttendanceStatus, WebhookConfig, WebhookEventType, AccessApiKey, Scholarship, ScholarshipType, DiscountType, PaymentPlan, PaymentPlanStatus, FeeReminder, FeeReminderSchedule, TransactionType, UserRole, UserStatus } from './types';
+import { Product, Category, SalesData, StudentProfile, Transaction, EntityOwner, School, OperatingUnit, SupportTicket, AuthorizedContact, ExitPermission, SchoolPermissionConfig, SchoolTrip, TripEnrollment, TripPayment, TripReminder, ActivityLogEntry, Gift, GiftStatus, StudentNotification, Friend, PreOrder, PreOrderStatus, SchoolFee, SchoolFeeType, FeeRecurrence, ParentPayment, ParentPaymentStatus, SchoolAnnouncement, AnnouncementPriority, AccessPoint, AccessPointType, AccessDirection, ScanMethod, AccessPointStatus, AccessEvent, AttendanceRecord, AttendanceStatus, WebhookConfig, WebhookEventType, AccessApiKey, Scholarship, ScholarshipType, DiscountType, PaymentPlan, PaymentPlanStatus, FeeReminder, FeeReminderSchedule, TransactionType, UserRole, UserStatus, SchoolStatus, ContractType } from './types';
 
-// Add missing clabePersonal property
-export const MOCK_STUDENT: StudentProfile = {
+const buildStudentProfile = (legacy: {
+  id: string;
+  name: string;
+  grade: string;
+  group?: string;
+  photo?: string;
+  schoolId: string;
+  balance: number;
+  dailyLimit: number;
+  spentToday: number;
+  restrictedCategories: Category[];
+  restrictedProducts: string[];
+  allergies: string[];
+  parentName: string;
+  parentId: string;
+  busRoute?: string;
+  status: UserStatus;
+  enrollmentDate: string;
+  clabePersonal?: string;
+  curp?: string;
+}): StudentProfile => {
+  const now = new Date().toISOString();
+  const [firstName, ...rest] = legacy.name.split(' ');
+  return {
+    id: legacy.id,
+    studentId: legacy.id,
+    fullName: legacy.name,
+    firstName,
+    lastName: rest.join(' ') || '-',
+    grade: legacy.grade,
+    group: legacy.group,
+    schoolId: legacy.schoolId,
+    credential: {
+      id: `cred_${legacy.id}`,
+      studentId: legacy.id,
+      qrCode: `QR-${legacy.id}`,
+      issuedAt: now,
+      isActive: true,
+      usageCount: 0,
+    },
+    balance: legacy.balance,
+    dailyLimit: legacy.dailyLimit,
+    spentToday: legacy.spentToday,
+    totalSpent: legacy.spentToday,
+    restrictions: {
+      restrictedCategories: legacy.restrictedCategories,
+      restrictedProducts: legacy.restrictedProducts,
+      allergens: legacy.allergies,
+    },
+    parentId: legacy.parentId,
+    parentName: legacy.parentName,
+    busRoute: legacy.busRoute,
+    photo: legacy.photo,
+    enrollmentDate: legacy.enrollmentDate,
+    status: legacy.status,
+    clabePersonal: legacy.clabePersonal,
+    curp: legacy.curp,
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
+export const MOCK_STUDENT: StudentProfile = buildStudentProfile({
   id: '2024001',
   name: 'Santiago Gonzalez',
   grade: '4° Primaria - B',
   photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400',
   schoolId: 'mx_01',
-  balance: 150.50,
-  dailyLimit: 200.00,
-  spentToday: 45.00,
+  balance: 150.5,
+  dailyLimit: 200,
+  spentToday: 45,
   restrictedCategories: [Category.DRINKS],
-  restrictedProducts: ['1'], // Bloqueamos el Wrap de Pollo por defecto
+  restrictedProducts: ['1'],
   allergies: ['Peanuts'],
   parentName: 'Maria Gonzalez',
   parentId: 'parent_01',
   busRoute: 'Ruta 3 - Satélite',
   status: UserStatus.ACTIVE,
   enrollmentDate: '2023-08-15',
-  clabePersonal: '646180000012300015'
-};
+  clabePersonal: '646180000012300015',
+});
 
-// Add missing clabePersonal property
 export const MOCK_STUDENTS_LIST: StudentProfile[] = [
   MOCK_STUDENT,
-  { 
-    id: '2024002', name: 'Ana García', grade: '2° Primaria - A', group: 'A', photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200', schoolId: 'mx_01', 
-    balance: 250.00, dailyLimit: 100, spentToday: 0, restrictedCategories: [], restrictedProducts: [], allergies: [], 
+  buildStudentProfile({
+    id: '2024002', name: 'Ana García', grade: '2° Primaria - A', group: 'A', photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200', schoolId: 'mx_01',
+    balance: 250.00, dailyLimit: 100, spentToday: 0, restrictedCategories: [], restrictedProducts: [], allergies: [],
     parentName: 'Roberto Garcia', parentId: 'parent_02', busRoute: 'Ruta 1 - Lomas', status: UserStatus.ACTIVE, enrollmentDate: '2023-08-15',
     clabePersonal: '646180000012300028'
-  },
-  {
+  }),
+  buildStudentProfile({
     id: '2024003', name: 'Diego Martínez', grade: '5° Primaria - C', group: 'C', photo: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=200', schoolId: 'mx_01',
     balance: 180.00, dailyLimit: 150, spentToday: 30, restrictedCategories: [Category.SNACKS], restrictedProducts: [], allergies: ['Gluten'],
     parentName: 'Laura Martínez', parentId: 'parent_03', busRoute: 'Ruta 2 - Del Valle', status: UserStatus.ACTIVE, enrollmentDate: '2022-08-20',
     clabePersonal: '646180000012300035'
-  },
-  {
+  }),
+  buildStudentProfile({
     id: '2024004', name: 'Valentina López', grade: '3° Primaria - A', group: 'A', photo: 'https://images.unsplash.com/photo-1595454223600-91e5312e3186?w=200', schoolId: 'mx_01',
     balance: 320.00, dailyLimit: 120, spentToday: 0, restrictedCategories: [], restrictedProducts: [], allergies: [],
     parentName: 'Carlos López', parentId: 'parent_04', busRoute: 'Ruta 4 - Polanco', status: UserStatus.ACTIVE, enrollmentDate: '2024-01-10',
     clabePersonal: '646180000012300042'
-  },
-  {
+  }),
+  buildStudentProfile({
     id: '2024005', name: 'Mateo Hernández', grade: '6° Primaria - B', group: 'B', photo: 'https://images.unsplash.com/photo-1560785496-3c9d27877182?w=200', schoolId: 'mx_01',
     balance: 75.50, dailyLimit: 200, spentToday: 85, restrictedCategories: [], restrictedProducts: [], allergies: ['Dairy'],
     parentName: 'Patricia Hernández', parentId: 'parent_05', busRoute: 'Ruta 5 - Interlomas', status: UserStatus.ACTIVE, enrollmentDate: '2021-08-15',
     clabePersonal: '646180000012300059'
-  },
+  }),
 ];
 
 export const MOCK_SCHOOLS: School[] = [
@@ -61,10 +121,12 @@ export const MOCK_SCHOOLS: School[] = [
     stpCostCenter: '123',
     platformFeePercent: 4.5,
     onboardingStatus: 'COMPLETED',
-    status: 'ACTIVE',
-    contractType: 'STANDARD',
+    status: SchoolStatus.ACTIVE,
+    contractType: ContractType.STANDARD,
+    unifiedBalance: false,
     createdAt: '2023-01-01T00:00:00Z',
-    branding: { primary: '#4f46e5', secondary: '#818cf8' },
+    updatedAt: '2023-01-01T00:00:00Z',
+    branding: { primaryColor: '#4f46e5', secondaryColor: '#818cf8' },
     businessModel: {
       setupFee: 25000,
       annualFee: 15000,
@@ -102,10 +164,12 @@ export const MOCK_SCHOOLS: School[] = [
     stpCostCenter: '456',
     platformFeePercent: 4.5,
     onboardingStatus: 'COMPLETED',
-    status: 'ACTIVE',
-    contractType: 'STANDARD',
+    status: SchoolStatus.ACTIVE,
+    contractType: ContractType.STANDARD,
+    unifiedBalance: false,
     createdAt: '2023-01-01T00:00:00Z',
-    branding: { primary: '#0f172a', secondary: '#334155' },
+    updatedAt: '2023-01-01T00:00:00Z',
+    branding: { primaryColor: '#0f172a', secondaryColor: '#334155' },
     businessModel: {
       setupFee: 18000,
       annualFee: 10000,
@@ -137,9 +201,9 @@ export const MOCK_SCHOOLS: School[] = [
 ];
 
 export const MOCK_UNITS: OperatingUnit[] = [
-  { id: 'unit_01', schoolId: 'mx_01', name: 'Cafetería Central', type: 'CAFETERIA', ownerType: EntityOwner.CONCESSIONAIRE, managerId: 'mgr_01' },
-  { id: 'unit_02', schoolId: 'mx_01', name: 'Papelería Secundaria', type: 'STATIONERY', ownerType: EntityOwner.SCHOOL },
-  { id: 'unit_03', schoolId: 'mx_02', name: 'Comedor Principal', type: 'CAFETERIA', ownerType: EntityOwner.CONCESSIONAIRE }
+  { id: 'unit_01', schoolId: 'mx_01', name: 'Cafetería Central', type: 'CAFETERIA', ownerType: EntityOwner.CONCESSIONAIRE, managerId: 'mgr_01', isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'unit_02', schoolId: 'mx_01', name: 'Papelería Secundaria', type: 'STATIONERY', ownerType: EntityOwner.SCHOOL, isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'unit_03', schoolId: 'mx_02', name: 'Comedor Principal', type: 'CAFETERIA', ownerType: EntityOwner.CONCESSIONAIRE, isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
 ];
 
 const BASE_PRODUCTS = [
@@ -254,7 +318,10 @@ export const MOCK_TICKETS: SupportTicket[] = [
     status: 'OPEN',
     priority: 'HIGH',
     createdAt: '2024-10-24T10:00:00Z',
+    updatedAt: '2024-10-24T10:00:00Z',
     creatorId: 'mx_01_admin',
+    creatorName: 'Director Cumbres',
+    creatorRole: UserRole.SCHOOL_ADMIN,
     messages: [
       {
         id: 'm1',

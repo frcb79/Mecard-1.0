@@ -302,7 +302,7 @@ export const Sidebar: React.FC = () => {
 
       {/* ─── Notifications ─── */}
       <div className="px-3 py-2 shrink-0 border-t border-surface-100">
-        <NotificationCenter />
+        <NotificationCenter userId={user?.id ?? ''} />
       </div>
 
       {/* ─── Logout ─── */}

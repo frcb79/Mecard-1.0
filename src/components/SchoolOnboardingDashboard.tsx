@@ -306,7 +306,7 @@ const FeatureCard = ({ icon, title, desc }: FeatureCardProps) => (
     </div>
 );
 
-interface OnboardingInputFieldProps { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; }
+interface OnboardingInputFieldProps { label: string; value: string; onChange: (value: string) => void; placeholder?: string; }
 const InputField = ({ label, value, onChange, placeholder }: OnboardingInputFieldProps) => {
     const fieldId = `onboarding-${label.toLowerCase().replace(/\s+/g, '-')}`;
     return (
