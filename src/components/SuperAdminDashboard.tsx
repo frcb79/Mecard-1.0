@@ -40,7 +40,9 @@ export const SuperAdminDashboard: React.FC = () => {
 
   // Trigger fetch when schools change
   useEffect(() => {
-    if (schools.length > 0) fetchMetrics(schools);
+    if (schools.length > 0) {
+      void fetchMetrics(schools);
+    }
   }, [schools, fetchMetrics]);
 
   return (
