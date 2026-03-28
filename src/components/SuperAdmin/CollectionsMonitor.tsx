@@ -7,7 +7,7 @@
  * @route /admin/billing/collections
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   HandCoins, TrendingUp, AlertTriangle, CheckCircle2,
   Clock, ChevronRight, X, Filter, Search, Building2, FileText
@@ -16,6 +16,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, Line, Area, AreaChart, ResponsiveContainer, Cell
 } from 'recharts';
+import { usePlatform } from '../../contexts/PlatformContext';
+import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
+import { logger } from '../../lib/logger';
 
 // ─── Types ──────────────────────────────────────────
 
@@ -37,6 +40,14 @@ interface SchoolCollectionRecord {
 
 type SemaphoreStatus = 'green' | 'yellow' | 'red';
 
+interface TransactionLite {
+  id: string;
+  school_id: string | null;
+  amount: number | null;
+  type: string | null;
+  created_at: string | null;
+}
+
 // ─── Mock Data ──────────────────────────────────────
 
 const MOCK_SCHOOLS: SchoolCollectionRecord[] = [
@@ -52,7 +63,7 @@ const MOCK_SCHOOLS: SchoolCollectionRecord[] = [
   { id: 's10', name: 'Concesionario Don Pepe (Independiente)', contractType: 'STANDARD', totalBilled: 180000, totalCollected: 135000, pending: 15000, overdue: 30000, avgDaysToCollect: 25, lastPaymentDate: '2026-02-01', lastInvoiceNumber: 'INV-2026-02-CDP01', invoiceCount: 6, overdueInvoices: 2, maxOverdueDays: 38 },
 ];
 
-const AGING_BUCKETS = [
+const MOCK_AGING_BUCKETS = [
   { label: '1-15 días', count: 4, amount: 48000, color: '#fbbf24' },
   { label: '16-30 días', count: 3, amount: 55000, color: '#f97316' },
   { label: '31-60 días', count: 2, amount: 42000, color: '#ef4444' },
@@ -60,7 +71,7 @@ const AGING_BUCKETS = [
   { label: '90+ días', count: 0, amount: 0, color: '#991b1b' },
 ];
 
-const TREND_DATA = [
+const MOCK_TREND_DATA = [
   { mes: 'Oct', facturado: 280000, cobrado: 265000 },
   { mes: 'Nov', facturado: 295000, cobrado: 280000 },
   { mes: 'Dic', facturado: 260000, cobrado: 250000 },
@@ -88,31 +99,210 @@ const SEMAPHORE_STYLES: Record<SemaphoreStatus, { bg: string; text: string; labe
 // ─── Main Component ──────────────────────────────────
 
 export default function CollectionsMonitor() {
+  const { schools } = usePlatform();
   const [filterStatus, setFilterStatus] = useState<SemaphoreStatus | 'all'>('all');
   const [search, setSearch] = useState('');
   const [selectedSchool, setSelectedSchool] = useState<SchoolCollectionRecord | null>(null);
+  const [schoolRecords, setSchoolRecords] = useState<SchoolCollectionRecord[]>(MOCK_SCHOOLS);
+  const [agingBuckets, setAgingBuckets] = useState(MOCK_AGING_BUCKETS);
+  const [trendData, setTrendData] = useState(MOCK_TREND_DATA);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCollections = async () => {
+      if (!isSupabaseConfigured) {
+        setSchoolRecords(MOCK_SCHOOLS);
+        setAgingBuckets(MOCK_AGING_BUCKETS);
+        setTrendData(MOCK_TREND_DATA);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data, error: txError } = await supabase
+          .from('transactions')
+          .select('id, school_id, amount, type, created_at')
+          .order('created_at', { ascending: false })
+          .limit(5000);
+
+        if (txError) throw txError;
+
+        const txRows = (data || []) as TransactionLite[];
+        const txBySchool: Record<string, TransactionLite[]> = {};
+
+        txRows.forEach((tx) => {
+          if (!tx.school_id) return;
+          if (!txBySchool[tx.school_id]) txBySchool[tx.school_id] = [];
+          txBySchool[tx.school_id].push(tx);
+        });
+
+        const now = Date.now();
+
+        const records: SchoolCollectionRecord[] = schools.map((school) => {
+          const recordsBySchool = txBySchool[school.id] || [];
+
+          let billed = 0;
+          let collected = 0;
+          let pending = 0;
+          let overdue = 0;
+          let overdueInvoices = 0;
+          let maxOverdueDays = 0;
+          let ageSum = 0;
+          let ageCount = 0;
+          let lastPaymentDate = '-';
+
+          recordsBySchool.forEach((tx) => {
+            const amount = tx.amount || 0;
+            const txType = (tx.type || '').toUpperCase();
+            const createdAt = tx.created_at ? new Date(tx.created_at) : null;
+            const ageDays = createdAt ? Math.max(0, Math.floor((now - createdAt.getTime()) / 86400000)) : 0;
+
+            if (amount < 0 || txType === 'PURCHASE' || txType === 'FEE') {
+              const invoiceAmount = Math.abs(amount);
+              billed += invoiceAmount;
+
+              if (ageDays > 30) {
+                overdue += invoiceAmount;
+                overdueInvoices += 1;
+                maxOverdueDays = Math.max(maxOverdueDays, ageDays);
+              } else {
+                pending += invoiceAmount;
+              }
+
+              if (createdAt) {
+                ageSum += ageDays;
+                ageCount += 1;
+              }
+              return;
+            }
+
+            if (amount > 0 && txType !== 'REFUND') {
+              collected += amount;
+              if (createdAt) {
+                lastPaymentDate = createdAt.toISOString().slice(0, 10);
+              }
+            }
+          });
+
+          return {
+            id: school.id,
+            name: school.name,
+            contractType: school.contractType === 'TRIAL' ? 'TRIAL' : 'STANDARD',
+            totalBilled: Math.round(billed),
+            totalCollected: Math.round(collected),
+            pending: Math.max(0, Math.round(pending)),
+            overdue: Math.max(0, Math.round(overdue)),
+            avgDaysToCollect: ageCount > 0 ? Math.round(ageSum / ageCount) : 0,
+            lastPaymentDate,
+            lastInvoiceNumber: `AUTO-${school.id.slice(0, 6).toUpperCase()}`,
+            invoiceCount: recordsBySchool.length,
+            overdueInvoices,
+            maxOverdueDays,
+          };
+        });
+
+        const trendMap: Record<string, { mes: string; facturado: number; cobrado: number }> = {};
+        txRows.forEach((tx) => {
+          if (!tx.created_at) return;
+          const dt = new Date(tx.created_at);
+          const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+          if (!trendMap[key]) {
+            trendMap[key] = {
+              mes: dt.toLocaleDateString('es-MX', { month: 'short' }),
+              facturado: 0,
+              cobrado: 0,
+            };
+          }
+
+          const amount = tx.amount || 0;
+          const txType = (tx.type || '').toUpperCase();
+          if (amount < 0 || txType === 'PURCHASE' || txType === 'FEE') {
+            trendMap[key].facturado += Math.abs(amount);
+          } else if (amount > 0 && txType !== 'REFUND') {
+            trendMap[key].cobrado += amount;
+          }
+        });
+
+        const sortedTrend = Object.entries(trendMap)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .slice(-6)
+          .map(([, value]) => value);
+
+        const buckets = [
+          { label: '1-15 días', count: 0, amount: 0, color: '#fbbf24' },
+          { label: '16-30 días', count: 0, amount: 0, color: '#f97316' },
+          { label: '31-60 días', count: 0, amount: 0, color: '#ef4444' },
+          { label: '61-90 días', count: 0, amount: 0, color: '#dc2626' },
+          { label: '90+ días', count: 0, amount: 0, color: '#991b1b' },
+        ];
+
+        txRows.forEach((tx) => {
+          const amount = tx.amount || 0;
+          const txType = (tx.type || '').toUpperCase();
+          if (!(amount < 0 || txType === 'PURCHASE' || txType === 'FEE') || !tx.created_at) return;
+
+          const ageDays = Math.max(0, Math.floor((now - new Date(tx.created_at).getTime()) / 86400000));
+          const value = Math.abs(amount);
+
+          if (ageDays <= 15) {
+            buckets[0].count += 1;
+            buckets[0].amount += value;
+          } else if (ageDays <= 30) {
+            buckets[1].count += 1;
+            buckets[1].amount += value;
+          } else if (ageDays <= 60) {
+            buckets[2].count += 1;
+            buckets[2].amount += value;
+          } else if (ageDays <= 90) {
+            buckets[3].count += 1;
+            buckets[3].amount += value;
+          } else {
+            buckets[4].count += 1;
+            buckets[4].amount += value;
+          }
+        });
+
+        setSchoolRecords(records.length > 0 ? records : MOCK_SCHOOLS);
+        setTrendData(sortedTrend.length > 0 ? sortedTrend : MOCK_TREND_DATA);
+        setAgingBuckets(buckets);
+      } catch (err: unknown) {
+        logger.error('superAdmin.collectionsMonitor', 'Error loading collections data', err);
+        setError('No se pudieron cargar métricas reales. Mostrando datos fallback.');
+        setSchoolRecords(MOCK_SCHOOLS);
+        setAgingBuckets(MOCK_AGING_BUCKETS);
+        setTrendData(MOCK_TREND_DATA);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadCollections();
+  }, [schools]);
 
   // Calculated metrics
   const totals = useMemo(() => {
-    const billed = MOCK_SCHOOLS.reduce((s, sc) => s + sc.totalBilled, 0);
-    const collected = MOCK_SCHOOLS.reduce((s, sc) => s + sc.totalCollected, 0);
-    const overdue = MOCK_SCHOOLS.reduce((s, sc) => s + sc.overdue, 0);
-    const pending = MOCK_SCHOOLS.reduce((s, sc) => s + sc.pending, 0);
+    const billed = schoolRecords.reduce((s, sc) => s + sc.totalBilled, 0);
+    const collected = schoolRecords.reduce((s, sc) => s + sc.totalCollected, 0);
+    const overdue = schoolRecords.reduce((s, sc) => s + sc.overdue, 0);
+    const pending = schoolRecords.reduce((s, sc) => s + sc.pending, 0);
     const rate = billed > 0 ? (collected / billed) * 100 : 0;
     return { billed, collected, overdue, pending, rate };
-  }, []);
+  }, [schoolRecords]);
 
   const semaphoreCounts = useMemo(() => {
     const counts = { green: 0, yellow: 0, red: 0 };
-    MOCK_SCHOOLS.forEach((s) => { counts[getSemaphore(s)]++; });
+    schoolRecords.forEach((s) => { counts[getSemaphore(s)]++; });
     return counts;
-  }, []);
+  }, [schoolRecords]);
 
   const filteredSchools = useMemo(() => {
-    return MOCK_SCHOOLS
+    return schoolRecords
       .filter((s) => filterStatus === 'all' || getSemaphore(s) === filterStatus)
       .filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
-  }, [filterStatus, search]);
+  }, [filterStatus, search, schoolRecords]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-6 space-y-6">
@@ -136,8 +326,20 @@ export default function CollectionsMonitor() {
           badge={totals.rate >= 90 ? 'Saludable' : totals.rate >= 75 ? 'Atención' : 'Crítico'} />
         <KpiCard label="Cartera Vencida" value={fmt(totals.overdue)} icon={AlertTriangle}
           color={totals.overdue === 0 ? 'emerald' : 'red'}
-          badge={totals.overdue > 0 ? `${MOCK_SCHOOLS.filter((s) => s.overdue > 0).length} escuelas` : undefined} />
+          badge={totals.overdue > 0 ? `${schoolRecords.filter((s) => s.overdue > 0).length} escuelas` : undefined} />
       </div>
+
+      {loading && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
+          Cargando métricas de cobranza en tiempo real...
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          {error}
+        </div>
+      )}
 
       {/* Semaphore Counters */}
       <div className="grid grid-cols-3 gap-3">
@@ -252,20 +454,20 @@ export default function CollectionsMonitor() {
           <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-5">
             <h3 className="text-sm font-semibold text-slate-800 mb-4">Aging de Cartera MeCard</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={AGING_BUCKETS} layout="vertical" margin={{ top: 0, right: 5, bottom: 0, left: 5 }}>
+              <BarChart data={agingBuckets} layout="vertical" margin={{ top: 0, right: 5, bottom: 0, left: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
                 <YAxis type="category" dataKey="label" tick={{ fontSize: 10 }} width={70} />
                 <Tooltip formatter={(v: number) => fmt(v)} />
                 <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={20}>
-                  {AGING_BUCKETS.map((b, i) => (
+                  {agingBuckets.map((b, i) => (
                     <Cell key={i} fill={b.color} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 space-y-1">
-              {AGING_BUCKETS.map((b) => (
+              {agingBuckets.map((b) => (
                 <div key={b.label} className="flex items-center justify-between text-[10px]">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: b.color }} />
@@ -281,7 +483,7 @@ export default function CollectionsMonitor() {
           <div className="bg-white rounded-[32px] border border-slate-200 ring-1 ring-inset ring-slate-100 p-5">
             <h3 className="text-sm font-semibold text-slate-800 mb-4">Tendencia de Cobro (6 meses)</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={TREND_DATA} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+              <AreaChart data={trendData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
