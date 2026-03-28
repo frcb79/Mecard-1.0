@@ -21,16 +21,82 @@ import {
   getBlockingDetails,
   unblockSchool,
   formatCurrency,
-  getSchoolInvoices,
 } from '../../services/BillingService';
-import type {
-  BlockingDetails,
-} from '../../services/BillingService';
-import type { Invoice } from '../../types';
+import type { BlockingDetails } from '../../services/BillingService';
+import { Invoice, InvoiceStatus, SchoolBlockingRule, BlockingReason } from '../../types';
+import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
+import { logger } from '../../lib/logger';
+
+interface BlockingRuleRow {
+  id: string;
+  school_id: string;
+  blocked_reason: BlockingReason;
+  blocked_at: string;
+  blocked_until_payment: boolean;
+  overdue_days: number;
+  notification_sent: boolean;
+  legal_escalation_eligible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface InvoiceRow {
+  id: string;
+  school_id: string;
+  invoice_number: string;
+  issue_date: string;
+  due_date: string;
+  subtotal: number;
+  taxes: number;
+  total: number;
+  status: 'DRAFT' | 'ISSUED' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+  payment_method: string | null;
+  paid_at: string | null;
+  line_items: unknown;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BillingConfigRow {
+  school_id: string;
+  overdue_days_before_suspension: number | null;
+}
 
 interface BlockedSchoolDetail extends BlockingDetails {
   schoolId: string;
 }
+
+const mapRuleRow = (row: BlockingRuleRow): SchoolBlockingRule => ({
+  id: row.id,
+  schoolId: row.school_id,
+  blockedReason: row.blocked_reason,
+  blockedAt: row.blocked_at,
+  blockedUntilPayment: row.blocked_until_payment,
+  overdueDays: row.overdue_days,
+  notificationSent: row.notification_sent,
+  legalEscalationEligible: row.legal_escalation_eligible,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+const mapInvoiceRow = (row: InvoiceRow): Invoice => ({
+  id: row.id,
+  schoolId: row.school_id,
+  invoiceNumber: row.invoice_number,
+  issueDate: row.issue_date,
+  dueDate: row.due_date,
+  subtotal: Number(row.subtotal || 0),
+  taxes: Number(row.taxes || 0),
+  total: Number(row.total || 0),
+  status: InvoiceStatus[row.status as keyof typeof InvoiceStatus] || InvoiceStatus.ISSUED,
+  paymentMethod: row.payment_method || undefined,
+  paidAt: row.paid_at || undefined,
+  lineItems: Array.isArray(row.line_items) ? (row.line_items as Invoice['lineItems']) : [],
+  notes: row.notes || undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
 
 export default function SchoolBlockingManagement() {
   const [blockedSchools, setBlockedSchools] = useState<BlockedSchoolDetail[]>([]);
@@ -50,17 +116,76 @@ export default function SchoolBlockingManagement() {
   const loadBlockedSchools = async () => {
     setLoading(true);
     try {
-      const blocked = await getBlockedSchools();
-      const details = await Promise.all(
-        blocked.map(async (rule) => ({
-          ...await getBlockingDetails(rule.schoolId),
-          schoolId: rule.schoolId,
-        }))
-      );
-      setBlockedSchools(details);
+      if (!isSupabaseConfigured) {
+        const blocked = await getBlockedSchools();
+        const details = await Promise.all(
+          blocked.map(async (rule) => ({
+            ...(await getBlockingDetails(rule.schoolId)),
+            schoolId: rule.schoolId,
+          })),
+        );
+        setBlockedSchools(details);
+      } else {
+        const { data: rulesData, error: rulesError } = await supabase
+          .from('school_blocking_rules')
+          .select('id, school_id, blocked_reason, blocked_at, blocked_until_payment, overdue_days, notification_sent, legal_escalation_eligible, created_at, updated_at')
+          .order('blocked_at', { ascending: false });
+
+        if (rulesError) throw rulesError;
+
+        const rows = (rulesData || []) as BlockingRuleRow[];
+        if (rows.length === 0) {
+          setBlockedSchools([]);
+          setLastCheck(new Date().toLocaleTimeString('es-MX'));
+          setLoading(false);
+          return;
+        }
+
+        const schoolIds = rows.map((r) => r.school_id);
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: invoicesData, error: invoicesError } = await supabase
+          .from('invoices')
+          .select('id, school_id, invoice_number, issue_date, due_date, subtotal, taxes, total, status, payment_method, paid_at, line_items, notes, created_at, updated_at')
+          .in('school_id', schoolIds)
+          .in('status', [InvoiceStatus.ISSUED, InvoiceStatus.OVERDUE])
+          .lt('due_date', today)
+          .order('due_date', { ascending: true });
+
+        if (invoicesError) throw invoicesError;
+
+        const invoiceRows = (invoicesData || []) as InvoiceRow[];
+        const bySchool: Record<string, Invoice[]> = {};
+        invoiceRows.forEach((row) => {
+          if (!bySchool[row.school_id]) bySchool[row.school_id] = [];
+          bySchool[row.school_id].push(mapInvoiceRow(row));
+        });
+
+        const details: BlockedSchoolDetail[] = rows.map((row) => {
+          const rule = mapRuleRow(row);
+          const overdueInvoices = bySchool[row.school_id] || [];
+          const totalOwed = overdueInvoices.reduce((sum, inv) => sum + inv.total, 0);
+          const daysUntilLegalAction = Math.max(0, 60 - (rule.overdueDays || 0));
+
+          return {
+            schoolId: row.school_id,
+            rule,
+            isBlocked: true,
+            overdueInvoices,
+            totalOwed,
+            daysUntilLegalAction,
+          };
+        });
+
+        setBlockedSchools(details);
+      }
+
       setLastCheck(new Date().toLocaleTimeString('es-MX'));
-    } catch (error) {
-      console.error('Error loading blocked schools:', error);
+    } catch (error: unknown) {
+      logger.error('superAdmin.schoolBlocking', 'Error loading blocked schools', error);
+      setMessage({
+        type: 'error',
+        text: '❌ Error cargando bloqueos. Mostrando estado previo.',
+      });
     } finally {
       setLoading(false);
     }
@@ -69,10 +194,82 @@ export default function SchoolBlockingManagement() {
   const handleCheckAndApplyRules = async () => {
     setExecuting(true);
     try {
-      const applied = await checkAndApplyBlockingRules();
+      let appliedCount = 0;
+
+      if (!isSupabaseConfigured) {
+        const applied = await checkAndApplyBlockingRules();
+        appliedCount = applied.length;
+      } else {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: invoiceData, error: invoiceError } = await supabase
+          .from('invoices')
+          .select('school_id, due_date, status')
+          .in('status', [InvoiceStatus.ISSUED, InvoiceStatus.OVERDUE])
+          .lt('due_date', today);
+        if (invoiceError) throw invoiceError;
+
+        const { data: configData, error: configError } = await supabase
+          .from('school_billing_config')
+          .select('school_id, overdue_days_before_suspension');
+        if (configError) throw configError;
+
+        const configRows = (configData || []) as BillingConfigRow[];
+        const thresholdBySchool: Record<string, number> = {};
+        configRows.forEach((row) => {
+          thresholdBySchool[row.school_id] = row.overdue_days_before_suspension || 30;
+        });
+
+        const now = Date.now();
+        const overdueBySchool: Record<string, number> = {};
+        (invoiceData || []).forEach((row) => {
+          const dueDate = new Date(row.due_date).getTime();
+          const overdueDays = Math.max(0, Math.floor((now - dueDate) / (1000 * 60 * 60 * 24)));
+          overdueBySchool[row.school_id] = Math.max(overdueBySchool[row.school_id] || 0, overdueDays);
+        });
+
+        const toBlock = Object.entries(overdueBySchool)
+          .filter(([schoolId, overdueDays]) => overdueDays >= (thresholdBySchool[schoolId] || 30))
+          .map(([schoolId, overdueDays]) => ({
+            school_id: schoolId,
+            blocked_reason: BlockingReason.OVERDUE_INVOICE,
+            blocked_until_payment: true,
+            overdue_days: overdueDays,
+            notification_sent: false,
+            legal_escalation_eligible: overdueDays >= 60,
+            updated_at: new Date().toISOString(),
+          }));
+
+        if (toBlock.length > 0) {
+          const { error: upsertError } = await supabase
+            .from('school_blocking_rules')
+            .upsert(toBlock, { onConflict: 'school_id' });
+          if (upsertError) throw upsertError;
+        }
+
+        const { data: currentRules, error: currentError } = await supabase
+          .from('school_blocking_rules')
+          .select('school_id');
+        if (currentError) throw currentError;
+
+        const keepSet = new Set(toBlock.map((b) => b.school_id));
+        const removable = (currentRules || [])
+          .map((r) => r.school_id as string)
+          .filter((id) => !keepSet.has(id));
+
+        if (removable.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('school_blocking_rules')
+            .delete()
+            .in('school_id', removable);
+          if (deleteError) throw deleteError;
+        }
+
+        appliedCount = toBlock.length;
+      }
+
       setMessage({
         type: 'success',
-        text: `✅ Verificación completada. ${applied.length} escuela(s) bloqueadas.`,
+        text: `✅ Verificación completada. ${appliedCount} escuela(s) bloqueadas.`,
       });
       await loadBlockedSchools();
       setTimeout(() => setMessage(null), 5000);
@@ -88,7 +285,9 @@ export default function SchoolBlockingManagement() {
 
   const handleUnblockSchool = async (schoolId: string) => {
     try {
-      const success = await unblockSchool(schoolId);
+      const success = !isSupabaseConfigured
+        ? await unblockSchool(schoolId)
+        : !(await supabase.from('school_blocking_rules').delete().eq('school_id', schoolId)).error;
       if (success) {
         setMessage({
           type: 'success',
