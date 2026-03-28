@@ -13,7 +13,7 @@
 -- ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS activity_log (
   id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  school_id     TEXT        NOT NULL,
+  school_id     UUID        NOT NULL,
   actor_id      UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
   action        TEXT        NOT NULL,            -- e.g. 'WALLET_RELOAD', 'REFUND_PROCESSED'
   table_name    TEXT        NOT NULL,
@@ -54,7 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_school_id ON activity_log (school_id
 -- ──────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION reload_wallet_atomic(
   p_student_id  UUID,
-  p_school_id   TEXT,
+  p_school_id   UUID,
   p_amount      NUMERIC,
   p_reason      TEXT,
   p_admin_id    UUID DEFAULT NULL
@@ -155,7 +155,7 @@ GRANT  EXECUTE ON FUNCTION reload_wallet_atomic TO authenticated;
 CREATE OR REPLACE FUNCTION process_refund_atomic(
   p_transaction_id  UUID,
   p_student_id      UUID,
-  p_school_id       TEXT,
+  p_school_id       UUID,
   p_reason          TEXT,
   p_admin_id        UUID DEFAULT NULL
 )

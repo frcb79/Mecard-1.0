@@ -8,10 +8,11 @@ import { Calendar, Zap, CheckCircle, AlertCircle, Loader2, TrendingUp, ShieldChe
 import { Button } from '../Button';
 import {
   executeMonthlyBillingCycle,
-  getSchoolInvoices,
   formatCurrency,
 } from '../../services/BillingService';
-import { Invoice } from '../../types';
+import { Invoice, InvoiceStatus } from '../../types';
+import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
+import { logger } from '../../lib/logger';
 
 interface BillingOperationResult {
   success: boolean;
@@ -19,6 +20,42 @@ interface BillingOperationResult {
   generatedInvoices: Invoice[];
   timestamp: string;
 }
+
+interface InvoiceRow {
+  id: string;
+  school_id: string;
+  invoice_number: string;
+  issue_date: string;
+  due_date: string;
+  subtotal: number;
+  taxes: number;
+  total: number;
+  status: 'DRAFT' | 'ISSUED' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+  payment_method: string | null;
+  paid_at: string | null;
+  line_items: unknown;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const mapInvoiceRow = (row: InvoiceRow): Invoice => ({
+  id: row.id,
+  schoolId: row.school_id,
+  invoiceNumber: row.invoice_number,
+  issueDate: row.issue_date,
+  dueDate: row.due_date,
+  subtotal: Number(row.subtotal || 0),
+  taxes: Number(row.taxes || 0),
+  total: Number(row.total || 0),
+  status: InvoiceStatus[row.status as keyof typeof InvoiceStatus] || InvoiceStatus.ISSUED,
+  paymentMethod: row.payment_method || undefined,
+  paidAt: row.paid_at || undefined,
+  lineItems: Array.isArray(row.line_items) ? (row.line_items as Invoice['lineItems']) : [],
+  notes: row.notes || undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
 
 export default function BillingOperationsPanel() {
   const [executing, setExecuting] = useState(false);
@@ -33,11 +70,25 @@ export default function BillingOperationsPanel() {
   const loadAllInvoices = async () => {
     setLoading(true);
     try {
-      const invoices1 = await getSchoolInvoices('school-001');
-      const invoices2 = await getSchoolInvoices('school-002');
-      setAllInvoices([...invoices1, ...invoices2]);
-    } catch (error) {
-      console.error('Error loading invoices:', error);
+      if (!isSupabaseConfigured) {
+        // Keep legacy behavior for local mock mode
+        setAllInvoices([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, school_id, invoice_number, issue_date, due_date, subtotal, taxes, total, status, payment_method, paid_at, line_items, notes, created_at, updated_at')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (error) throw error;
+
+      const rows = (data || []) as InvoiceRow[];
+      setAllInvoices(rows.map(mapInvoiceRow));
+    } catch (error: unknown) {
+      logger.error('superAdmin.billingOperations', 'Error loading invoices', error);
+      setAllInvoices([]);
     } finally {
       setLoading(false);
     }
@@ -46,6 +97,18 @@ export default function BillingOperationsPanel() {
   const handleExecuteBillingCycle = async () => {
     setExecuting(true);
     try {
+      if (isSupabaseConfigured) {
+        const result: BillingOperationResult = {
+          success: false,
+          message: 'Ejecución manual no conectada aún a un job de backend. Usa tu scheduler/edge function de billing.',
+          generatedInvoices: [],
+          timestamp: new Date().toISOString(),
+        };
+        setLastExecution(result);
+        setExecuting(false);
+        return;
+      }
+
       const generated = await executeMonthlyBillingCycle();
 
       const result: BillingOperationResult = {
@@ -110,6 +173,11 @@ export default function BillingOperationsPanel() {
             <strong>Panel administrativo critico:</strong> este modulo ejecuta procesos de billing para toda la red.
             Usalo unicamente en ventanas operativas controladas.
           </p>
+          {isSupabaseConfigured && (
+            <p className="text-amber-800 text-xs mt-2 font-medium">
+              Modo productivo detectado: la ejecución manual está protegida hasta conectar el cron/edge function oficial.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
