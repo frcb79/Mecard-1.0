@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { SchoolAdminView } from './SchoolAdminView';
 import { StudentProfile, OperatingUnit } from '../types';
 import { useSchoolAdminQueries } from '../hooks/useSchoolAdminQueries';
+import { useSchoolAdminMutations } from '../hooks/useSchoolAdminMutations';
 
 const DEFAULT_SCHOOL_ID = 'school-001';
 
@@ -21,6 +22,8 @@ export const SchoolAdminContainer: React.FC = () => {
     error,
     refresh,
   } = useSchoolAdminQueries(DEFAULT_SCHOOL_ID);
+
+  const { reloadWallet } = useSchoolAdminMutations({ schoolId: DEFAULT_SCHOOL_ID });
 
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [operatingUnits, setOperatingUnits] = useState<OperatingUnit[]>([]);
@@ -86,6 +89,7 @@ export const SchoolAdminContainer: React.FC = () => {
           onAddUnit={handleAddUnit}
           onUpdateUnit={handleUpdateUnit}
           onDeleteUnit={handleDeleteUnit}
+          onReloadWallet={reloadWallet}
         />
       </div>
     );
@@ -100,6 +104,7 @@ export const SchoolAdminContainer: React.FC = () => {
       onAddUnit={handleAddUnit}
       onUpdateUnit={handleUpdateUnit}
       onDeleteUnit={handleDeleteUnit}
+      onReloadWallet={reloadWallet}
     />
   );
 };

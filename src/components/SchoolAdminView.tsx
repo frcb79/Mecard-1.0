@@ -38,7 +38,8 @@ export const SchoolAdminView: React.FC<{
   onAddUnit: (unit: OperatingUnit) => void;
   onUpdateUnit: (id: string, updates: Partial<OperatingUnit>) => void;
   onDeleteUnit: (id: string) => void;
-}> = ({ onUpdateStudent, allStudents, onBulkAddStudents, operatingUnits, onAddUnit, onUpdateUnit, onDeleteUnit }) => {
+  onReloadWallet: (studentId: string, amount: number, reason: string) => Promise<{ ok: boolean; message: string }>;
+}> = ({ onUpdateStudent, allStudents, onBulkAddStudents, operatingUnits, onAddUnit, onUpdateUnit, onDeleteUnit, onReloadWallet }) => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'units'>('dashboard');
   const [showAddUnitModal, setShowAddUnitModal] = useState(false);
@@ -155,6 +156,7 @@ export const SchoolAdminView: React.FC<{
                 onAddStudent={(s) => onBulkAddStudents([s])}
                 onDeleteStudent={handleDeleteStudent}
                 onToggleStatus={handleToggleStudent}
+                onReloadWallet={onReloadWallet}
               />
             )}
 

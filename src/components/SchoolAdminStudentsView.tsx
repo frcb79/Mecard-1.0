@@ -3,7 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { 
   Search, Filter, Download, Upload, Plus, Edit2, Trash2, 
   Power, PowerOff, Eye, Mail, Phone, Calendar, AlertCircle,
-  CheckCircle, XCircle, Users, FileText, RefreshCw, X, AlertTriangle
+  CheckCircle, XCircle, Users, FileText, RefreshCw, X, AlertTriangle,
+  Wallet
 } from 'lucide-react';
 import { StudentProfile, UserStatus, Category } from '../types';
 import { Button } from './Button';
@@ -17,6 +18,7 @@ interface SchoolAdminStudentsViewProps {
   onAddStudent: (student: StudentProfile) => void;
   onDeleteStudent: (id: string) => void;
   onToggleStatus: (id: string) => void;
+  onReloadWallet: (studentId: string, amount: number, reason: string) => Promise<{ ok: boolean; message: string }>;
 }
 
 export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = ({
@@ -25,7 +27,8 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
   onUpdateStudent,
   onAddStudent,
   onDeleteStudent,
-  onToggleStatus
+  onToggleStatus,
+  onReloadWallet,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | UserStatus.ACTIVE | UserStatus.INACTIVE>('all');
@@ -37,6 +40,10 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
   const [deleteConfirm, setDeleteConfirm] = useState<StudentProfile | null>(null);
   const [addForm, setAddForm] = useState({ name: '', grade: '', parentName: '' });
   const [editForm, setEditForm] = useState({ name: '', grade: '', parentName: '' });
+  const [reloadTarget, setReloadTarget] = useState<StudentProfile | null>(null);
+  const [reloadAmount, setReloadAmount] = useState('');
+  const [reloadReason, setReloadReason] = useState('');
+  const [reloadLoading, setReloadLoading] = useState(false);
   const toast = useToast();
 
   const buildStudentProfile = (fullName: string, grade: string, parentName: string): StudentProfile => {
@@ -208,6 +215,7 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
                 <td className="p-8">
                   <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setSelectedStudent(student); setShowEditModal(true); }} className="p-3 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-all" title="Editar"><Edit2 size={18} /></button>
+                    <button onClick={() => { setReloadTarget(student); setReloadAmount(''); setReloadReason(''); }} className="p-3 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-all" title="Recargar saldo"><Wallet size={18} /></button>
                     <button onClick={() => onToggleStatus(student.id)} className={`p-3 rounded-xl transition-all ${student.status === UserStatus.ACTIVE ? 'hover:bg-rose-50 text-rose-500' : 'hover:bg-emerald-50 text-emerald-500'}`} title={student.status === UserStatus.ACTIVE ? 'Desactivar' : 'Activar'}>{student.status === UserStatus.ACTIVE ? <PowerOff size={18} /> : <Power size={18} />}</button>
                     <button onClick={() => setDeleteConfirm(student)} className="p-3 hover:bg-rose-50 text-rose-500 rounded-xl transition-all" title="Eliminar"><Trash2 size={18} /></button>
                   </div>
@@ -287,6 +295,59 @@ export const SchoolAdminStudentsView: React.FC<SchoolAdminStudentsViewProps> = (
             <div className="flex gap-4">
               <Button onClick={() => setShowImportModal(false)} variant="secondary" className="flex-1 py-5 rounded-3xl font-black uppercase text-[10px]">Cancelar</Button>
               <Button onClick={() => { setShowImportModal(false); window.location.hash = '/school/import'; }} className="flex-[2] py-5 rounded-3xl bg-indigo-600 font-black uppercase text-[10px] tracking-widest">Ir al Wizard</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WALLET RELOAD MODAL */}
+      {reloadTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
+          <div className="bg-white rounded-[32px] p-12 w-full max-w-md shadow-2xl relative">
+            <button onClick={() => setReloadTarget(null)} className="absolute top-10 right-10 text-slate-300 hover:text-slate-800"><X size={32}/></button>
+            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-6"><Wallet size={32} className="text-emerald-600" /></div>
+            <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-1 text-center">Recargar Saldo</h3>
+            <p className="text-sm text-slate-400 text-center mb-8">{reloadTarget.fullName} • Saldo actual: <span className="font-black text-indigo-600">${reloadTarget.balance.toFixed(2)}</span></p>
+            <div className="space-y-5">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Monto a Recargar *</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={reloadAmount}
+                  onChange={(e) => setReloadAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full p-5 bg-slate-50 rounded-2xl border-none outline-none font-bold text-xl"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Motivo</label>
+                <input
+                  value={reloadReason}
+                  onChange={(e) => setReloadReason(e.target.value)}
+                  placeholder="Recarga mensual, depósito padre, etc."
+                  className="w-full p-5 bg-slate-50 rounded-2xl border-none outline-none font-medium"
+                />
+              </div>
+              <Button
+                disabled={reloadLoading || !reloadAmount || Number(reloadAmount) <= 0}
+                onClick={async () => {
+                  if (!reloadTarget || Number(reloadAmount) <= 0) return;
+                  setReloadLoading(true);
+                  const result = await onReloadWallet(reloadTarget.id, Number(reloadAmount), reloadReason || 'Recarga manual');
+                  setReloadLoading(false);
+                  if (result.ok) {
+                    toast.success('Recarga exitosa', result.message);
+                    setReloadTarget(null);
+                  } else {
+                    toast.error('Error', result.message);
+                  }
+                }}
+                className="w-full py-6 rounded-3xl bg-emerald-600 font-black uppercase"
+              >
+                {reloadLoading ? 'Procesando...' : 'Confirmar Recarga'}
+              </Button>
             </div>
           </div>
         </div>
