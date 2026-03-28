@@ -141,12 +141,16 @@ function FormPanel({ icon, iconBg, bg, title, subtitle, fields, buttonLabel, but
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isDemoMode, loginAsRole, user, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isDemoMode, loginAsRole, login, user, isLoading: authLoading } = useAuth();
   const toast = useToast();
 
   const [gateway, setGateway] = useState<GatewayType>('choice');
   const [isLoading, setIsLoading] = useState(false);
   const [masterKeyInput, setMasterKeyInput] = useState('');
+  const [corporateEmail, setCorporateEmail] = useState('');
+  const [corporatePassword, setCorporatePassword] = useState('');
+  const [institutionEmail, setInstitutionEmail] = useState('');
+  const [institutionPassword, setInstitutionPassword] = useState('');
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -183,10 +187,32 @@ export const LoginView: React.FC = () => {
         await new Promise(resolve => setTimeout(resolve, 600));
         loginAsRole(role);
       } else {
-        throw new Error('Real auth not implemented yet');
+        if (role === UserRole.SUPER_ADMIN) {
+          const email = corporateEmail.trim();
+          if (!email || !corporatePassword) {
+            toast.warning('Faltan credenciales', 'Ingresa correo y contraseña de Super Admin.');
+            return;
+          }
+          await login(email, corporatePassword, role);
+          return;
+        }
+
+        if (role === UserRole.SCHOOL_ADMIN) {
+          const email = institutionEmail.trim();
+          if (!email || !institutionPassword) {
+            toast.warning('Faltan credenciales', 'Ingresa correo y contraseña institucional.');
+            return;
+          }
+          await login(email, institutionPassword, role);
+          return;
+        }
+
+        toast.info('Acceso no habilitado', 'Este tipo de inicio de sesión aún no está habilitado en modo real.');
       }
-    } catch {
-      toast.error('Error de autenticación', 'Intenta de nuevo más tarde.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Intenta de nuevo más tarde.';
+      toast.error('Error de autenticación', message);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -194,6 +220,10 @@ export const LoginView: React.FC = () => {
   const reset = () => {
     setGateway('choice');
     setMasterKeyInput('');
+    setCorporateEmail('');
+    setCorporatePassword('');
+    setInstitutionEmail('');
+    setInstitutionPassword('');
     setIsLoading(false);
   };
 
@@ -290,6 +320,22 @@ export const LoginView: React.FC = () => {
             </div>
             <div className="px-8 pb-8 space-y-5">
               <div>
+                <label htmlFor="corporate-email" className="block text-xs font-semibold text-surface-400 mb-2">
+                  Correo Super Admin
+                </label>
+                <div className="relative mb-3">
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-500" />
+                  <input
+                    id="corporate-email"
+                    type="email"
+                    value={corporateEmail}
+                    onChange={(e) => setCorporateEmail(e.target.value)}
+                    placeholder="admin@mecard.mx"
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-medium
+                      placeholder:text-surface-500 outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-all"
+                    autoComplete="username"
+                  />
+                </div>
                 <label htmlFor="master-key" className="block text-xs font-semibold text-surface-400 mb-2">
                   Master Key
                 </label>
@@ -297,11 +343,28 @@ export const LoginView: React.FC = () => {
                   <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-500" />
                   <input
                     id="master-key"
+                    type="password"
+                    value={corporatePassword}
+                    onChange={(e) => setCorporatePassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleLogin(UserRole.SUPER_ADMIN)}
+                    placeholder="Ingresa tu contraseña"
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-medium text-center tracking-widest
+                      placeholder:text-surface-500 placeholder:tracking-normal outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-all"
+                    autoComplete="current-password"
+                  />
+                </div>
+                <label htmlFor="master-approval" className="block text-xs font-semibold text-surface-400 mb-2 mt-3">
+                  Llave Maestra
+                </label>
+                <div className="relative">
+                  <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-500" />
+                  <input
+                    id="master-approval"
                     type="text"
                     value={masterKeyInput}
                     onChange={(e) => setMasterKeyInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin(UserRole.SUPER_ADMIN)}
-                    placeholder="Ingresa la clave maestra"
+                    placeholder="MECARD2025"
                     className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-medium text-center tracking-widest
                       placeholder:text-surface-500 placeholder:tracking-normal outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-all"
                     autoComplete="off"
@@ -314,7 +377,7 @@ export const LoginView: React.FC = () => {
               </div>
               <button
                 onClick={() => handleLogin(UserRole.SUPER_ADMIN)}
-                disabled={isLoading || !masterKeyInput}
+                disabled={isLoading || !masterKeyInput || !corporateEmail || !corporatePassword}
                 className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm
                   transition-all shadow-lg shadow-purple-900/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
@@ -437,6 +500,8 @@ export const LoginView: React.FC = () => {
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-300" />
                 <input id="inst-email" type="email" placeholder="admin@escuela.mx"
+                  value={institutionEmail}
+                  onChange={(e) => setInstitutionEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-surface-50 border border-surface-200 rounded-xl text-sm font-medium
                     outline-none focus:border-surface-500 focus:ring-2 focus:ring-surface-100 transition-all" />
               </div>
@@ -446,6 +511,8 @@ export const LoginView: React.FC = () => {
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-300" />
                 <input id="inst-pass" type="password" placeholder="••••••••"
+                  value={institutionPassword}
+                  onChange={(e) => setInstitutionPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-surface-50 border border-surface-200 rounded-xl text-sm font-medium
                     outline-none focus:border-surface-500 focus:ring-2 focus:ring-surface-100 transition-all" />
               </div>
