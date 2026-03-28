@@ -1,74 +1,92 @@
-/**
+﻿/**
  * SchoolAdminContainer
- * Wrapper que proporciona estado y props a SchoolAdminView
- * Consumes useStudents() and useSchoolData() hooks as single source of truth
+ * Wrapper que proporciona estado y props a SchoolAdminView.
+ *
+ * Sprint 1: now hydrates data from useSchoolAdminQueries
+ * (Supabase when configured, fallback to mocks).
  */
 
 import React, { useState, useEffect } from 'react';
 import { SchoolAdminView } from './SchoolAdminView';
-import { useStudents } from '../hooks/useStudents';
-import { useSchoolData } from '../hooks/useSchoolData';
-import { StudentProfile, OperatingUnit, EntityOwner } from '../types';
+import { StudentProfile, OperatingUnit } from '../types';
+import { useSchoolAdminQueries } from '../hooks/useSchoolAdminQueries';
 
 const DEFAULT_SCHOOL_ID = 'school-001';
 
 export const SchoolAdminContainer: React.FC = () => {
-  // Hook-based data — single source of truth
-  const { students: hookStudents, loading: studentsLoading } = useStudents({ schoolId: DEFAULT_SCHOOL_ID });
-  const { units: hookUnits, currentSchool, loading: schoolLoading } = useSchoolData(DEFAULT_SCHOOL_ID);
+  const {
+    students: queryStudents,
+    operatingUnits: queryUnits,
+    loading,
+    error,
+    refresh,
+  } = useSchoolAdminQueries(DEFAULT_SCHOOL_ID);
 
-  // Local state seeded from hooks (allows in-session mutations)
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [operatingUnits, setOperatingUnits] = useState<OperatingUnit[]>([]);
 
-  // Sync hook data into local state when loaded
   useEffect(() => {
-    if (!studentsLoading && hookStudents.length > 0) {
-      setStudents(hookStudents);
-    }
-  }, [studentsLoading, hookStudents]);
+    setStudents(queryStudents);
+  }, [queryStudents]);
 
   useEffect(() => {
-    if (!schoolLoading && hookUnits.length > 0) {
-      setOperatingUnits(hookUnits);
-    }
-  }, [schoolLoading, hookUnits]);
+    setOperatingUnits(queryUnits);
+  }, [queryUnits]);
 
   const handleUpdateStudent = (id: string, data: Partial<StudentProfile>) => {
-    setStudents(
-      students.map(student =>
-        student.id === id ? { ...student, ...data } : student
-      )
-    );
+    setStudents((prev) => prev.map((student) => (student.id === id ? { ...student, ...data } : student)));
   };
 
   const handleBulkAddStudents = (newStudents: StudentProfile[]) => {
-    setStudents([...students, ...newStudents]);
+    setStudents((prev) => [...prev, ...newStudents]);
   };
 
   const handleAddUnit = (unit: OperatingUnit) => {
-    setOperatingUnits([...operatingUnits, unit]);
+    setOperatingUnits((prev) => [...prev, unit]);
   };
 
   const handleUpdateUnit = (id: string, updates: Partial<OperatingUnit>) => {
-    setOperatingUnits(
-      operatingUnits.map(unit =>
-        unit.id === id ? { ...unit, ...updates } : unit
-      )
-    );
+    setOperatingUnits((prev) => prev.map((unit) => (unit.id === id ? { ...unit, ...updates } : unit)));
   };
 
   const handleDeleteUnit = (id: string) => {
-    setOperatingUnits(operatingUnits.filter(unit => unit.id !== id));
+    setOperatingUnits((prev) => prev.filter((unit) => unit.id !== id));
   };
 
-  if (studentsLoading || schoolLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Cargando datos institucionales...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 text-sm">
+          {error}
+          <button
+            onClick={() => {
+              void refresh();
+            }}
+            className="ml-3 font-bold underline"
+          >
+            Reintentar
+          </button>
+        </div>
+        <SchoolAdminView
+          onUpdateStudent={handleUpdateStudent}
+          allStudents={students}
+          onBulkAddStudents={handleBulkAddStudents}
+          operatingUnits={operatingUnits}
+          onAddUnit={handleAddUnit}
+          onUpdateUnit={handleUpdateUnit}
+          onDeleteUnit={handleDeleteUnit}
+        />
       </div>
     );
   }

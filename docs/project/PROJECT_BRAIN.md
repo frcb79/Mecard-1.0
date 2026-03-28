@@ -5,7 +5,7 @@
 
 **Fase:** Phase 1 — Base técnica de calidad + habilitación de pruebas  
 **Sprint actual:** Semana de 2026-03-21  
-**Próxima entrega:** Suite de tests completa + entorno híbrido operativo
+**Proxima entrega:** Admin Ops Readiness (School + Super Admin conectados a datos reales)
 
 ## Lo que está DONE ✅
 
@@ -46,7 +46,11 @@
 - Skill de testing documentado: `docs/skills/testing/README.md`
 - Observabilidad frontend base: `src/lib/logger.ts` con eventos `mecard:log` y adopción inicial en arranque, auth y error boundary
 
-## Lo que está EN PROGRESO 🔄
+## Lo que esta EN PROGRESO
+- [ ] Admin Ops Readiness Sprint 1: SCHOOL_ADMIN conectado a Supabase (students, wallets, tx, refunds)
+- [ ] Admin Ops Readiness Sprint 2: SUPER_ADMIN con KPI global, settlement y alertas
+- [ ] Skill de Reporting and Analytics aplicado por perfil (SCHOOL_ADMIN/SUPER_ADMIN)
+
 - [ ] Cobertura de tests de integración (auth, POS → Supabase, RLS multi-tenant)
 - [ ] Observabilidad: logging estructurado y trazabilidad de errores en producción
 - [ ] Entorno staging: Supabase DEV + Vercel preview configurados (sin ruido de ramas dependabot)
@@ -56,7 +60,16 @@
 - Pruebas E2E con Playwright (5 flujos críticos)
 - Lighthouse CI baseline
 - Gate de cobertura en CI (umbral acordado)
-- Skills faltantes: `docs/skills/operations/`, `docs/skills/performance/`, `docs/skills/ai/`
+- Madurar y aplicar los nuevos skills transversales en el ciclo de entrega:
+  - `docs/skills/strategy-orchestration/README.md`
+  - `docs/skills/product-strategy/README.md`
+  - `docs/skills/operations/README.md`
+  - `docs/skills/performance/README.md`
+  - `docs/skills/accessibility/README.md`
+  - `docs/skills/data/README.md`
+  - `docs/skills/ai/README.md`
+  - `docs/skills/legal/README.md`
+  - `docs/skills/design/README.md`
 
 ## Módulos y su Estado
 
@@ -79,3 +92,6 @@ Nueva variable:
 
 ## Decisiones Técnicas Importantes
 Ver `docs/project/DECISIONS.md` para el historial completo.
+
+
+

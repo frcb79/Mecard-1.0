@@ -1,4 +1,22 @@
-# DECISIONS — meCard
+# DECISIONS - meCard
+
+## [2026-03-27] Priorizacion operativa: Admin Ops Readiness antes de testing exhaustivo
+- Se decide priorizar conexion real de SCHOOL_ADMIN y SUPER_ADMIN a Supabase antes de ampliar la piramide de testing.
+- Se crea el skill docs/skills/reporting/README.md para gobernar reportes, KPIs y visibilidad por perfil.
+- Impacto: enfoque en operabilidad de negocio (saldos, reembolsos, reportes reales) antes de endurecer gates de cobertura.
+## [2026-03-27] Expansión del framework de skills por dominio
+- Se refuerzan los skills existentes de `architecture`, `security`, `devops` y `ux` con checklists operativos, criterios de release y referencias cruzadas.
+- Se crean nuevos skills faltantes para cubrir planeación y ejecución transversal:
+	- `product-strategy`
+	- `strategy-orchestration`
+	- `operations`
+	- `performance`
+	- `accessibility`
+	- `data`
+	- `ai`
+	- `legal`
+	- `design`
+- **Impacto**: el equipo y Copilot tienen una guía consistente para priorizar negocio, reducir riesgo de seguridad/operación y planear entregas por fases con criterios claros.
 
 ## [2026-03-21] Validación de entorno centralizada
 - Se crea `src/lib/env.ts` como fuente única de verdad para detectar credenciales Supabase válidas vs placeholder.
@@ -39,3 +57,6 @@
 ## [2026-01-XX] API de IA
 - Usar `@google/genai` para casos de análisis de gastos y recomendaciones de reward points.
 - **Decisión de seguridad pendiente**: mover llamadas a Gemini API a Edge Functions de Supabase para que la API key no quede expuesta en el cliente. Actualmente está en `src/services/geminiService.ts` (riesgo XSS).
+
+
+
