@@ -1,6 +1,6 @@
-# docs/skills — Skills por dominio para meCard
+# docs/skills ï¿½ Skills por dominio para meCard
 
-Este directorio contiene la guía de habilidades (skills) que el equipo debe consultar antes de implementar cambios en el proyecto.
+Este directorio contiene la guï¿½a de habilidades (skills) que el equipo debe consultar antes de implementar cambios en el proyecto.
 
 ## Estructura
 - docs/skills/architecture
@@ -22,20 +22,20 @@ Este directorio contiene la guía de habilidades (skills) que el equipo debe cons
 ## Uso recomendado
 1. Antes de desarrollar una funcionalidad, identifica el dominio principal.
 2. Lee el archivo correspondiente (si existe) en `docs/skills/[dominio]/`.
-3. Añade una nota breve con fecha y nombre en ese doc cuando tomes una decisión crítica.
-4. Si un dominio no existe aún, crea un archivo `docs/skills/[dominio]/README.md` con la política.
+3. Aï¿½ade una nota breve con fecha y nombre en ese doc cuando tomes una decisiï¿½n crï¿½tica.
+4. Si un dominio no existe aï¿½n, crea un archivo `docs/skills/[dominio]/README.md` con la polï¿½tica.
 
-## Cómo elegir un skill
-- Si la decisión cambia prioridades, costos, roadmap o métricas de adopción: `product-strategy`.
-- Si la decisión cruza negocio + arquitectura + seguridad + release: `strategy-orchestration`.
-- Si la decisión afecta límites de dominio, modularidad o contratos: `architecture`.
+## Cï¿½mo elegir un skill
+- Si la decisiï¿½n cambia prioridades, costos, roadmap o mï¿½tricas de adopciï¿½n: `product-strategy`.
+- Si la decisiï¿½n cruza negocio + arquitectura + seguridad + release: `strategy-orchestration`.
+- Si la decisiï¿½n afecta lï¿½mites de dominio, modularidad o contratos: `architecture`.
 - Si hay riesgo de datos, acceso, credenciales o abuso: `security`.
-- Si impacta despliegues, pipeline, rollback u operación diaria: `devops` y `operations`.
-- Si impacta tiempos de respuesta o costo de cómputo: `performance`.
-- Si impacta experiencia, flujos críticos o inclusión: `ux` y `accessibility`.
+- Si impacta despliegues, pipeline, rollback u operaciï¿½n diaria: `devops` y `operations`.
+- Si impacta tiempos de respuesta o costo de cï¿½mputo: `performance`.
+- Si impacta experiencia, flujos crï¿½ticos o inclusiï¿½n: `ux` y `accessibility`.
 - Si impacta analitica, trazabilidad o modelos de datos: `data` y `reporting`.
 - Si involucra IA generativa o scoring: `ai`.
-- Si afecta términos, consentimiento o datos de menores: `legal`.
+- Si afecta tï¿½rminos, consentimiento o datos de menores: `legal`.
 - Si modifica patrones visuales y componentes: `design`.
 
 ## Documentos por dominio
@@ -55,11 +55,11 @@ Este directorio contiene la guía de habilidades (skills) que el equipo debe cons
 - `docs/skills/design/README.md`
 - `docs/skills/reporting/README.md`
 
-## Definición de terminado para un skill
+## Definiciï¿½n de terminado para un skill
 - Tiene objetivo claro y alcance.
 - Tiene checklist operativo con criterios verificables.
 - Incluye riesgos frecuentes y mitigaciones.
-- Incluye historial breve con fecha y decisión.
+- Incluye historial breve con fecha y decisiï¿½n.
 - Referencia `docs/project/PROJECT_BRAIN.md`, `docs/project/DECISIONS.md` y `docs/project/ERROR_LOG.md` cuando aplica.
 
 ## Plantilla de skill
