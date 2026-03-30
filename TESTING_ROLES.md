@@ -316,16 +316,62 @@ Antes de demo, verifica que todos estos accesos funcionan:
 
 ---
 
+## 🌱 CREAR DATOS QA DE PRUEBA
+
+### Sembradura de datos maestros (Día 1 Plan)
+
+Ejecuta el script de seed para crear:
+- 1 colegio: "Escuela QA Demo"
+- 3 campuses
+- 5 unidades operativas (cafeterías, papelería, librería)
+- 4 staff con roles (SCHOOL_ADMIN, SCHOOL_FINANCE, CAFETERIA_STAFF, POS_OPERATOR)
+- 50 alumnos con credenciales
+
+**Comando:**
+```bash
+$env:SUPABASE_URL="https://tu-proyecto.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+node scripts/seed-qa-data.mjs
+```
+
+**Resultado esperado:**
+```
+✅ Seed completado exitosamente.
+
+📊 RESUMEN DE DATOS CREADOS:
+  Colegio: Escuela QA Demo
+  Campuses: 3
+  Unidades: 5
+  Staff: 4
+  Productos: 20
+  Alumnos: 50
+```
+
+---
+
+## 📊 MATRIZ QA COMPLETA (Post-Seed)
+
+| Rol | Email | Password | Master Key | Estado |
+|-----|-------|----------|-----------|--------|
+| **Super Admin** | admin@mecard.mx | Mecard2025! | MECARD2025 | ✅ Usado para setup |
+| **School Admin** | principal@escuela-qa.mx | Mecard2025! | — | ✅ Gestiona colegio |
+| **Finance** | finance@escuela-qa.mx | Mecard2025! | — | ✅ Reportes |
+| **Cafeteria Op** | cafeteria-op@escuela-qa.mx | Mecard2025! | — | ✅ Operación POS |
+| **POS Operator** | pos-operator@escuela-qa.mx | Mecard2025! | — | ✅ Operación POS |
+| **Student (x50)** | student001@escuela-qa.mx | Mecard2025! | — | ✅ Compras |
+
+---
+
 ## 📝 NOTAS IMPORTANTES
 
-1. **Modo Demo**: Todos los datos son mock, no persisten
-2. **Master Key**: `MECARD2025` para super admin
-3. **Vercel con Supabase**: School Admin y Super Admin usan credenciales reales de Supabase Auth
-4. **Student/Parent**: en modo real aún no tienen login por password habilitado
+1. **Modo Demo Local**: Cualquier credencial funciona en local (no hace auth)
+2. **Modo Real (Vercel/Staging)**: Credenciales reales de Supabase Auth obligatorio
+3. **Master Key**: `MECARD2025` para super admin en gateway CORPORATIVO
+4. **Datos QA**: Ejecuta seed una vez. Los datos persisten en Supabase.
 5. **TypeScript Strict**: Todos los tipos validados
 
 ---
 
-**Última Actualización**: 2026-03-29
-**Build Status**: ✅ 2314 módulos sin errores
-**Estado Plataforma**: 🟢 Lista para verificación de roles
+**Última Actualización**: 2026-03-30 (Día 1 Plan)
+**Build Status**: ✅ 2320 módulos sin errores
+**Estado Plataforma**: 🟢 Estructura base lista, iniciando pruebas operativas

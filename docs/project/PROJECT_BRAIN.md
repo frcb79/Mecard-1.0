@@ -3,14 +3,14 @@
 
 ## Estado Actual del Proyecto
 
-**Fase:** Phase 1 — Base técnica de calidad + habilitación de pruebas  
-**Sprint actual:** Semana de 2026-03-21  
-**Proxima entrega:** Admin Ops Readiness (School + Super Admin conectados a datos reales)
+**Fase:** Phase 2 — Operación End-to-End (Sin pagos reales aún)  
+**Sprint actual:** Semana de 2026-03-30 (Día 1 de 10 - Plan de Go-Live)  
+**Próxima entrega:** Plataforma operativa para demos y UAT
 
 ## Lo que está DONE ✅
 
 ### Frontend
-- Estructura React + Vite + Tailwind establecida (2306 módulos, 0 errores de build)
+- Estructura React + Vite + Tailwind establecida (2320 módulos, 0 errores de build)
 - 48 rutas implementadas para 6 roles: STUDENT, PARENT, POS_OPERATOR, SCHOOL_ADMIN, SUPER_ADMIN, CASHIER
 - 70+ componentes con lazy loading por ruta
 - Sistema de roles RBAC con permisos granulares (AppPermission + CustomRole)
@@ -18,58 +18,59 @@
 - Sistema de Rewards: puntos, tiers (BRONZE/SILVER/GOLD/PLATINUM), marketplace mock
 - POS terminal: escaneo QR, carrito, pago, generación de puntos
 - Portal Parent: wallet, límites, viajes, permisos de salida, notificaciones
+- AuthContext actualizado: login real desde tabla profiles (no users)
 
 ### Base de Datos
 - SUPABASE_SCHEMA.sql: esquema completo listo para ejecutar
 - SECURITY_FIXES_PHASE1.sql: función atómica POS + RLS multi-tenant + idempotency keys
 - PHASE1_SCHEMA_DEPLOYMENT.sql: políticas de reembolso
+- **DÍA 1**: Migration 20260330_pos_and_cafeteria_tables.sql creada (pos_terminals, cafeteria_orders, pos_operations_log, updates a products)
+
+### Datos QA (Día 1 - Listo para ejecutar)
+- Script seed-qa-data.mjs creado: siembra 1 colegio + 50 alumnos + 4 staff + 20 productos + 5 unidades
+- Credenciales estables documentadas en TESTING_ROLES.md
+- Matriz QA completa con emails, contraseñas y roles
 
 ### Seguridad
 - RLS implementado con aislamiento por school_id
 - 4 vulnerabilidades críticas resueltas (ver SECURITY_IMPLEMENTATION_REPORT.md)
 - Función process_pos_sale_atomic() previene double-spend
+- AuthContext ahora lee de tabla profiles correctamente
 
 ### CI/CD
 - GitHub Actions: type-check + tests + build en cada PR a main
 - Deploy automático a Vercel en push a main
 - Instalación de dependencias alineada en CI/Vercel con `--legacy-peer-deps`
-- Previews de Vercel ignoradas para ramas `dependabot/*` para reducir ruido operativo
+- Previews de Vercel ignoradas para ramas `dependabot/*`
 
-### Calidad (2026-03-21)
+### Calidad (2026-03-30)
 - Validación centralizada de variables de entorno: `src/lib/env.ts`
-- Modo estricto opcional: `VITE_REQUIRE_SUPABASE=true` falla en arranque si no hay credenciales reales
-- 4 suites de unit tests nuevas:
-  - `src/services/__tests__/clabeService.test.ts`
-  - `src/services/__tests__/MockPaymentService.test.ts`
-  - `src/services/__tests__/RoleService.test.ts`
-  - `src/services/__tests__/factory.test.ts`
-- Skill de testing documentado: `docs/skills/testing/README.md`
-- Observabilidad frontend base: `src/lib/logger.ts` con eventos `mecard:log` y adopción inicial en arranque, auth y error boundary
+- 4 suites de unit tests: CLABEService, MockPaymentService, RoleService, factory
+- Observabilidad base: `src/lib/logger.ts` con eventos `mecard:log`
 
-## Lo que esta EN PROGRESO
-- [ ] Admin Ops Readiness Sprint 1: SCHOOL_ADMIN conectado a Supabase (students, wallets, tx, refunds)
-- [ ] Admin Ops Readiness Sprint 2: SUPER_ADMIN con KPI global, settlement y alertas
-- [ ] Skill de Reporting and Analytics aplicado por perfil (SCHOOL_ADMIN/SUPER_ADMIN)
-
-- [ ] Cobertura de tests de integración (auth, POS → Supabase, RLS multi-tenant)
-- [ ] Observabilidad: logging estructurado y trazabilidad de errores en producción
-- [ ] Entorno staging: Supabase DEV + Vercel preview configurados (sin ruido de ramas dependabot)
+## Lo que está EN PROGRESO (Días 1-10 Plan)
+- [ ] **Día 1**: ✅ Validación schema + seed data (ESTE TURNO)
+- [ ] **Día 2**: Auth + E2E smoke (login, permisos, logout)
+- [ ] **Día 3**: School Admin - Alta de colegio
+- [ ] **Día 4**: School Admin - CSV import de alumnos
+- [ ] **Día 5**: Crear y configurar POS
+- [ ] **Día 6**: Catálogo de productos
+- [ ] **Día 7**: Operación de POS - Compra completa
+- [ ] **Día 8**: Pedidos de cafetería
+- [ ] **Día 9**: Administración de POS
+- [ ] **Día 10**: QA integral + Go/No-Go
 
 ## Lo que está PENDIENTE 📋
-- Integración real de pagos SPEI (actualmente MockPaymentService)
-- Pruebas E2E con Playwright (5 flujos críticos)
+- Integración real de pagos SPEI (diferido a Fase 3)
+- Pruebas E2E con Playwright (Días 2-10 plan)
 - Lighthouse CI baseline
-- Gate de cobertura en CI (umbral acordado)
-- Madurar y aplicar los nuevos skills transversales en el ciclo de entrega:
-  - `docs/skills/strategy-orchestration/README.md`
-  - `docs/skills/product-strategy/README.md`
-  - `docs/skills/operations/README.md`
-  - `docs/skills/performance/README.md`
-  - `docs/skills/accessibility/README.md`
-  - `docs/skills/data/README.md`
-  - `docs/skills/ai/README.md`
-  - `docs/skills/legal/README.md`
-  - `docs/skills/design/README.md`
+- Gate de cobertura en CI (umbral 60%)
+- Madurar skills transversales en el ciclo de entrega
+
+## Decisiones Ejecutivas (2026-03-30)
+- **INCLUIDO en este corte**: Operación escolar completa (colegio, alumnos, credenciales, POS, cafetería, supervisión)
+- **DIFERIDO**: Pagos reales (SPEI/tarjeta) → Fase después de UAT
+- **CRITERIO**: Platform "go-live ready for staged rollout with mock payments"
 
 ## Módulos y su Estado
 
