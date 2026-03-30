@@ -92,8 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const { data, error } = await supabase
-        .from('users')
-        .select('id, email, role, school_id, campus_id, unit_id, full_name, photo')
+        .from('profiles')
+        .select('id, email, role, school_id, campus_id, full_name, photo_url')
         .eq('id', userId)
         .single();
 
@@ -107,8 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: data.role as UserRole,
           schoolId: data.school_id,
           campusId: data.campus_id,
-          unitId: data.unit_id,
-          photo: data.photo
+          unitId: undefined,
+          photo: data.photo_url
         };
         
         setUser(authUser);

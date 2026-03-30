@@ -16,6 +16,10 @@ URL: http://localhost:5173/login
 ### Paso 2: Seleccionar Gateway (rol)
 La página de login muestra 4 opciones principales:
 
+### Paso 3: Diferencia entre Local y Vercel
+- **Local (demo mode)**: para Student/Parent, se aceptan credenciales demo como en este documento.
+- **Vercel (Supabase real)**: School Admin y Super Admin requieren correo y contraseña reales de Supabase Auth.
+
 ---
 
 ## 👨‍🎓 ROLE 1: ESTUDIANTE (STUDENT)
@@ -106,9 +110,9 @@ La página de login muestra 4 opciones principales:
 ### Acceso - **FIJO AHORA** ✅
 1. Click en **"COLEGIOS"** en la página de login
 2. Sistema te lleva a: `/login?gateway=institution`
-3. Ingresa datos de escuela (cualquier valor en demo):
+3. Ingresa datos de escuela:
    - **School Email**: `admin@escuela.mx`
-   - **PIN**: `0000`
+  - **Password**: `Mecard2025!`
 4. Click **"Acceder"**
 
 ### URLs Accesibles (Después de login)
@@ -170,9 +174,9 @@ La página de login muestra 4 opciones principales:
 1. Click en **"CORPORATIVO"** en la página de login
 2. Sistema te lleva a: `/login?gateway=corporate`
 3. Requiere **Master Key**: `MECARD2025`
-4. Luego ingresa datos de admin (cualquier valor):
+4. Luego ingresa datos de admin:
    - **Corp Email**: `admin@mecard.mx`
-   - **PIN**: `0000`
+  - **Password**: `Mecard2025!`
 5. Click **"Acceder"**
 
 ### URLs Accesibles (Después de login)
@@ -316,12 +320,12 @@ Antes de demo, verifica que todos estos accesos funcionan:
 
 1. **Modo Demo**: Todos los datos son mock, no persisten
 2. **Master Key**: `MECARD2025` para super admin
-3. **Credentials Dummy**: Cualquier valor funciona en demo
-4. **Sin BD Real**: Usa MockPaymentService y datos locales
+3. **Vercel con Supabase**: School Admin y Super Admin usan credenciales reales de Supabase Auth
+4. **Student/Parent**: en modo real aún no tienen login por password habilitado
 5. **TypeScript Strict**: Todos los tipos validados
 
 ---
 
-**Última Actualización**: 2026-02-16
+**Última Actualización**: 2026-03-29
 **Build Status**: ✅ 2314 módulos sin errores
 **Estado Plataforma**: 🟢 Lista para verificación de roles
