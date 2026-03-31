@@ -25,7 +25,7 @@
 ### Automated Coverage Implemented
 - File: src/components/ProtectedRoute.test.tsx
 - Command: npm run test:auth-smoke
-- Status: PASS (6/6)
+- Status: PASS (16/16)
 - Covered scenarios:
 	- Loading state rendering
 	- Unauthenticated redirect to /login
@@ -33,6 +33,7 @@
 	- Denied role redirect to /unauthorized
 	- Denied permission redirect to /unauthorized
 	- Public route when requireAuth=false
+	- Role matrix allow/deny (SUPER_ADMIN, SCHOOL_ADMIN, SCHOOL_FINANCE, UNIT_MANAGER, PARENT, STUDENT)
 
 ### TC-01: SUPER_ADMIN Login + Route Access
 **Steps**:

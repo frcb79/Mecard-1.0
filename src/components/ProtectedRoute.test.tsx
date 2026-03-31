@@ -126,4 +126,74 @@ describe('ProtectedRoute', () => {
 
     expect(screen.getByText('Private Content')).toBeTruthy();
   });
+
+  it.each([
+    {
+      role: UserRole.SUPER_ADMIN,
+      allowedRoles: [UserRole.SUPER_ADMIN],
+      label: 'SUPER_ADMIN -> /admin',
+    },
+    {
+      role: UserRole.SCHOOL_ADMIN,
+      allowedRoles: [UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE],
+      label: 'SCHOOL_ADMIN -> /school',
+    },
+    {
+      role: UserRole.SCHOOL_FINANCE,
+      allowedRoles: [UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE],
+      label: 'SCHOOL_FINANCE -> /school',
+    },
+    {
+      role: UserRole.UNIT_MANAGER,
+      allowedRoles: [UserRole.UNIT_MANAGER],
+      label: 'UNIT_MANAGER -> /unit',
+    },
+    {
+      role: UserRole.PARENT,
+      allowedRoles: [UserRole.PARENT],
+      label: 'PARENT -> /parent',
+    },
+    {
+      role: UserRole.STUDENT,
+      allowedRoles: [UserRole.STUDENT],
+      label: 'STUDENT -> /student',
+    },
+  ])('allows authorized role matrix: $label', ({ role, allowedRoles }) => {
+    mockAuthState.user = buildUser(role);
+    mockAuthState.isAuthenticated = true;
+
+    renderRoute({ allowedRoles });
+
+    expect(screen.getByText('Private Content')).toBeTruthy();
+  });
+
+  it.each([
+    {
+      role: UserRole.SCHOOL_ADMIN,
+      allowedRoles: [UserRole.SUPER_ADMIN],
+      label: 'SCHOOL_ADMIN denied from /admin',
+    },
+    {
+      role: UserRole.PARENT,
+      allowedRoles: [UserRole.STUDENT],
+      label: 'PARENT denied from /student',
+    },
+    {
+      role: UserRole.STUDENT,
+      allowedRoles: [UserRole.PARENT],
+      label: 'STUDENT denied from /parent',
+    },
+    {
+      role: UserRole.UNIT_MANAGER,
+      allowedRoles: [UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE],
+      label: 'UNIT_MANAGER denied from /school',
+    },
+  ])('denies unauthorized role matrix: $label', ({ role, allowedRoles }) => {
+    mockAuthState.user = buildUser(role);
+    mockAuthState.isAuthenticated = true;
+
+    renderRoute({ allowedRoles });
+
+    expect(screen.getByText('Unauthorized Page')).toBeTruthy();
+  });
 });
