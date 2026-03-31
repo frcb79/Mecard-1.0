@@ -47,7 +47,10 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const [schoolsRes, unitsRes, settlementsRes] = await Promise.all([
           supabase.from('schools').select('*'),
           supabase.from('operating_units').select('*'),
-          supabase.from('settlements').select('*').order('created_at', { ascending: false })
+          supabase
+            .from('school_refund_settlements')
+            .select('*')
+            .order('settled_at', { ascending: false })
         ]);
         
         if (schoolsRes.error) throw schoolsRes.error;

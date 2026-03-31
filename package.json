@@ -16,6 +16,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "type-check": "tsc --noEmit",
+    "verify:supabase-schema": "node scripts/verify-supabase-schema.mjs",
+    "verify:schema-coverage": "node scripts/audit-schema-coverage.mjs",
     "verify:quick": "npm run test -- --run && npm run build",
     "verify:local": "powershell -ExecutionPolicy Bypass -File scripts/prepush-check.ps1",
     "verify:deploy": "npm ci --legacy-peer-deps && npm run type-check && npm run test -- --run && npm run build",
