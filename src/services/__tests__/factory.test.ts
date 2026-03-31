@@ -29,8 +29,7 @@ describe("Service Factory", () => {
       expect(typeof factory.paymentService.createDeposit).toBe("function");
     });
 
-    it("returns valid services even when useMock is false (falls back to mock until real services are implemented)", () => {
-      // useMock: false is expected to still provide services (real not yet implemented)
+    it("returns valid services when useMock is false", () => {
       const factory = createServiceFactory({ useMock: false, mockDelay: 0 });
       expect(factory.paymentService).toBeDefined();
       expect(typeof factory.paymentService.processTransaction).toBe("function");

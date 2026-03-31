@@ -8,6 +8,7 @@ import {
   ChefHat, Package, Plus, Minus, Hash, Tag, Store, CheckCircle2
 } from 'lucide-react';
 import { Product, CartItem, Category, StudentProfile } from '../types';
+import { EntityOwner } from '../types';
 import { PRODUCTS } from '../constants';
 import { useStudent, useStudents } from '../hooks/useStudents';
 import { ProductCard } from './ProductCard';
@@ -22,6 +23,8 @@ import { CartOrder } from '../services/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { logger } from '../lib/logger';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { inventoryService as supabaseInventoryCatalog } from '../services/supabaseInventory';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -55,6 +58,8 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   const [loadingUpsell, setLoadingUpsell] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
   const [transactionSuccess, setTransactionSuccess] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>(PRODUCTS);
+  const [displayBalance, setDisplayBalance] = useState(0);
 
   // Gift redemption state
   const [giftRedemptionCode, setGiftRedemptionCode] = useState('');
@@ -82,6 +87,10 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   };
 
   const student = activeStudent || defaultStudent;
+
+  useEffect(() => {
+    setDisplayBalance(student.balance ?? 0);
+  }, [student.id, student.balance]);
 
   const isCafeteria = mode === 'cafeteria';
 
@@ -119,6 +128,71 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   };
 
   useEffect(() => {
+    const loadCatalog = async () => {
+      if (!isSupabaseConfigured) {
+        setCatalogProducts(PRODUCTS);
+        return;
+      }
+
+      try {
+        const rows = await supabaseInventoryCatalog.getInventory('all');
+        const mapped: Product[] = rows
+          .map((item: {
+            id: string;
+            name: string;
+            description?: string | null;
+            category?: string | null;
+            price: number;
+            image_url?: string | null;
+            allergens?: string[] | null;
+            calories?: number | null;
+            unit_id?: string;
+            status?: string;
+            created_at?: string;
+            updated_at?: string;
+            barcode?: string | null;
+          }) => {
+            const categoryKey = (item.category || '').toUpperCase() as keyof typeof Category;
+            const categoryValue = Category[categoryKey];
+
+            if (!categoryValue) {
+              return null;
+            }
+
+            return {
+              id: item.id,
+              sku: item.barcode || undefined,
+              name: item.name,
+              description: item.description || undefined,
+              category: categoryValue,
+              price: Number(item.price),
+              image: item.image_url || undefined,
+              allergens: item.allergens || undefined,
+              calories: item.calories ?? undefined,
+              ownerType: EntityOwner.SCHOOL,
+              unitId: item.unit_id,
+              isAvailable: item.status === 'active',
+              createdAt: item.created_at || new Date().toISOString(),
+              updatedAt: item.updated_at || new Date().toISOString(),
+            } satisfies Product;
+          })
+          .filter(Boolean) as Product[];
+
+        if (mapped.length > 0) {
+          setCatalogProducts(mapped);
+        } else {
+          setCatalogProducts(PRODUCTS);
+        }
+      } catch (error) {
+        logger.error('pos.catalog', 'Error loading Supabase catalog, fallback to mock', error);
+        setCatalogProducts(PRODUCTS);
+      }
+    };
+
+    void loadCatalog();
+  }, []);
+
+  useEffect(() => {
     if (cart.length > 0 && isCafeteria) {
       const timer = setTimeout(() => triggerUpsell(), 800);
       return () => clearTimeout(timer);
@@ -130,7 +204,8 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   const triggerUpsell = async () => {
     setLoadingUpsell(true);
     try {
-      const suggestion = await getSmartUpsell(cart, PRODUCTS);
+      const suggestion = await getSmartUpsell(cart, catalogProducts);
+      
       setAiUpsell(suggestion);
     } finally {
       setLoadingUpsell(false);
@@ -143,14 +218,14 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
   }, [isCafeteria]);
 
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter(p => {
+    return catalogProducts.filter(p => {
       if (!allowedCategories.includes(p.category)) return false;
       if (!p.isAvailable) return false;
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
       const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [search, selectedCategory, allowedCategories]);
+  }, [search, selectedCategory, allowedCategories, catalogProducts]);
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +251,16 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
     setTransactionSuccess(false);
 
     try {
+      // Preflight stock validation before charging wallet
+      for (const item of cart) {
+        const availableStock = await inventoryService.getStock(item.id);
+        if (availableStock < item.quantity) {
+          throw new Error(
+            `Stock insuficiente para ${item.name}. Disponible: ${availableStock}, solicitado: ${item.quantity}`
+          );
+        }
+      }
+
       // Create cart order for payment service
       const order: CartOrder = {
         studentId: student.id,
@@ -187,6 +272,8 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
         metadata: {
           posMode: mode,
           timestamp: new Date().toISOString(),
+          unitId: user?.unitId,
+          paymentMethod: 'qr',
         },
       };
 
@@ -240,8 +327,18 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
           try {
             await inventoryService.decrementStock(item.id, item.quantity);
           } catch (err) {
-            // Continue even if inventory update fails
+            logger.error('pos.stock', 'Inventory decrement failed after payment', err, {
+              itemId: item.id,
+              itemName: item.name,
+              quantity: item.quantity,
+            });
+            toast.warning('Venta registrada', `No se pudo actualizar inventario de ${item.name}. Revisión manual requerida.`);
           }
+        }
+
+        if (typeof result.newBalance === 'number') {
+          setDisplayBalance(result.newBalance);
+          setActiveStudent((prev) => (prev ? { ...prev, balance: result.newBalance as number } : prev));
         }
 
         setTransactionSuccess(true);
@@ -442,7 +539,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
             <div className="mt-4 flex justify-between items-end border-t border-white/10 pt-4 relative z-10">
                 <div>
                   <p className="text-[10px] font-medium text-surface-500 mb-1">Cartera Digital</p>
-                  <div className="text-4xl font-extrabold tracking-tight leading-none">${student.balance.toFixed(2)}</div>
+                  <div className="text-4xl font-extrabold tracking-tight leading-none">${displayBalance.toFixed(2)}</div>
                 </div>
             </div>
         </div>
@@ -554,16 +651,16 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
                 <div className="text-right">
                     <div className={cn(
                       "px-3.5 py-2 rounded-lg text-[10px] font-semibold uppercase tracking-wider border flex items-center gap-1.5",
-                      student.balance >= total ? "bg-success-50 text-success-600 border-success-100" : "bg-danger-50 text-danger-600 border-danger-100"
+                      displayBalance >= total ? "bg-success-50 text-success-600 border-success-100" : "bg-danger-50 text-danger-600 border-danger-100"
                     )}>
-                        {student.balance >= total ? <><CheckCircle2 size={12}/> Fondos OK</> : <><AlertTriangle size={12}/> Sin fondos</>}
+                      {displayBalance >= total ? <><CheckCircle2 size={12}/> Fondos OK</> : <><AlertTriangle size={12}/> Sin fondos</>}
                     </div>
                 </div>
             </div>
             <div className="flex gap-2 mt-3">
                 <Button 
                     className="flex-1 py-4 rounded-xl text-sm font-semibold shadow-sm relative overflow-hidden group transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-brand-500 hover:bg-brand-600 text-white" 
-                    disabled={cart.length === 0 || isProcessing || student.balance < total} 
+                    disabled={cart.length === 0 || isProcessing || displayBalance < total} 
                     onClick={handleCheckout}
                 >
                     <span className="relative z-10 flex items-center justify-center gap-3">

@@ -17,6 +17,8 @@ import {
 import MockPaymentService from './MockPaymentService';
 import MockInventoryService from './MockInventoryService';
 import MockSettlementService from './MockSettlementService';
+import SupabasePaymentService from './SupabasePaymentService';
+import SupabaseInventoryService from './SupabaseInventoryService';
 
 /**
  * Crea una instancia del ServiceFactory con la configuración especificada
@@ -37,10 +39,10 @@ export function createServiceFactory(config: ServiceFactoryConfig): ServiceFacto
     inventoryService = new MockInventoryService(Math.floor(mockDelay / 2));
     settlementService = new MockSettlementService(mockDelay);
   } else {
-    // TODO: Real services will be implemented here
-    // For now, fall back to mock
-    paymentService = new MockPaymentService(mockDelay);
-    inventoryService = new MockInventoryService(Math.floor(mockDelay / 2));
+    // Real POS + inventory services backed by Supabase
+    paymentService = new SupabasePaymentService();
+    inventoryService = new SupabaseInventoryService();
+    // Settlement real service pending; keep mock temporarily
     settlementService = new MockSettlementService(mockDelay);
   }
 
