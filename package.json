@@ -12,6 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:auth-smoke": "vitest run src/components/ProtectedRoute.test.tsx",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "type-check": "tsc --noEmit",

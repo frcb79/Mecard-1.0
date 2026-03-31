@@ -51,6 +51,8 @@
 ## Lo que está EN PROGRESO (Días 1-10 Plan)
 - [x] **Día 1**: ✅ COMPLETADO - Schema + Seed + Docs
 - [x] **Día 2**: ⏳ EN PROGRESO - Button fixes done, E2E tests pending
+	- Auth smoke automation added: ProtectedRoute.test.tsx (6 tests PASS)
+	- Script: npm run test:auth-smoke
 - [ ] **Día 3**: School Admin - Alta de colegio
 - [ ] **Día 4**: School Admin - CSV import de alumnos
 - [ ] **Día 5**: Crear y configurar POS

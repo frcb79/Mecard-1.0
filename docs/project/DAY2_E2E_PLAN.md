@@ -22,6 +22,18 @@
 
 ## ✅ Test Cases
 
+### Automated Coverage Implemented
+- File: src/components/ProtectedRoute.test.tsx
+- Command: npm run test:auth-smoke
+- Status: PASS (6/6)
+- Covered scenarios:
+	- Loading state rendering
+	- Unauthenticated redirect to /login
+	- Allowed role access
+	- Denied role redirect to /unauthorized
+	- Denied permission redirect to /unauthorized
+	- Public route when requireAuth=false
+
 ### TC-01: SUPER_ADMIN Login + Route Access
 **Steps**:
 1. Navigate to `/login`
@@ -169,7 +181,7 @@
 - No console errors
 
 **Code Quality**:
-- [ ] Type-check passes
+- [x] Type-check passes
 - [ ] No unhandled errors
 - [ ] No console.log leaks
 
@@ -180,7 +192,7 @@
 ### Environment: localhost
 ```bash
 npm run dev
-# Navigate to http://localhost:5173/login
+# Navigate to Vite local URL shown in terminal (currently http://localhost:5174/login)
 ```
 
 ### Environment: Vercel
@@ -202,13 +214,13 @@ https://mecard-network-staging.vercel.app/login
 
 | Test Case | Status | Time | Notes |
 |-----------|--------|------|-------|
-| TC-01 | ⏳ | - | Pending |
-| TC-02 | ⏳ | - | Pending |
-| TC-03 | ⏳ | - | Pending |
-| TC-04 | ⏳ | - | Pending |
+| TC-01 | 🟡 | - | Manual pending / route guard automated ✅ |
+| TC-02 | 🟡 | - | Manual pending / route guard automated ✅ |
+| TC-03 | 🟡 | - | Manual pending / route guard automated ✅ |
+| TC-04 | 🟡 | - | Manual pending / route guard automated ✅ |
 | TC-05 | ⏳ | - | Pending |
-| TC-06 | ⏳ | - | Pending |
-| TC-07 | ⏳ | - | Pending |
+| TC-06 | ✅ | < 2s | Automated in ProtectedRoute.test.tsx |
+| TC-07 | 🟡 | - | Manual pending / permission denial automated ✅ |
 | TC-08 | ⏳ | - | Optional |
 
 ---

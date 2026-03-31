@@ -6,7 +6,7 @@
  * Or: node scripts/day2-e2e-validator.mjs (if compiled)
  */
 
-import type { UserRole } from '../src/types';
+import { UserRole } from '../src/types';
 
 // Test scenarios
 interface TestScenario {
@@ -21,7 +21,7 @@ const SCENARIOS: TestScenario[] = [
   {
     name: 'SUPER_ADMIN Login & Access',
     email: 'admin@mecard.mx',
-    role: 'SUPER_ADMIN',
+    role: UserRole.SUPER_ADMIN,
     expectedRoutes: [
       '/admin',
       '/admin/schools',
@@ -39,7 +39,7 @@ const SCENARIOS: TestScenario[] = [
   {
     name: 'SCHOOL_ADMIN Login & Access',
     email: 'admin@escuela.mx',
-    role: 'SCHOOL_ADMIN',
+    role: UserRole.SCHOOL_ADMIN,
     expectedRoutes: [
       '/school',
       '/school/students',
@@ -56,7 +56,7 @@ const SCENARIOS: TestScenario[] = [
   },
   {
     name: 'PARENT Login & Access',
-    role: 'PARENT',
+    role: UserRole.PARENT,
     expectedRoutes: [
       '/parent',
       '/parent/wallet',
@@ -72,7 +72,7 @@ const SCENARIOS: TestScenario[] = [
   },
   {
     name: 'STUDENT Login & Access',
-    role: 'STUDENT',
+    role: UserRole.STUDENT,
     expectedRoutes: [
       '/student',
       '/student/wallet',
@@ -89,7 +89,7 @@ const SCENARIOS: TestScenario[] = [
   },
   {
     name: 'UNIT_MANAGER Login & Access',
-    role: 'UNIT_MANAGER',
+    role: UserRole.UNIT_MANAGER,
     expectedRoutes: [
       '/unit',
       '/unit/inventory',
