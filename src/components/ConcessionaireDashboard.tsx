@@ -19,6 +19,20 @@ interface ConcessionaireDashboardProps {
 export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = ({ unit: unitProp }) => {
   const unit = unitProp || MOCK_UNITS[0];
   const [activeTab, setActiveTab] = useState<'sales' | 'inventory' | 'staff' | 'config'>('sales');
+  const [settlementMethod, setSettlementMethod] = useState<'SPEI' | 'CHECK'>('SPEI');
+  const [showAdvanceModal, setShowAdvanceModal] = useState(false);
+  const [advanceAmount, setAdvanceAmount] = useState('');
+    const handleAdvanceRequest = async () => {
+      if (!advanceAmount) return;
+      try {
+        console.log('Requesting advance:', { amount: advanceAmount, unit: unit.id });
+        // TODO: Connect to API when ready
+        setShowAdvanceModal(false);
+        setAdvanceAmount('');
+      } catch (error) {
+        console.error('Error requesting advance:', error);
+      }
+    };
   const [localInventory, setLocalInventory] = useState<Product[]>(PRODUCTS.filter(p => p.unitId === unit.id || p.unitId === 'unit_01'));
   
   const school = MOCK_SCHOOLS.find(s => s.id === unit.schoolId) || MOCK_SCHOOLS[0];
@@ -84,7 +98,12 @@ export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = (
                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Próxima Liquidación</h4>
                  <p className="text-4xl font-black tracking-tighter mb-3">${netProfit.toLocaleString()}</p>
                  <p className="text-sm text-slate-400 leading-relaxed mb-8">Pago programado para el Viernes 27 de Octubre vía transferencia SPEI.</p>
-                 <button className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all">Solicitar Adelanto</button>
+                 <button 
+                   onClick={() => setShowAdvanceModal(true)}
+                   className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all"
+                 >
+                   Solicitar Adelanto
+                 </button>
               </div>
             </div>
           </div>
@@ -125,7 +144,58 @@ export const ConcessionaireDashboard: React.FC<ConcessionaireDashboardProps> = (
                    <AlertCircle className="text-amber-600 shrink-0" size={18}/>
                    <p className="text-xs font-bold text-amber-800 leading-relaxed">Los cambios en el porcentaje de comisión deben ser autorizados por el Administrador del Colegio desde el Panel Maestro.</p>
                 </div>
-                <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"><Save size={16}/> Guardar Preferencias</button>
+                <button 
+                  onClick={async () => {
+                    try {
+                      console.log('Saving preferences for unit:', unit.id);
+                      // TODO: Connect to API when ready
+                    } catch (error) {
+                      console.error('Error saving preferences:', error);
+                    }
+                  }}
+                  className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"
+                >
+                  <Save size={16}/> Guardar Preferencias
+                </button>
+                  {/* ADVANCE REQUEST MODAL */}
+                  {showAdvanceModal && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                      <div className="bg-white rounded-[32px] p-8 shadow-2xl max-w-sm w-full animate-in zoom-in duration-300">
+                        <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
+                          <DollarSign size={28} className="text-indigo-600"/>
+                          Solicitar Adelanto
+                        </h3>
+                        <div className="space-y-4 mb-6">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Monto a Solicitar</label>
+                            <input
+                              type="number"
+                              value={advanceAmount}
+                              onChange={(e) => setAdvanceAmount(e.target.value)}
+                              placeholder="0.00"
+                              className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl font-black text-lg outline-none focus:ring-4 focus:ring-indigo-100"
+                            />
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium">Se deducirá un fee del 2.5% sobre el monto solicitado</p>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setShowAdvanceModal(false)}
+                            className="flex-1 py-3 rounded-2xl text-slate-600 font-black text-[10px] uppercase hover:bg-slate-100 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={handleAdvanceRequest}
+                            disabled={!advanceAmount}
+                            className="flex-1 py-3 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase disabled:opacity-50 hover:bg-indigo-700 transition-colors"
+                          >
+                            Confirmar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
              </div>
           </div>
         )}

@@ -1,3 +1,4 @@
+  const [settlementMethod, setSettlementMethod] = useState<'BANK_TRANSFER' | 'CHECK'>('BANK_TRANSFER');
 
 import React, { useState, useMemo } from 'react';
 import { 
@@ -177,8 +178,32 @@ const SchoolWizard: React.FC<SchoolWizardProps> = ({ school, onSave, onCancel })
                   <div className="space-y-4">
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Método de Pago</label>
                      <div className="flex gap-4">
-                        <button className="flex-1 py-4 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-2xl font-black text-[10px] uppercase tracking-widest">Transferencia SPEI</button>
-                        <button className="flex-1 py-4 bg-white border border-slate-100 text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest">Cheque</button>
+                        <button 
+                          onClick={() => {
+                            setSettlementMethod('BANK_TRANSFER');
+                            updateBusiness('settlement', { ...formData.businessModel!.settlement, method: 'BANK_TRANSFER' });
+                          }}
+                          className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all ${
+                            settlementMethod === 'BANK_TRANSFER'
+                              ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                              : 'bg-white border-slate-100 text-slate-300 hover:border-slate-300'
+                          }`}
+                        >
+                          Transferencia SPEI
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setSettlementMethod('CHECK');
+                            updateBusiness('settlement', { ...formData.businessModel!.settlement, method: 'CHECK' });
+                          }}
+                          className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all ${
+                            settlementMethod === 'CHECK'
+                              ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                              : 'bg-white border-slate-100 text-slate-300 hover:border-slate-300'
+                          }`}
+                        >
+                          Cheque
+                        </button>
                      </div>
                   </div>
                </div>

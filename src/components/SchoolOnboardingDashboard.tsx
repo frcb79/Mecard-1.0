@@ -25,7 +25,14 @@ type OnboardingStep = 'welcome' | 'profile' | 'banking' | 'students' | 'pos' | '
 export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({ 
   school = MOCK_SCHOOLS[0], onComplete = () => {}, onUpdateSchool = () => {}, allStudents = MOCK_STUDENTS_LIST, onBulkAddStudents = () => {} 
 }) => {
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
+    const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
+    const [showLogoModal, setShowLogoModal] = useState(false);
+    const LOGO_OPTIONS = ['🏫', '🎓', '🌟', '📚', '🔬', '🎨', '🎭', '🚀', '⚡', '🏆'];
+    const handleLogoChange = (emoji: string) => {
+        const updatedSchool = { ...school, logo: emoji };
+        onUpdateSchool(updatedSchool);
+        setShowLogoModal(false);
+    };
   const [showImportWizard, setShowImportWizard] = useState(false);
   
   // Progress Logic
@@ -124,7 +131,50 @@ export const SchoolOnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                                     <p className="font-bold text-slate-800">El logo configurado por MeCard Corp.</p>
                                 </div>
                             </div>
-                            <Button variant="secondary" className="rounded-2xl py-3 px-6 text-[10px] uppercase font-black tracking-widest border-2">Cambiar Logo</Button>
+                                                        <Button 
+                                                            onClick={() => setShowLogoModal(true)}
+                                                            variant="secondary" 
+                                                            className="rounded-2xl py-3 px-6 text-[10px] uppercase font-black tracking-widest border-2"
+                                                        >
+                                                            Cambiar Logo
+                                                        </Button>
+                                    {/* LOGO PICKER MODAL */}
+                                    {showLogoModal && (
+                                        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                                            <div className="bg-white rounded-[32px] p-8 shadow-2xl max-w-sm w-full animate-in zoom-in duration-300">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <h3 className="text-2xl font-black text-slate-800 tracking-tighter">Selecciona Logo</h3>
+                                                    <button 
+                                                        onClick={() => setShowLogoModal(false)}
+                                                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                                    >
+                                                        <X size={24} className="text-slate-400"/>
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-5 gap-3 mb-6">
+                                                    {LOGO_OPTIONS.map((emoji) => (
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={() => handleLogoChange(emoji)}
+                                                            className={`p-4 rounded-2xl border-2 transition-all text-4xl hover:scale-110 ${
+                                                                school.logo === emoji
+                                                                    ? 'border-indigo-600 bg-indigo-50'
+                                                                    : 'border-slate-200 hover:border-indigo-300'
+                                                            }`}
+                                                        >
+                                                            {emoji}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <Button 
+                                                    onClick={() => setShowLogoModal(false)}
+                                                    className="w-full py-4 rounded-2xl bg-slate-900 text-white font-black uppercase text-[10px] tracking-widest"
+                                                >
+                                                    Hecho
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
                         </div>
                         <div className="pt-6 border-t border-slate-50 flex justify-end">
                             <Button onClick={handleNext} className="px-12 py-6 rounded-3xl bg-indigo-600 font-black uppercase tracking-widest shadow-xl">Siguiente: Finanzas</Button>
