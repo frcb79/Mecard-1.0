@@ -1,5 +1,5 @@
 # PROJECT BRAIN — meCard
-> Última actualización: 2026-03-21
+> Última actualización: 2026-03-30
 
 ## Estado Actual del Proyecto
 
@@ -49,8 +49,8 @@
 - Observabilidad base: `src/lib/logger.ts` con eventos `mecard:log`
 
 ## Lo que está EN PROGRESO (Días 1-10 Plan)
-- [ ] **Día 1**: ✅ Validación schema + seed data (ESTE TURNO)
-- [ ] **Día 2**: Auth + E2E smoke (login, permisos, logout)
+- [x] **Día 1**: ✅ COMPLETADO - Schema + Seed + Docs
+- [x] **Día 2**: ⏳ EN PROGRESO - Button fixes done, E2E tests pending
 - [ ] **Día 3**: School Admin - Alta de colegio
 - [ ] **Día 4**: School Admin - CSV import de alumnos
 - [ ] **Día 5**: Crear y configurar POS
