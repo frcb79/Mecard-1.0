@@ -11,19 +11,21 @@ import { SchoolAdminView } from './SchoolAdminView';
 import { StudentProfile, OperatingUnit } from '../types';
 import { useSchoolAdminQueries } from '../hooks/useSchoolAdminQueries';
 import { useSchoolAdminMutations } from '../hooks/useSchoolAdminMutations';
-
-const DEFAULT_SCHOOL_ID = 'school-001';
+import { useAuth } from '../hooks/useAuth';
 
 export const SchoolAdminContainer: React.FC = () => {
+  const { user } = useAuth();
+  const schoolId = user?.schoolId ?? '';
+
   const {
     students: queryStudents,
     operatingUnits: queryUnits,
     loading,
     error,
     refresh,
-  } = useSchoolAdminQueries(DEFAULT_SCHOOL_ID);
+  } = useSchoolAdminQueries(schoolId);
 
-  const { reloadWallet } = useSchoolAdminMutations({ schoolId: DEFAULT_SCHOOL_ID });
+  const { reloadWallet } = useSchoolAdminMutations({ schoolId, adminId: user?.id });
 
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [operatingUnits, setOperatingUnits] = useState<OperatingUnit[]>([]);
@@ -82,6 +84,7 @@ export const SchoolAdminContainer: React.FC = () => {
           </button>
         </div>
         <SchoolAdminView
+          schoolId={schoolId}
           onUpdateStudent={handleUpdateStudent}
           allStudents={students}
           onBulkAddStudents={handleBulkAddStudents}
@@ -97,6 +100,7 @@ export const SchoolAdminContainer: React.FC = () => {
 
   return (
     <SchoolAdminView
+      schoolId={schoolId}
       onUpdateStudent={handleUpdateStudent}
       allStudents={students}
       onBulkAddStudents={handleBulkAddStudents}

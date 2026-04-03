@@ -1,10 +1,21 @@
 import React from 'react';
-import { MOCK_SCHOOLS } from '../../constants';
+import { useAuth } from '../../hooks/useAuth';
 import SchoolSettingsPanel from './SchoolSettingsPanel';
 import AdminSettlementsTracker from './AdminSettlementsTracker';
 
 export default function SchoolRefundSettingsPage() {
-  const schoolId = MOCK_SCHOOLS[0]?.id;
+  const { user } = useAuth();
+  const schoolId = user?.schoolId;
+
+  if (!schoolId) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">
+        <div className="max-w-6xl mx-auto bg-white rounded-[28px] border border-slate-200 p-8 text-center text-slate-500">
+          Esta cuenta no tiene una escuela asociada para administrar refunds.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-5 md:p-8">

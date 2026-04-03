@@ -7,7 +7,7 @@ import {
   GraduationCap, Banknote, Zap, History, Users, MessageSquare, ChefHat,
   ShieldCheck, Globe, Terminal, PieChart, UtensilsCrossed, Layers,
   ChevronRight, Gift, Star, Menu, X, MapPin, Briefcase,
-  Receipt, BarChart3, Ban, Rocket, Trophy, HeadphonesIcon, FileText,
+  Receipt, BarChart3, Ban, Trophy, HeadphonesIcon, FileText,
   Shield, Megaphone, TrendingUp, HandCoins, Calculator, Cake, Heart,
   Send, Inbox, Store
 } from 'lucide-react';
@@ -40,7 +40,6 @@ function getNavSections(role: UserRole): NavSection[] {
         items: [
           { path: '/admin', label: 'Dashboard', icon: <Globe size={18} /> },
           { path: '/admin/schools', label: 'Escuelas', icon: <Building2 size={18} /> },
-          { path: '/admin/onboarding', label: 'Onboarding', icon: <Rocket size={18} /> },
           { path: '/admin/schools-directory', label: 'Directorio', icon: <Layers size={18} /> },
           { path: '/admin/refunds', label: 'Refunds', icon: <HandCoins size={18} /> },
           { path: '/admin/settlement', label: 'Settlement', icon: <Banknote size={18} /> },
@@ -125,7 +124,7 @@ function getNavSections(role: UserRole): NavSection[] {
         { path: '/school/reports', label: 'Reportes', icon: <BarChart3 size={18} /> },
         { path: '/school/access', label: 'Accesos', icon: <Shield size={18} /> },
         { path: '/school/import', label: 'Importar', icon: <Layers size={18} /> },
-        { path: '/school/config', label: 'Configuración', icon: <Settings size={18} /> },
+        { path: '/school/settings', label: 'Configuración', icon: <Settings size={18} /> },
         { path: '/school/permissions', label: 'Permisos Salida', icon: <ShieldCheck size={18} /> },
         { path: '/school/trips', label: 'Viajes', icon: <MapPin size={18} /> },
         { path: '/school/invoices', label: 'Facturas', icon: <FileText size={18} /> },

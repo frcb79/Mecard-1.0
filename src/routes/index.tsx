@@ -60,7 +60,6 @@ const BillingConfigView = lazyWithRetry(() => import('../components/SuperAdmin/B
 const BillingOperationsPanel = lazyWithRetry(() => import('../components/SuperAdmin/BillingOperationsPanel'));
 const MecardAnalyticsDashboard = lazyWithRetry(() => import('../components/SuperAdmin/MecardAnalyticsDashboard'));
 const SchoolBlockingManagement = lazyWithRetry(() => import('../components/SuperAdmin/SchoolBlockingManagement'));
-const SchoolOnboardingDashboard = lazyWithRetry(() => import('../components/SchoolOnboardingDashboard'));
 const AdminRewardsConfig = lazyWithRetry(() => import('../components/AdminRewardsConfig'));
 const SupportSystem = lazyWithRetry(() => import('../components/SupportSystem'));
 const CommercialSimulator = lazyWithRetry(() => import('../components/SuperAdmin/CommercialSimulator'));
@@ -82,6 +81,7 @@ const SchoolReportsView = lazyWithRetry(() => import('../components/SchoolReport
 const SchoolAccessDashboard = lazyWithRetry(() => import('../components/SchoolAccessDashboard'));
 const CustomRolesManager = lazyWithRetry(() => import('../components/CustomRolesManager'));
 const SchoolRefundSettingsPage = lazyWithRetry(() => import('../components/refunds/SchoolRefundSettingsPage'));
+const SchoolSettingsView = lazyWithRetry(() => import('../components/SchoolSettingsView'));
 
 // Unit Manager
 const ConcessionaireDashboard = lazyWithRetry(() => import('../components/ConcessionaireDashboard'));
@@ -268,9 +268,7 @@ export default function AppRoutes() {
         path="/admin/onboarding"
         element={
           <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
-            <RoleBasedLayout>
-              <SchoolOnboardingDashboard />
-            </RoleBasedLayout>
+            <Navigate to="/admin/schools" replace />
           </ProtectedRoute>
         }
       />
@@ -376,12 +374,23 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      {/* Business Model Configuration is SUPER_ADMIN only → see /admin/config */}
+      <Route
+        path="/school/settings"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
+            <RoleBasedLayout>
+              <SchoolSettingsView />
+            </RoleBasedLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/school/config"
         element={
-          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN]}>
+          <ProtectedRoute allowedRoles={[UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_FINANCE]}>
             <RoleBasedLayout>
-              <BusinessModelConfiguration onSave={() => {}} />
+              <SchoolSettingsView />
             </RoleBasedLayout>
           </ProtectedRoute>
         }

@@ -232,6 +232,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
     const term = studentIdInput.toLowerCase().trim();
     const found = allStudentsList.find(s =>
       s.id.toLowerCase() === term ||
+      s.studentId.toLowerCase() === term ||
       s.fullName.toLowerCase().includes(term)
     );
     if (found) {
@@ -261,10 +262,15 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
         }
       }
 
+      const resolvedSchoolId = student.schoolId || user?.schoolId;
+      if (!resolvedSchoolId) {
+        throw new Error('El alumno no tiene una escuela asociada para procesar la venta.');
+      }
+
       // Create cart order for payment service
       const order: CartOrder = {
         studentId: student.id,
-        schoolId: student.schoolId || 'school-001',
+        schoolId: resolvedSchoolId,
         items: cart,
         total,
         clabeFrom: student.clabePersonal || '646180000000000000',
@@ -284,9 +290,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
         // 🏆 MeCard Rewards: Calculate and record points
         try {
           // Step 1: Get school rewards config
-          const schoolConfig = await rewardsService.mockGetSchoolRewardsConfig(
-            student.schoolId || 'school-001'
-          );
+          const schoolConfig = await rewardsService.mockGetSchoolRewardsConfig(resolvedSchoolId);
 
           // Step 2: Calculate points earned
           const { markupAmount, pointsEarned } = rewardsService.calculatePointsFromPurchase(
@@ -297,7 +301,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
           // Step 3: Get old tier before update
           const oldPointsData = await rewardsService.mockGetStudentRewardsPoints(
             student.id,
-            student.schoolId || 'school-001'
+            resolvedSchoolId
           );
           const oldTier = oldPointsData.tier;
 
@@ -312,7 +316,7 @@ export const PosView: React.FC<PosViewStandalone> = ({ mode = 'cafeteria' }) => 
           // Step 6: Check tier elevation
           const newPointsData = await rewardsService.mockGetStudentRewardsPoints(
             student.id,
-            student.schoolId || 'school-001'
+            resolvedSchoolId
           );
           
           if (newPointsData.tier !== oldTier) {

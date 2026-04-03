@@ -31,6 +31,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend, subtitle }: StatCard
 );
 
 export const SchoolAdminView: React.FC<{
+  schoolId: string;
   onUpdateStudent: (id: string, data: Partial<StudentProfile>) => void;
   allStudents: StudentProfile[];
   onBulkAddStudents: (newStudents: StudentProfile[]) => void;
@@ -39,7 +40,7 @@ export const SchoolAdminView: React.FC<{
   onUpdateUnit: (id: string, updates: Partial<OperatingUnit>) => void;
   onDeleteUnit: (id: string) => void;
   onReloadWallet: (studentId: string, amount: number, reason: string) => Promise<{ ok: boolean; message: string }>;
-}> = ({ onUpdateStudent, allStudents, onBulkAddStudents, operatingUnits, onAddUnit, onUpdateUnit, onDeleteUnit, onReloadWallet }) => {
+}> = ({ schoolId, onUpdateStudent, allStudents, onBulkAddStudents, operatingUnits, onAddUnit, onUpdateUnit, onDeleteUnit, onReloadWallet }) => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'units'>('dashboard');
   const [showAddUnitModal, setShowAddUnitModal] = useState(false);
@@ -149,15 +150,24 @@ export const SchoolAdminView: React.FC<{
             )}
 
             {activeTab === 'students' && (
-              <SchoolAdminStudentsView 
-                schoolId="mx_01"
-                students={allStudents}
-                onUpdateStudent={onUpdateStudent}
-                onAddStudent={(s) => onBulkAddStudents([s])}
-                onDeleteStudent={handleDeleteStudent}
-                onToggleStatus={handleToggleStudent}
-                onReloadWallet={onReloadWallet}
-              />
+              <>
+                {!schoolId ? (
+                  <div className="p-8 text-center">
+                    <p className="text-slate-500 font-bold">⚠️ Sin escuela asociada</p>
+                    <p className="text-[10px] text-slate-400 mt-2">Contacta al Super Admin para vincular una escuela a tu cuenta</p>
+                  </div>
+                ) : (
+                  <SchoolAdminStudentsView 
+                    schoolId={schoolId}
+                    students={allStudents}
+                    onUpdateStudent={onUpdateStudent}
+                    onAddStudent={(s) => onBulkAddStudents([s])}
+                    onDeleteStudent={handleDeleteStudent}
+                    onToggleStatus={handleToggleStudent}
+                    onReloadWallet={onReloadWallet}
+                  />
+                )}
+              </>
             )}
 
             {activeTab === 'units' && (
@@ -211,7 +221,7 @@ export const SchoolAdminView: React.FC<{
                 </div>
                 <button onClick={() => {
                   if (!newUnitName.trim()) { toast.warning('Requerido', 'Ingresa un nombre para la unidad'); return; }
-                  onAddUnit({ id: `unit_${Date.now()}`, name: newUnitName.trim(), type: newUnitType, schoolId: 'school-001', ownerType: EntityOwner.SCHOOL } as OperatingUnit);
+                  onAddUnit({ id: `unit_${Date.now()}`, name: newUnitName.trim(), type: newUnitType, schoolId, ownerType: EntityOwner.SCHOOL } as OperatingUnit);
                   setNewUnitName(''); setShowAddUnitModal(false);
                   toast.info('Unidad Creada', `${newUnitName} agregada exitosamente`);
                 }} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[2px] shadow-lg hover:bg-indigo-700 transition-all">

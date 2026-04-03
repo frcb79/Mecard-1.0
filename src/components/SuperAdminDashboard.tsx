@@ -36,7 +36,7 @@ export const SuperAdminDashboard: React.FC = () => {
     recentActivity,
     loading,
     fetchMetrics,
-  } = useDashboard('mx_01');
+  } = useDashboard();
 
   // Trigger fetch when schools change
   useEffect(() => {

@@ -17,14 +17,30 @@ interface StudentsState {
   error: string | null;
 }
 
-interface ProfileRow {
+interface StudentRow {
   id: string;
-  full_name: string | null;
+  user_id: string | null;
   student_id: string | null;
+  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   grade: string | null;
+  group: string | null;
+  curp: string | null;
   school_id: string | null;
+  campus_id: string | null;
+  credential: StudentProfile['credential'] | null;
   balance: number | null;
+  daily_limit: number | null;
+  spent_today: number | null;
+  total_spent: number | null;
+  restrictions: StudentProfile['restrictions'] | null;
+  parent_id: string | null;
+  parent_name: string | null;
+  parent_email: string | null;
+  status: string | null;
   created_at: string | null;
+  updated_at: string | null;
 }
 
 const splitName = (fullName: string): { firstName: string; lastName: string } => {
@@ -41,25 +57,37 @@ const splitName = (fullName: string): { firstName: string; lastName: string } =>
   };
 };
 
-const toStudentProfile = (row: ProfileRow, fallback: StudentProfile): StudentProfile => {
+const toStudentProfile = (row: StudentRow, fallback: StudentProfile): StudentProfile => {
   const safeFullName = row.full_name?.trim() || fallback.fullName;
   const names = splitName(safeFullName);
   const createdAt = row.created_at || fallback.createdAt;
+  const updatedAt = row.updated_at || createdAt;
 
   return {
     ...fallback,
     id: row.id,
-    userId: row.id,
+    userId: row.user_id || row.id,
     studentId: row.student_id || fallback.studentId || row.id,
     fullName: safeFullName,
-    firstName: names.firstName,
-    lastName: names.lastName,
+    firstName: row.first_name?.trim() || names.firstName,
+    lastName: row.last_name?.trim() || names.lastName,
     grade: row.grade || fallback.grade,
+    group: row.group || fallback.group,
+    curp: row.curp || fallback.curp,
     schoolId: row.school_id || fallback.schoolId,
+    campusId: row.campus_id || fallback.campusId,
+    credential: row.credential || fallback.credential,
     balance: row.balance ?? fallback.balance,
-    status: UserStatus.ACTIVE,
+    dailyLimit: row.daily_limit ?? fallback.dailyLimit,
+    spentToday: row.spent_today ?? fallback.spentToday,
+    totalSpent: row.total_spent ?? fallback.totalSpent,
+    restrictions: row.restrictions || fallback.restrictions,
+    parentId: row.parent_id || fallback.parentId,
+    parentName: row.parent_name || fallback.parentName,
+    parentEmail: row.parent_email || fallback.parentEmail,
+    status: (row.status as UserStatus) || UserStatus.ACTIVE,
     createdAt,
-    updatedAt: createdAt,
+    updatedAt,
   };
 };
 
@@ -93,9 +121,8 @@ export function useStudents(options?: { schoolId?: string; parentId?: string }) 
 
     try {
       let query = supabase
-        .from('profiles')
-        .select('id, full_name, student_id, grade, school_id, balance, created_at')
-        .eq('role', 'STUDENT');
+        .from('students')
+        .select('id, user_id, student_id, full_name, first_name, last_name, grade, group, curp, school_id, campus_id, credential, balance, daily_limit, spent_today, total_spent, restrictions, parent_id, parent_name, parent_email, status, created_at, updated_at');
 
       if (options?.schoolId) {
         query = query.eq('school_id', options.schoolId);
@@ -107,7 +134,7 @@ export function useStudents(options?: { schoolId?: string; parentId?: string }) 
         throw error;
       }
 
-      const rows: ProfileRow[] = (data || []) as ProfileRow[];
+      const rows: StudentRow[] = (data || []) as StudentRow[];
       const fallbackStudents = loadFromMock(options);
       const template = fallbackStudents[0] || MOCK_STUDENT;
       const mapped = rows.map((row) => toStudentProfile(row, template));
@@ -188,10 +215,11 @@ export function useStudent(studentId?: string) {
       }
 
       const { data, error: queryError } = await supabase
-        .from('profiles')
-        .select('id, full_name, student_id, grade, school_id, balance, created_at')
-        .eq('id', studentId)
-        .single();
+        .from('students')
+        .select('id, user_id, student_id, full_name, first_name, last_name, grade, group, curp, school_id, campus_id, credential, balance, daily_limit, spent_today, total_spent, restrictions, parent_id, parent_name, parent_email, status, created_at, updated_at')
+        .or(`id.eq.${studentId},student_id.eq.${studentId}`)
+        .limit(1)
+        .maybeSingle();
 
       if (queryError || !data) {
         const found = MOCK_STUDENTS_LIST.find((s) => s.id === studentId || s.studentId === studentId);
@@ -200,7 +228,7 @@ export function useStudent(studentId?: string) {
         return;
       }
 
-      const mapped = toStudentProfile(data as ProfileRow, MOCK_STUDENT);
+      const mapped = toStudentProfile(data as StudentRow, MOCK_STUDENT);
       setStudent(mapped);
       setLoading(false);
     } catch (err: unknown) {

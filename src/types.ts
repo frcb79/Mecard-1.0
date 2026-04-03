@@ -2644,10 +2644,66 @@ export interface PlatformSettings {
   updated_by?: string;
 }
 
+export type SchoolModuleKey =
+  | 'cafeteria'
+  | 'stationery'
+  | 'fees'
+  | 'refunds'
+  | 'collections'
+  | 'reports'
+  | 'access'
+  | 'announcements'
+  | 'trips'
+  | 'invoicing'
+  | 'rewards';
+
+export interface SchoolEnabledModules {
+  cafeteria: boolean;
+  stationery: boolean;
+  fees: boolean;
+  refunds: boolean;
+  collections: boolean;
+  reports: boolean;
+  access: boolean;
+  announcements: boolean;
+  trips: boolean;
+  invoicing: boolean;
+  rewards: boolean;
+}
+
+export type SchoolPosOwnershipMode = 'school' | 'concessionaire' | 'mixed';
+
+export type SchoolPaymentMethod =
+  | 'qr'
+  | 'nfc'
+  | 'cash'
+  | 'matricula'
+  | 'barcode'
+  | 'card'
+  | 'spei'
+  | 'oxxo';
+
+export interface SchoolOperationalSettings {
+  paymentMethods: SchoolPaymentMethod[];
+  ownerScenarios: SchoolPosOwnershipMode[];
+  supportEmail: string;
+  supportPhone: string;
+  lowBalanceThreshold: number;
+  allowCash: boolean;
+  requireStudentIdentification: boolean;
+  notes?: string;
+  demo?: boolean;
+}
+
 export interface SchoolSettings {
   id: string;
   school_id: string;
   pool_points_multiplier: number;
+  enabled_modules?: SchoolEnabledModules | null;
+  operational_settings?: SchoolOperationalSettings | null;
+  onboarding_completed?: boolean | null;
+  onboarding_completed_at?: string | null;
+  is_demo_school?: boolean | null;
   created_at: string;
   updated_at: string;
 }

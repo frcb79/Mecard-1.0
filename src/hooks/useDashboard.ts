@@ -97,6 +97,7 @@ interface DashboardState {
 }
 
 interface StudentBalanceRow {
+  id: string;
   school_id: string | null;
   balance: number | null;
 }
@@ -132,6 +133,7 @@ interface ActivityLogRow {
 // ─── Mock metric builders ─────────────────────────────
 
 function buildMockMetrics(schools: School[]): DashboardMetrics {
+  const primarySchoolId = schools[0]?.id || MOCK_SCHOOLS[0]?.id || 'mx_01';
   const totalStudents = MOCK_STUDENTS_LIST.length;
   const totalUnits = MOCK_UNITS.length;
   const totalBalance = schools.reduce((s, sc) => s + sc.balance, 0);
@@ -147,7 +149,7 @@ function buildMockMetrics(schools: School[]): DashboardMetrics {
 
   let feeStats: FeeStats | null = null;
   try {
-    feeStats = SchoolFeeService.getStats('mx_01');
+    feeStats = SchoolFeeService.getStats(primarySchoolId);
   } catch {
     /* ignore */
   }
@@ -162,7 +164,7 @@ function buildMockMetrics(schools: School[]): DashboardMetrics {
     deniedAccess: 0,
   };
   try {
-    const ds = AccessControlService.getDailyStats('mx_01', today);
+    const ds = AccessControlService.getDailyStats(primarySchoolId, today);
     accessStats = ds;
   } catch {
     /* ignore */
@@ -311,9 +313,8 @@ function buildStatusPieFromTransactions(rows: TransactionRow[]): PaymentStatusSl
 async function fetchSupabaseDashboard(schools: School[]): Promise<Pick<DashboardState, 'metrics' | 'revenueByMonth' | 'campusData' | 'statusPie' | 'recentActivity'>> {
   const [studentsRes, unitsRes, transactionsRes, activityRes] = await Promise.all([
     supabase
-      .from('profiles')
-      .select('school_id, balance', { count: 'exact' })
-      .eq('role', 'STUDENT'),
+      .from('students')
+      .select('id, school_id, balance', { count: 'exact' }),
     supabase
       .from('operating_units')
       .select('school_id', { count: 'exact' }),
@@ -332,12 +333,11 @@ async function fetchSupabaseDashboard(schools: School[]): Promise<Pick<Dashboard
   if (studentsRes.error) throw studentsRes.error;
   if (unitsRes.error) throw unitsRes.error;
   if (transactionsRes.error) throw transactionsRes.error;
-  if (activityRes.error) throw activityRes.error;
 
   const studentRows = (studentsRes.data || []) as StudentBalanceRow[];
   const unitRows = (unitsRes.data || []) as UnitSchoolRow[];
   const txRows = (transactionsRes.data || []) as TransactionRow[];
-  const activityRows = (activityRes.data || []) as ActivityLogRow[];
+  const activityRows = activityRes.error ? [] : ((activityRes.data || []) as ActivityLogRow[]);
 
   const studentsBySchool: Record<string, number> = {};
   const balancesBySchool: Record<string, number> = {};
@@ -364,6 +364,16 @@ async function fetchSupabaseDashboard(schools: School[]): Promise<Pick<Dashboard
   const totalBalance = Object.values(balancesBySchool).reduce((a, b) => a + b, 0);
   const totalTransactions = transactionsRes.count || txRows.length;
 
+  let feeStats: FeeStats | null = null;
+  try {
+    const primarySchoolId = schools[0]?.id;
+    if (primarySchoolId) {
+      feeStats = SchoolFeeService.getStats(primarySchoolId);
+    }
+  } catch {
+    /* ignore */
+  }
+
   const metrics: DashboardMetrics = {
     totalSchools: schools.length,
     totalUnits,
@@ -374,7 +384,7 @@ async function fetchSupabaseDashboard(schools: School[]): Promise<Pick<Dashboard
     collectionRate: totalCollected > 0 ? 100 : 0,
     totalBalance,
     totalTransactions,
-    feeStats: null,
+    feeStats,
     attendancePercent: 0,
     entrancesToday: 0,
     exitesToday: 0,
@@ -425,7 +435,7 @@ async function fetchSupabaseDashboard(schools: School[]): Promise<Pick<Dashboard
 
 // ─── Hook ─────────────────────────────────────────────
 
-export function useDashboard(schoolId: string = 'mx_01') {
+export function useDashboard(schoolId?: string) {
   const [state, setState] = useState<DashboardState>({
     metrics: {
       totalSchools: 0,
