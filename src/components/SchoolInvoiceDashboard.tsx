@@ -23,6 +23,7 @@ import {
   formatCurrency,
 } from '../services/BillingService';
 import { Invoice, InvoiceStatus } from '../types';
+import { useAuth } from '../hooks/useAuth';
 
 interface SchoolInvoiceDashboardProps {
   schoolId?: string;
@@ -30,9 +31,12 @@ interface SchoolInvoiceDashboardProps {
 }
 
 export default function SchoolInvoiceDashboard({
-  schoolId = 'mx_01',
-  schoolName = 'Mi Escuela',
+  schoolId,
+  schoolName,
 }: SchoolInvoiceDashboardProps) {
+  const { user } = useAuth();
+  const effectiveSchoolId = schoolId ?? user?.schoolId;
+  const effectiveSchoolName = schoolName ?? 'Mi Escuela';
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -45,12 +49,18 @@ export default function SchoolInvoiceDashboard({
 
   useEffect(() => {
     loadInvoices();
-  }, [schoolId]);
+  }, [effectiveSchoolId]);
 
   const loadInvoices = async () => {
+    if (!effectiveSchoolId) {
+      setInvoices([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const schoolInvoices = await getSchoolInvoices(schoolId);
+      const schoolInvoices = await getSchoolInvoices(effectiveSchoolId);
       setInvoices(schoolInvoices.sort((a, b) =>
         new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()
       ));
@@ -166,7 +176,7 @@ export default function SchoolInvoiceDashboard({
               <FileText className="w-8 h-8 text-indigo-600" />
               <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900">Flujo de Caja Escolar</h1>
             </div>
-            <p className="text-slate-500 font-medium">{schoolName} · Facturacion y cobranza operativa</p>
+            <p className="text-slate-500 font-medium">{effectiveSchoolName} · Facturacion y cobranza operativa</p>
           </div>
           <div className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-[11px] font-bold text-slate-500 uppercase tracking-widest">
             Vista Ejecutiva

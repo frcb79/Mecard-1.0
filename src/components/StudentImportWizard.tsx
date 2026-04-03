@@ -6,6 +6,7 @@ import { Button } from './Button';
 import { StudentProfile } from '../types';
 import { MOCK_STUDENTS_LIST } from '../constants';
 import { useToast } from './ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 interface StudentImportWizardProps {
   schoolId?: string;
@@ -16,17 +17,20 @@ interface StudentImportWizardProps {
 }
 
 export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
-  schoolId = 'mx_01',
-  stpCostCenter = '646180110000000001',
+  schoolId,
+  stpCostCenter,
   existingStudents = MOCK_STUDENTS_LIST,
   onComplete = () => {},
   onCancel = () => {}
 }) => {
+  const { user } = useAuth();
   const [step, setStep] = useState<'upload' | 'validate' | 'import' | 'complete'>('upload');
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
+  const effectiveSchoolId = schoolId ?? user?.schoolId;
+  const effectiveStpCostCenter = stpCostCenter ?? '646180110000000001';
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -53,11 +57,16 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({
   };
 
   const handleConfirmImport = async () => {
+    if (!effectiveSchoolId) {
+      toast.error('Escuela no disponible', 'No se encontro una escuela asociada para la importacion.');
+      return;
+    }
+
     setLoading(true);
     setStep('import');
     try {
       const validRows = validationResults.filter(r => r.valid);
-      const result = await StudentImportService.importStudents(validRows, schoolId, stpCostCenter);
+      const result = await StudentImportService.importStudents(validRows, effectiveSchoolId, effectiveStpCostCenter);
       setImportResult(result);
       setStep('complete');
     } catch (error: unknown) {
