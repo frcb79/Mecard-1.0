@@ -304,7 +304,7 @@ export default function ParentSettingsView() {
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Escuela vinculada</p>
-                  <p className="text-slate-700 mt-1">🏫 Colegio Springfield (mx_01)</p>
+                  <p className="text-slate-700 mt-1">🏫 Colegio Springfield ({user?.schoolId || 'sin_escuela'})</p>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Hijos vinculados</p>

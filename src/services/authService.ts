@@ -1,5 +1,6 @@
 
 import { UserRole, UserStatus } from '../types';
+import { MOCK_SCHOOLS } from '../constants';
 
 interface AuthSession {
   token: string;
@@ -15,11 +16,12 @@ export class AuthService {
    * Simula el login real validando roles
    */
   static async login(email: string, role: UserRole): Promise<AuthSession> {
+    const defaultSchoolId = MOCK_SCHOOLS[0]?.id;
     const session: AuthSession = {
       token: `jwt_${Math.random().toString(36).substr(2)}`,
       role: role,
       userId: `user_${Date.now()}`,
-      schoolId: role === UserRole.SUPER_ADMIN ? undefined : 'mx_01'
+      schoolId: role === UserRole.SUPER_ADMIN ? undefined : defaultSchoolId
     };
     
     localStorage.setItem(this.STORAGE_SESSION_KEY, JSON.stringify(session));

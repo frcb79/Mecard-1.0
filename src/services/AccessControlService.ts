@@ -190,7 +190,7 @@ export const AccessControlService = {
 
   // Simulate sending a test webhook
   async sendTestWebhook(webhookId: string): Promise<{ success: boolean; statusCode?: number; error?: string }> {
-    const webhooks = this.getWebhooks('mx_01');
+    const webhooks = load<WebhookConfig>(WEBHOOKS_KEY, MOCK_WEBHOOK_CONFIGS);
     const webhook = webhooks.find(w => w.id === webhookId);
     if (!webhook) return { success: false, error: 'Webhook no encontrado' };
     
@@ -249,12 +249,13 @@ export const AccessControlService = {
   /**
    * Generate a sample webhook payload for documentation / testing
    */
-  generateSamplePayload(eventType: WebhookEventType): WebhookPayload {
+  generateSamplePayload(eventType: WebhookEventType, schoolId?: string): WebhookPayload {
+    const fallbackSchoolId = schoolId || MOCK_ACCESS_POINTS[0]?.schoolId || 'school_demo';
     const base = {
       eventType,
       timestamp: new Date().toISOString(),
       deviceId: 'ap_01',
-      schoolId: 'mx_01',
+      schoolId: fallbackSchoolId,
       signature: 'hmac_sha256_demo_signature',
     };
 

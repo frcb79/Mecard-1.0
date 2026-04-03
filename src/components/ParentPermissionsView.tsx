@@ -125,7 +125,7 @@ export default function ParentPermissionsView() {
 
     const perm: ExitPermission = {
       id: `perm-${Date.now()}`,
-      schoolId: 'mx_01',
+      schoolId: user?.schoolId || 'school_demo',
       childId: selectedChild,
       childName: c.name,
       childGrade: c.grade,

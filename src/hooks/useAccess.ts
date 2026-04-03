@@ -244,8 +244,8 @@ export function useAccess(schoolId: string, date?: string) {
   // ── Webhook helpers ──
 
   const generateSamplePayload = useCallback((eventType: WebhookEventType) => {
-    return AccessControlService.generateSamplePayload(eventType);
-  }, []);
+    return AccessControlService.generateSamplePayload(eventType, schoolId);
+  }, [schoolId]);
 
   return {
     // State
