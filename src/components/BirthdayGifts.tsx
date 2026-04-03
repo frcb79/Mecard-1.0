@@ -123,7 +123,7 @@ type Tab = 'upcoming' | 'mywishlist' | 'pools';
 
 export default function BirthdayGifts() {
   const { user } = useAuth();
-  const schoolId = (user as any)?.schoolId || 'mx_01';
+  const schoolId = user?.schoolId || '';
 
   const [tab, setTab] = useState<Tab>('upcoming');
   const [search, setSearch] = useState('');

@@ -20,7 +20,7 @@ interface GiftSenderProps {
  */
 export const GiftSender: React.FC<GiftSenderProps> = ({ onGiftSent }) => {
   const { user } = useAuth();
-  const schoolId = (user as any)?.schoolId || 'mx_01';
+  const schoolId = user?.schoolId || '';
   const currentStudentId = user?.studentId || user?.id;
 
   const [searchTerm, setSearchTerm] = useState('');

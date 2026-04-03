@@ -133,7 +133,7 @@ interface ActivityLogRow {
 // ─── Mock metric builders ─────────────────────────────
 
 function buildMockMetrics(schools: School[]): DashboardMetrics {
-  const primarySchoolId = schools[0]?.id || MOCK_SCHOOLS[0]?.id || 'mx_01';
+  const primarySchoolId = schools[0]?.id || MOCK_SCHOOLS[0]?.id || '';
   const totalStudents = MOCK_STUDENTS_LIST.length;
   const totalUnits = MOCK_UNITS.length;
   const totalBalance = schools.reduce((s, sc) => s + sc.balance, 0);

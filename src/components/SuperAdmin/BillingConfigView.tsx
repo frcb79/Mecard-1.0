@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react'
 import { DollarSign, CreditCard, Store, ShieldCheck, Eye, Settings2, Loader2, Save, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { SchoolBillingConfig } from '../../types'
+import { MOCK_SCHOOLS } from '../../constants'
 import { getBillingConfig, updateBillingConfig, formatCurrency, formatPercentage } from '../../services/BillingService'
 
 interface BillingConfigViewProps {
@@ -56,7 +57,8 @@ const TABS = [
   { id: 'preview', label: 'Vista Previa', icon: Eye },
 ] as const
 
-export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId = 'mx_01', onSaved }) => {
+export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId, onSaved }) => {
+  const effectiveSchoolId = schoolId ?? MOCK_SCHOOLS[0]?.id ?? ''
   const [config, setConfig] = useState<SchoolBillingConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -65,12 +67,18 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
 
   useEffect(() => {
     loadConfig()
-  }, [schoolId])
+  }, [effectiveSchoolId])
 
   const loadConfig = async () => {
+    if (!effectiveSchoolId) {
+      setLoading(false)
+      setMessage({ type: 'error', text: 'No hay escuela disponible para cargar billing.' })
+      return
+    }
+
     setLoading(true)
     try {
-      const billingConfig = await getBillingConfig(schoolId)
+      const billingConfig = await getBillingConfig(effectiveSchoolId)
       setConfig(billingConfig)
     } catch (error) {
       setMessage({ type: 'error', text: 'Error cargando configuración de billing' })
@@ -81,10 +89,11 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
 
   const handleSave = async () => {
     if (!config) return
+    if (!effectiveSchoolId) return
 
     setSaving(true)
     try {
-      await updateBillingConfig(schoolId, config)
+      await updateBillingConfig(effectiveSchoolId, config)
       setMessage({ type: 'success', text: 'Configuración guardada exitosamente' })
       onSaved?.(config)
     } catch (error) {
@@ -128,7 +137,7 @@ export const BillingConfigView: React.FC<BillingConfigViewProps> = ({ schoolId =
       {/* Header */}
       <header>
         <h1 className="text-4xl font-black text-slate-800 tracking-tighter">Configuración de Billing</h1>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Escuela: {schoolId}</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Escuela: {effectiveSchoolId || 'No seleccionada'}</p>
       </header>
 
       {/* Message Alert */}

@@ -21,6 +21,7 @@ import {
   Inbox
 } from 'lucide-react';
 import { SchoolRewardsConfig } from '../types';
+import { MOCK_SCHOOLS } from '../constants';
 import { MarketplaceSuggestion, rewardsService } from '../services/rewardsService';
 
 interface AdminRewardsConfigProps {
@@ -39,10 +40,11 @@ interface AdminMarketplaceProduct {
 }
 
 export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
-  schoolId = 'mx_01',
+  schoolId,
   schoolName = 'Instituto Cumbres',
   onSave
 }) => {
+  const effectiveSchoolId = schoolId ?? MOCK_SCHOOLS[0]?.id ?? '';
   const [config, setConfig] = useState<SchoolRewardsConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,16 +65,22 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
   // Load config on mount
   useEffect(() => {
     loadConfig();
-  }, [schoolId]);
+  }, [effectiveSchoolId]);
 
   useEffect(() => {
     loadMarketplaceData();
-  }, [schoolId]);
+  }, [effectiveSchoolId]);
 
   const loadConfig = async () => {
+    if (!effectiveSchoolId) {
+      setLoading(false);
+      setMessage({ type: 'error', text: 'No hay escuela disponible para configurar rewards.' });
+      return;
+    }
+
     setLoading(true);
     try {
-      const cfg = await rewardsService.mockGetSchoolRewardsConfig(schoolId);
+      const cfg = await rewardsService.mockGetSchoolRewardsConfig(effectiveSchoolId);
       setConfig(cfg);
       setHasChanges(false);
     } catch (err) {
@@ -86,10 +94,15 @@ export const AdminRewardsConfig: React.FC<AdminRewardsConfigProps> = ({
   };
 
   const loadMarketplaceData = async () => {
+    if (!effectiveSchoolId) {
+      setMarketplaceLoading(false);
+      return;
+    }
+
     setMarketplaceLoading(true);
     try {
       const [products, suggestions] = await Promise.all([
-        rewardsService.getMarketplaceProducts(schoolId),
+        rewardsService.getMarketplaceProducts(effectiveSchoolId),
         rewardsService.getMarketplaceSuggestions()
       ]);
 

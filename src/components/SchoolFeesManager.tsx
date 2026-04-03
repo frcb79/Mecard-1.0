@@ -3,7 +3,7 @@
  * 6 Tabs: Conceptos | Estado de Pagos | Becas | Planes de Pago | Cartera Vencida | Recordatorios
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Receipt, Plus, Edit2, Trash2, X, DollarSign, AlertTriangle, CheckCircle2,
   Clock, TrendingUp, Download, Users, CalendarDays, ToggleLeft, ToggleRight,
@@ -19,8 +19,7 @@ import {
 import { MOCK_STUDENTS_LIST } from '../constants';
 import { SchoolFeeService } from '../services/SchoolFeeService';
 import { useToast } from './ui/Toast';
-
-const SCHOOL_ID = 'mx_01';
+import { useAuth } from '../hooks/useAuth';
 
 // -------- Label Maps --------
 const FEE_TYPE_LABELS: Record<SchoolFeeType, string> = {
@@ -67,14 +66,16 @@ type Tab = 'concepts' | 'payments' | 'scholarships' | 'plans' | 'aging' | 'remin
 
 export default function SchoolFeesManager() {
   const toast = useToast();
+  const { user } = useAuth();
+  const schoolId = user?.schoolId || '';
   const [activeTab, setActiveTab] = useState<Tab>('concepts');
 
   // Load data from service
-  const [fees, setFees] = useState<SchoolFee[]>(() => SchoolFeeService.getFees(SCHOOL_ID));
-  const [payments, setPayments] = useState<ParentPayment[]>(() => SchoolFeeService.getPaymentsBySchool(SCHOOL_ID));
-  const [scholarships, setScholarships] = useState<Scholarship[]>(() => SchoolFeeService.getScholarships(SCHOOL_ID));
-  const [plans, setPlans] = useState<PaymentPlan[]>(() => SchoolFeeService.getPaymentPlans(SCHOOL_ID));
-  const [reminders, setReminders] = useState<FeeReminder[]>(() => SchoolFeeService.getReminders(SCHOOL_ID));
+  const [fees, setFees] = useState<SchoolFee[]>(() => SchoolFeeService.getFees(schoolId));
+  const [payments, setPayments] = useState<ParentPayment[]>(() => SchoolFeeService.getPaymentsBySchool(schoolId));
+  const [scholarships, setScholarships] = useState<Scholarship[]>(() => SchoolFeeService.getScholarships(schoolId));
+  const [plans, setPlans] = useState<PaymentPlan[]>(() => SchoolFeeService.getPaymentPlans(schoolId));
+  const [reminders, setReminders] = useState<FeeReminder[]>(() => SchoolFeeService.getReminders(schoolId));
 
   // Modals
   const [showFeeModal, setShowFeeModal] = useState(false);
@@ -108,15 +109,19 @@ export default function SchoolFeesManager() {
 
   // Refresh helper
   const reload = useCallback(() => {
-    setFees(SchoolFeeService.getFees(SCHOOL_ID));
-    setPayments(SchoolFeeService.getPaymentsBySchool(SCHOOL_ID));
-    setScholarships(SchoolFeeService.getScholarships(SCHOOL_ID));
-    setPlans(SchoolFeeService.getPaymentPlans(SCHOOL_ID));
-    setReminders(SchoolFeeService.getReminders(SCHOOL_ID));
-  }, []);
+    setFees(SchoolFeeService.getFees(schoolId));
+    setPayments(SchoolFeeService.getPaymentsBySchool(schoolId));
+    setScholarships(SchoolFeeService.getScholarships(schoolId));
+    setPlans(SchoolFeeService.getPaymentPlans(schoolId));
+    setReminders(SchoolFeeService.getReminders(schoolId));
+  }, [schoolId]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   // Stats
-  const stats = useMemo(() => SchoolFeeService.getStats(SCHOOL_ID), [payments, fees, scholarships, plans]);
+  const stats = useMemo(() => SchoolFeeService.getStats(schoolId), [payments, fees, scholarships, plans, schoolId]);
 
   // Filtered payments
   const filteredPayments = useMemo(() => {
@@ -141,12 +146,12 @@ export default function SchoolFeesManager() {
   }, [payments, paymentFilter, paymentSort, sortDir]);
 
   // Aging data
-  const agingBuckets = useMemo(() => SchoolFeeService.getAgingBuckets(SCHOOL_ID), [payments]);
+  const agingBuckets = useMemo(() => SchoolFeeService.getAgingBuckets(schoolId), [payments, schoolId]);
   const totalOverdueAmount = agingBuckets.reduce((s, b) => s + b.totalAmount, 0);
   const totalOverdueCount = agingBuckets.reduce((s, b) => s + b.count, 0);
 
   // Scholarship impact
-  const scholarshipImpact = useMemo(() => SchoolFeeService.getScholarshipImpact(SCHOOL_ID), [scholarships, payments]);
+  const scholarshipImpact = useMemo(() => SchoolFeeService.getScholarshipImpact(schoolId), [scholarships, payments, schoolId]);
 
   // ======== FEE CRUD ========
   const openAddFee = () => { setEditingFee(null); setFeeForm(emptyFeeForm); setShowFeeModal(true); };
@@ -168,7 +173,7 @@ export default function SchoolFeesManager() {
   const saveFee = () => {
     if (!feeForm.name.trim() || !feeForm.amount) { toast.warning('Requerido', 'Nombre y monto son obligatorios'); return; }
     const feeData: SchoolFee = {
-      id: editingFee?.id || `fee_${Date.now()}`, schoolId: SCHOOL_ID,
+      id: editingFee?.id || `fee_${Date.now()}`, schoolId,
       name: feeForm.name.trim(), description: feeForm.description.trim() || undefined,
       type: feeForm.type, amount: parseFloat(feeForm.amount), recurrence: feeForm.recurrence,
       dueDay: parseInt(feeForm.dueDay) || 5,
@@ -199,14 +204,14 @@ export default function SchoolFeesManager() {
     const fee = fees.find(f => f.id === genFeeId);
     if (!fee) { toast.warning('Selecciona', 'Elige un concepto'); return; }
     const students = MOCK_STUDENTS_LIST.map(s => ({ id: s.id, name: s.fullName, parentId: s.parentId || 'parent_01' }));
-    const created = SchoolFeeService.generateMonthlyPayments(SCHOOL_ID, genFeeId, students, genMonth);
+    const created = SchoolFeeService.generateMonthlyPayments(schoolId, genFeeId, students, genMonth);
     if (created.length === 0) { toast.warning('Sin cambios', 'Ya existen cobros para este periodo'); return; }
     toast.info('Generados', `${created.length} cobros creados`); reload();
   };
 
   // ======== LATE FEES ========
   const applyLateFees = () => {
-    const result = SchoolFeeService.applyLateFees(SCHOOL_ID);
+    const result = SchoolFeeService.applyLateFees(schoolId);
     toast.info('Recargos', `${result.markedOverdue} vencidos, ${result.feesApplied} recargos ($${result.totalLateFees.toLocaleString('es-MX')})`);
     reload();
   };
@@ -222,7 +227,7 @@ export default function SchoolFeesManager() {
     if (!schForm.studentId || !schForm.name || !schForm.discountValue) { toast.warning('Requerido', 'Alumno, nombre y descuento obligatorios'); return; }
     const student = MOCK_STUDENTS_LIST.find(s => s.id === schForm.studentId);
     const data: Scholarship = {
-      id: editingScholarship?.id || `sch_${Date.now()}`, schoolId: SCHOOL_ID,
+      id: editingScholarship?.id || `sch_${Date.now()}`, schoolId,
       studentId: schForm.studentId, studentName: student?.fullName || schForm.studentId,
       type: schForm.type, name: schForm.name.trim(), discountType: schForm.discountType,
       discountValue: parseFloat(schForm.discountValue), appliesToFeeTypes: schForm.appliesToFeeTypes,
@@ -253,7 +258,7 @@ export default function SchoolFeesManager() {
   const saveReminder = () => {
     if (!remForm.name) { toast.warning('Requerido', 'Nombre obligatorio'); return; }
     const data: FeeReminder = {
-      id: editingReminder?.id || `rem_${Date.now()}`, schoolId: SCHOOL_ID,
+      id: editingReminder?.id || `rem_${Date.now()}`, schoolId,
       name: remForm.name, schedule: remForm.schedule, feeTypes: remForm.feeTypes,
       channel: remForm.channel, messageTemplate: remForm.messageTemplate || '',
       isActive: editingReminder?.isActive ?? true, lastSent: editingReminder?.lastSent,
@@ -265,7 +270,7 @@ export default function SchoolFeesManager() {
   };
   const deleteReminder = (id: string) => { SchoolFeeService.deleteReminder(id); toast.info('Eliminado', 'Recordatorio eliminado'); reload(); };
   const simulateReminders = () => {
-    const result = SchoolFeeService.simulateSendReminders(SCHOOL_ID);
+    const result = SchoolFeeService.simulateSendReminders(schoolId);
     toast.info('Recordatorios', `${result.sent} notificaciones enviadas (${result.remindersTriggered.join(', ') || 'Ninguna regla aplicó'})`);
     reload();
   };

@@ -11,6 +11,7 @@ import {
 import { SchoolAnnouncement, AnnouncementPriority } from '../types';
 import { MOCK_ANNOUNCEMENTS } from '../constants';
 import { useToast } from './ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 const PRIORITY_CONFIG: Record<AnnouncementPriority, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
   [AnnouncementPriority.INFO]: { label: 'Informativo', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', icon: <Info size={16} /> },
@@ -20,6 +21,8 @@ const PRIORITY_CONFIG: Record<AnnouncementPriority, { label: string; color: stri
 
 export default function SchoolAnnouncementsView() {
   const toast = useToast();
+  const { user } = useAuth();
+  const schoolId = user?.schoolId || '';
   const [announcements, setAnnouncements] = useState<SchoolAnnouncement[]>(MOCK_ANNOUNCEMENTS);
   const [showModal, setShowModal] = useState(false);
   const [editingAnn, setEditingAnn] = useState<SchoolAnnouncement | null>(null);
@@ -60,7 +63,7 @@ export default function SchoolAnnouncementsView() {
     const now = new Date().toISOString();
     const annData: SchoolAnnouncement = {
       id: editingAnn?.id || `ann_${Date.now()}`,
-      schoolId: 'mx_01', title: form.title.trim(), body: form.body.trim(), priority: form.priority,
+      schoolId, title: form.title.trim(), body: form.body.trim(), priority: form.priority,
       audience: form.audienceType === 'all' ? { type: 'all' } : { type: form.audienceType, targets: form.targets.split(',').map(t => t.trim()).filter(Boolean) },
       publishedAt: editingAnn?.publishedAt || now,
       expiresAt: form.expiresAt ? `${form.expiresAt}T23:59:59Z` : undefined,

@@ -17,6 +17,7 @@ import {
 } from '../types';
 import { useAccess } from '../hooks/useAccess';
 import { useToast } from './ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 type Tab = 'live' | 'attendance' | 'points' | 'api';
 
@@ -62,6 +63,8 @@ const WEBHOOK_EVENT_LABELS: Record<WebhookEventType, string> = {
 
 export default function SchoolAccessDashboard() {
   const toast = useToast();
+  const { user } = useAuth();
+  const schoolId = user?.schoolId || '';
   const [activeTab, setActiveTab] = useState<Tab>('live');
 
   // Use the access hook for all data
@@ -73,7 +76,7 @@ export default function SchoolAccessDashboard() {
     sendTestWebhook: hookSendTestWebhook,
     createApiKey: hookCreateApiKey, revokeApiKey: hookRevokeApiKey,
     refresh: refreshAccess,
-  } = useAccess('mx_01');
+  } = useAccess(schoolId);
 
   const [events] = useState<AccessEvent[]>(accessEvents);
   const [attendance] = useState<AttendanceRecord[]>(attendanceRecords);
@@ -527,7 +530,7 @@ export default function SchoolAccessDashboard() {
                     <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Ejemplo de Webhook Payload</p>
                     <pre className="text-xs font-mono text-emerald-400 whitespace-pre overflow-x-auto">{JSON.stringify({
                       eventType: 'student.entry',
-                      schoolId: 'mx_01',
+                      schoolId: schoolId || 'school_id',
                       timestamp: '2026-03-01T07:15:00Z',
                       signature: 'sha256=abc123...',
                       data: {

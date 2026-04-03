@@ -16,6 +16,7 @@ import { ParentPaymentStatus, AttendanceStatus } from '../types';
 import { MOCK_PARENT_PAYMENTS, MOCK_SCHOOL_FEES, MOCK_ATTENDANCE_RECORDS, MOCK_STUDENTS_LIST } from '../constants';
 import { SchoolFeeService } from '../services/SchoolFeeService';
 import { useToast } from './ui/Toast';
+import { useAuth } from '../hooks/useAuth';
 
 const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -32,6 +33,8 @@ type Section = 'overview' | 'financial' | 'operational';
 
 export default function SchoolReportsView() {
   const toast = useToast();
+  const { user } = useAuth();
+  const schoolId = user?.schoolId || '';
   const [period, setPeriod] = useState<Period>('30d');
   const [section, setSection] = useState<Section>('overview');
 
@@ -48,13 +51,13 @@ export default function SchoolReportsView() {
   }, []);
 
   // Aging buckets & scholarship impact (from service)
-  const agingBuckets = useMemo(() => SchoolFeeService.getAgingBuckets('mx_01'), []);
-  const scholarshipImpact = useMemo(() => SchoolFeeService.getScholarshipImpact('mx_01'), []);
+  const agingBuckets = useMemo(() => SchoolFeeService.getAgingBuckets(schoolId), [schoolId]);
+  const scholarshipImpact = useMemo(() => SchoolFeeService.getScholarshipImpact(schoolId), [schoolId]);
   const agingChartData = useMemo(() => agingBuckets.map(b => ({ name: b.label, monto: b.totalAmount, count: b.count })), [agingBuckets]);
   const lateFeeRevenue = useMemo(() => {
-    const payments = SchoolFeeService.getPaymentsBySchool('mx_01');
+    const payments = SchoolFeeService.getPaymentsBySchool(schoolId);
     return payments.reduce((s, p) => s + (p.lateFeeAmount || 0), 0);
-  }, []);
+  }, [schoolId]);
 
   // Revenue by month chart data
   const revenueByMonth = useMemo(() => {

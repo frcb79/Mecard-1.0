@@ -3,7 +3,7 @@
  * CRUD roles, asignación de permisos por grupo, badges de sistema vs custom
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Shield, Plus, Edit2, Trash2, X, Check, Users, Lock, Unlock,
   ChevronDown, ChevronRight, Settings
@@ -11,8 +11,7 @@ import {
 import { CustomRole, AppPermission, UserRole } from '../types';
 import { RoleService, PERMISSION_LABELS, PERMISSION_GROUPS } from '../services/RoleService';
 import { useToast } from './ui/Toast';
-
-const SCHOOL_ID = 'mx_01';
+import { useAuth } from '../hooks/useAuth';
 
 const BASE_ROLE_LABELS: Record<string, string> = {
   [UserRole.SCHOOL_ADMIN]: 'Director Escolar',
@@ -26,8 +25,10 @@ const BASE_ROLE_LABELS: Record<string, string> = {
 
 export default function CustomRolesManager() {
   const toast = useToast();
+  const { user } = useAuth();
+  const schoolId = user?.schoolId || '';
 
-  const [roles, setRoles] = useState<CustomRole[]>(() => RoleService.getRoles(SCHOOL_ID));
+  const [roles, setRoles] = useState<CustomRole[]>(() => RoleService.getRoles(schoolId));
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<CustomRole | null>(null);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
@@ -39,9 +40,13 @@ export default function CustomRolesManager() {
   const [formColor, setFormColor] = useState('#6366f1');
   const [formPerms, setFormPerms] = useState<Set<AppPermission>>(new Set());
 
-  const stats = useMemo(() => RoleService.getStats(SCHOOL_ID), [roles]);
+  const stats = useMemo(() => RoleService.getStats(schoolId), [roles, schoolId]);
 
-  const reload = useCallback(() => setRoles(RoleService.getRoles(SCHOOL_ID)), []);
+  const reload = useCallback(() => setRoles(RoleService.getRoles(schoolId)), [schoolId]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const openAdd = () => {
     setEditing(null);
@@ -78,7 +83,7 @@ export default function CustomRolesManager() {
     if (!formName.trim()) { toast.warning('Requerido', 'El nombre es obligatorio'); return; }
     const data: CustomRole = {
       id: editing?.id || `role_${Date.now()}`,
-      schoolId: SCHOOL_ID,
+      schoolId,
       name: formName.trim(),
       description: formDesc.trim(),
       baseRole: formBase,

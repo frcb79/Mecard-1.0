@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   MapPin, Calendar, DollarSign, Users, FileText, Clock,
   CheckCircle2, AlertTriangle, ChevronDown, ChevronUp,
@@ -10,6 +10,7 @@ import {
   MOCK_TRIPS, MOCK_TRIP_ENROLLMENTS, MOCK_TRIP_PAYMENTS, MOCK_TRIP_REMINDERS
 } from '../constants';
 import type { SchoolTrip, TripEnrollment, TripPayment, TripReminder, TripStatus, EnrollmentStatus, TripPaymentStatus } from '../types';
+import { useAuth } from '../hooks/useAuth';
 
 type TabView = 'trips' | 'enrollments' | 'reminders' | 'create';
 
@@ -39,8 +40,8 @@ function formatMoney(n: number) {
 
 const EMOJIS = ['🏕️', '🏛️', '⚽', '🎭', '🏖️', '🏔️', '🎵', '🔬', '🎨', '📚'];
 
-const INITIAL_FORM: Omit<SchoolTrip, 'id' | 'creadoPor' | 'creadoEn' | 'actualizadoEn'> = {
-  schoolId: 'mx_01',
+const createInitialForm = (schoolId: string): Omit<SchoolTrip, 'id' | 'creadoPor' | 'creadoEn' | 'actualizadoEn'> => ({
+  schoolId,
   nombre: '', destino: '', descripcion: '',
   fechaSalida: '', fechaRegreso: '',
   costoTotal: 0, costoPorAlumno: 0,
@@ -51,11 +52,13 @@ const INITIAL_FORM: Omit<SchoolTrip, 'id' | 'creadoPor' | 'creadoEn' | 'actualiz
   permiteParcialidades: false, numeroParcialidades: 1,
   requiereDocumentos: false, documentosRequeridos: [],
   contactoEmergencia: '', imageEmoji: '🏕️',
-};
+});
 
 const GRADES = ['1° Primaria', '2° Primaria', '3° Primaria', '4° Primaria', '5° Primaria', '6° Primaria'];
 
 export default function SchoolTripsView() {
+  const { user } = useAuth();
+  const schoolId = user?.schoolId || '';
   const { showToast } = useToast();
   const [tabView, setTabView] = useState<TabView>('trips');
   const [trips, setTrips] = useState<SchoolTrip[]>(MOCK_TRIPS);
@@ -67,13 +70,19 @@ export default function SchoolTripsView() {
   const [filterStatus, setFilterStatus] = useState<TripStatus | 'todos'>('todos');
 
   // Create/Edit form
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(() => createInitialForm(schoolId));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newDoc, setNewDoc] = useState('');
 
   // Reminder form
   const [showReminderForm, setShowReminderForm] = useState(false);
   const [reminderForm, setReminderForm] = useState({ tripId: '', tipo: 'general' as TripReminder['tipo'], mensaje: '', fechaEnvio: '' });
+
+  useEffect(() => {
+    if (!editingId) {
+      setForm(createInitialForm(schoolId));
+    }
+  }, [schoolId, editingId]);
 
   const filtered = useMemo(() => {
     return trips.filter(t => {
@@ -112,7 +121,7 @@ export default function SchoolTripsView() {
       showToast('✅ Viaje creado', 'success');
     }
 
-    setForm(INITIAL_FORM); setEditingId(null); setTabView('trips');
+    setForm(createInitialForm(schoolId)); setEditingId(null); setTabView('trips');
   }
 
   function handleEdit(trip: SchoolTrip) {
@@ -212,7 +221,7 @@ export default function SchoolTripsView() {
           className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 ${tabView === 'reminders' ? 'bg-teal-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
           🔔 Recordatorios ({reminders.length})
         </button>
-        <button onClick={() => { setTabView('create'); if (!editingId) { setForm(INITIAL_FORM); } }}
+        <button onClick={() => { setTabView('create'); if (!editingId) { setForm(createInitialForm(schoolId)); } }}
           className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 ${tabView === 'create' ? 'bg-teal-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
           <Plus size={12} /> {editingId ? 'Editando...' : 'Nuevo Viaje'}
         </button>
@@ -688,7 +697,7 @@ export default function SchoolTripsView() {
                   className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-lg uppercase text-[10px] tracking-[2px] flex items-center justify-center gap-2">
                   <Save size={16} /> {editingId ? 'Guardar Cambios' : 'Crear como Borrador'}
                 </button>
-                <button onClick={() => { setTabView('trips'); setEditingId(null); setForm(INITIAL_FORM); }}
+                <button onClick={() => { setTabView('trips'); setEditingId(null); setForm(createInitialForm(schoolId)); }}
                   className="px-6 py-3 bg-slate-100 text-slate-600 rounded-2xl text-xs font-bold">
                   Cancelar
                 </button>
